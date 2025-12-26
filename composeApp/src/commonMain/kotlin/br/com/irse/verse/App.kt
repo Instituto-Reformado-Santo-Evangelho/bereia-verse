@@ -253,7 +253,7 @@ fun SearchView(viewModel: VerseViewModel, onVerseSelect: (Int) -> Unit, textColo
         OutlinedTextField(
             value = query,
             onValueChange = { viewModel.onSearchQueryChanged(it) },
-            label = { Text(Strings.SEARCH_HINT) },
+            placeholder = { Text(Strings.SEARCH_HINT, color = textColor.copy(alpha = 0.4f)) },
             modifier = Modifier.fillMaxWidth()
                 .onKeyEvent { keyEvent ->
                     if (keyEvent.type == KeyEventType.KeyDown) {
@@ -286,7 +286,12 @@ fun SearchView(viewModel: VerseViewModel, onVerseSelect: (Int) -> Unit, textColo
                 },
             singleLine = true,
             shape = RoundedCornerShape(24.dp),
-            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryAmber, focusedLabelColor = PrimaryAmber),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = PrimaryAmber, 
+                unfocusedBorderColor = textColor.copy(alpha = 0.1f),
+                focusedContainerColor = textColor.copy(alpha = 0.02f),
+                unfocusedContainerColor = textColor.copy(alpha = 0.02f)
+            ),
             trailingIcon = {
                 IconButton(onClick = { 
                     if (query.isNotBlank()) {
@@ -348,9 +353,21 @@ fun SearchView(viewModel: VerseViewModel, onVerseSelect: (Int) -> Unit, textColo
                     HorizontalDivider(color = textColor.copy(alpha = 0.05f))
                 }
             }
-        } else if (query.length >= 3) {
-             Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
-                 Text(Strings.NO_RESULTS, style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
+        } else {
+             Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                 if (query.length >= 2) {
+                     Text(Strings.NO_RESULTS, style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
+                 } else {
+                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                         Text(Strings.SEARCH_EXAMPLES_TITLE, style = MaterialTheme.typography.titleMedium, color = textColor.copy(alpha = 0.7f))
+                         Text(
+                             text = Strings.SEARCH_EXAMPLES_SUBTITLE, 
+                             style = MaterialTheme.typography.bodyMedium, 
+                             color = textColor.copy(alpha = 0.4f),
+                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                         )
+                     }
+                 }
              }
         }
     }
