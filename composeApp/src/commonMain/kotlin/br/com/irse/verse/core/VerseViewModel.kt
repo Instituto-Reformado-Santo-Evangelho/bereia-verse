@@ -98,7 +98,8 @@ class VerseViewModel(
                     _detectedVerses.value = results
                     
                     if (addToHistory) {
-                        HistoryManager.saveEntry(text)
+                        val historyLabel = formatHistoryLabel(requests)
+                        HistoryManager.saveEntry(historyLabel)
                         _history.value = HistoryManager.getHistory() // Atualiza UI
                     }
                 }
@@ -106,6 +107,28 @@ class VerseViewModel(
                 e.printStackTrace()
             } finally {
                 _isProcessing.value = false
+            }
+        }
+    }
+
+    private fun formatHistoryLabel(requests: List<VerseRequest>): String {
+        if (requests.isEmpty()) return ""
+        val first = requests.first()
+        val last = requests.last()
+        
+        return if (requests.size == 1) {
+            "${first.book} ${first.chapter}:${first.verse}"
+        } else if (first.book == last.book && first.chapter == last.chapter) {
+            "${first.book} ${first.chapter}:${first.verse}-${last.verse}"
+        } else if (first.book == last.book) {
+            "${first.book} ${first.chapter}:${first.verse} - ${last.chapter}:${last.verse}"
+        } else {
+            // Múltiplos livros detectados
+            val uniqueBooks = requests.map { it.book }.distinct()
+            if (uniqueBooks.size > 1) {
+                "${first.book} ${first.chapter}:${first.verse} (+${uniqueBooks.size - 1} livros)"
+            } else {
+                "${first.book} ${first.chapter}:${first.verse}..."
             }
         }
     }
