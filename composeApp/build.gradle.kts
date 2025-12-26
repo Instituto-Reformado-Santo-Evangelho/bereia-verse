@@ -70,11 +70,11 @@ kotlin {
 }
 
 android {
-    namespace = "br.com.irse.writers"
+    namespace = "br.com.irse.verse"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "br.com.irse.writers"
+        applicationId = "br.com.irse.verse"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
@@ -102,11 +102,11 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "br.com.irse.writers.MainKt"
+        mainClass = "br.com.irse.verse.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "VerseReaderIRSE"
+            packageName = "bereia-verse"
             packageVersion = "1.0.0"
             
             // Força a inclusão do módulo SQL para o SQLite funcionar
@@ -129,11 +129,11 @@ compose.desktop {
 
 // Tarefa Manual para criar JAR Universal (Fat Jar)
 val packageUniversalJar by tasks.registering(Jar::class) {
-    archiveBaseName.set("VerseReaderIRSE-universal")
+    archiveBaseName.set("bereia-verse-universal")
     archiveVersion.set("1.0.0")
     
     manifest {
-        attributes["Main-Class"] = "br.com.irse.writers.MainKt"
+        attributes["Main-Class"] = "br.com.irse.verse.MainKt"
     }
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -160,7 +160,7 @@ tasks.register<JavaExec>("createExe") {
     
     val buildDirFile = project.layout.buildDirectory.get().asFile
     val outputDir = File(buildDirFile, "compose/binaries/main/exe")
-    val outputExe = File(outputDir, "VerseReader.exe")
+    val outputExe = File(outputDir, "BereiaVerse.exe")
     val configFile = File(outputDir, "launch4j-config.xml")
     val jarFile = packageUniversalJar.get().archiveFile.get().asFile
     

@@ -10,48 +10,70 @@ import androidx.compose.ui.text.withStyle
 
 object HtmlTextFormatter {
     
-    // Simplistic HTML parser for basic tags: <b>, <i>, <br>
-    // This assumes the input HTML is relatively well-formed for these specific tags
+    private val tagRegex = Regex("""<(/?)(\w+)([^>]*)>""")
+
     fun format(html: String): AnnotatedString {
         return buildAnnotatedString {
             var currentIndex = 0
-            val regex = Regex("(<(?<tag>b|i|br|/b|/i)>)")
-            val matches = regex.findAll(html)
-
-            // Track active styles
-            val styles = java.util.Stack<SpanStyle>()
+            val matches = tagRegex.findAll(html)
             
             for (match in matches) {
-                // Append text before the tag
                 if (match.range.first > currentIndex) {
                     append(html.substring(currentIndex, match.range.first))
                 }
 
-                val tag = match.groups["tag"]?.value?.lowercase() ?: ""
+                val isClosing = match.groupValues[1] == "/"
+                val tagName = match.groupValues[2].lowercase()
+                val attributes = match.groupValues[3].lowercase()
 
-                when (tag) {
-                    "b" -> {
-                        val style = SpanStyle(fontWeight = FontWeight.Bold)
-                        pushStyle(style)
+                if (isClosing) {
+                    when (tagName) {
+                        "b", "strong", "i", "em", "span", "font", "cite" -> { 
+                            try { pop() } catch (e: Exception) { }
+                        }
                     }
-                    "i" -> {
-                        val style = SpanStyle(fontStyle = FontStyle.Italic)
-                        pushStyle(style)
-                    }
-                    "/b", "/i" -> {
-                         // In a perfect world we check if it matches the top, 
-                         // but for simple text we just try to pop
-                         try { pop() } catch (e: Exception) {}
-                    }
-                    "br" -> {
-                        append("\n")
+                } else {
+                    when (tagName) {
+                        "b", "strong" -> pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                        "i", "em", "cite" -> pushStyle(SpanStyle(fontStyle = FontStyle.Italic))
+                        "u" -> pushStyle(SpanStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline))
+                        "br" -> append("\n")
+                        "span", "font" -> {
+                            var style = SpanStyle()
+                            
+                            if (attributes.contains("class")) {
+                                if (attributes.contains("quote") || 
+                                    attributes.contains("ot") || 
+                                    attributes.contains("citac") ||
+                                    attributes.contains("cita") ||
+                                    attributes.contains("at")) {
+                                    style = style.copy(fontWeight = FontWeight.Bold)
+                                }
+                                
+                                if (attributes.contains("jesus") || attributes.contains("red")) {
+                                    style = style.copy(color = Color(0xFFC62828))
+                                }
+                                
+                                if (attributes.contains("italic")) {
+                                    style = style.copy(fontStyle = FontStyle.Italic)
+                                }
+                            }
+                            
+                            if (attributes.contains("color")) {
+                                if (attributes.contains("red") || attributes.contains("#ff0000")) {
+                                    style = style.copy(color = Color(0xFFC62828))
+                                }
+                            }
+                            
+                            pushStyle(style)
+                        }
+                        else -> { } 
                     }
                 }
                 
                 currentIndex = match.range.last + 1
             }
 
-            // Append remaining text
             if (currentIndex < html.length) {
                 append(html.substring(currentIndex))
             }

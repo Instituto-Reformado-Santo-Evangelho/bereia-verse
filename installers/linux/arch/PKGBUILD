@@ -1,85 +1,59 @@
 # Maintainer: Heleno <seu-email@exemplo.com>
-pkgname=verse-reader-bin
+pkgname=bereia-verse-bin
 pkgver=1.0.0
-pkgrel=2
+pkgrel=1
 pkgdesc="Leitor de versículos bíblicos (ACF) com detecção automática de clipboard."
 arch=('x86_64')
 url="https://github.com/heleno/verse-extension"
 license=('MIT')
 depends=('java-runtime>=17' 'gtk3')
 makedepends=('jdk17-openjdk' 'gradle')
-provides=('verse-reader')
-conflicts=('verse-reader')
-# Usamos 'file://' para referenciar os arquivos locais, assumindo que estamos na raiz do projeto
-# Mas em builds manuais, geralmente copiamos os artifacts.
-# Vamos manter a lógica de build local, mas com caminhos absolutos resolvidos dinamicamente ou instrução clara.
+provides=('bereia-verse')
+conflicts=('bereia-verse' 'verse-reader')
+options=('!strip')
 
-options=('!strip') # Não tentar fazer strip em jars
+find_project_root() {
+    local dir="$1"
+    while [[ "$dir" != "/" ]]; do
+        if [[ -f "$dir/gradlew" ]]; then
+            echo "$dir"
+            return 0
+        fi
+        dir="$(dirname "$dir")"
+    done
+    return 1
+}
 
 build() {
-    # Detecta onde estamos. O makepkg roda dentro de src/, então precisamos voltar.
-    # Mas o ideal para um pacote local é confiar que o usuário já rodou o build ou copiar tudo.
-    
-    # Abordagem Híbrida Robusta:
-    # 1. Se existir o build final, usa.
-    # 2. Se não, tenta construir.
-    
-    local project_root="${startdir}/../../../../.."
-    
-    msg2 "Localizando raiz do projeto em: $project_root"
-    
-    if [ ! -f "$project_root/gradlew" ]; then
-        error "Não foi possível encontrar o gradlew. Verifique se você está rodando makepkg de dentro de installers/linux/arch/"
-        return 1
-    fi
-
+    local project_root=$(find_project_root "$startdir")
+    if [[ -z "$project_root" ]]; then return 1; fi
     cd "$project_root"
-    msg2 "Iniciando build do Gradle..."
+    chmod +x gradlew
     ./gradlew :composeApp:createDistributable --no-daemon
 }
 
 package() {
-    local project_root="${startdir}/../../../../.."
-    local build_dir="$project_root/composeApp/build/compose/binaries/main/app"
-    local dest_dir="${pkgdir}/opt/${pkgname}"
+    local project_root=$(find_project_root "$startdir")
+    local build_dir="$project_root/composeApp/build/compose/binaries/main/app/bereia-verse"
+    local dest_dir="${pkgdir}/opt/bereia-verse"
 
-    if [ ! -d "$build_dir" ]; then
-        error "Diretório de build não encontrado: $build_dir"
-        return 1
-    fi
-
-    msg2 "Instalando arquivos..."
-    
-    # Cria diretório de destino
     mkdir -p "${dest_dir}"
-    
-    # Copia os arquivos gerados pelo Gradle
     cp -r "${build_dir}"/* "${dest_dir}/"
+    chmod +x "${dest_dir}/bin/bereia-verse"
 
-    # Permissões
-    chmod +x "${dest_dir}/bin/writers"
-
-    # Cria o link simbólico para o executável no PATH
     mkdir -p "${pkgdir}/usr/bin"
-    ln -s "/opt/${pkgname}/bin/writers" "${pkgdir}/usr/bin/verse-reader"
+    ln -sf "/opt/bereia-verse/bin/bereia-verse" "${pkgdir}/usr/bin/bereia-verse"
 
-    # Instala o ícone
     mkdir -p "${pkgdir}/usr/share/pixmaps"
-    local icon_path="$project_root/composeApp/src/commonMain/composeResources/drawable/logo.png"
-    if [ -f "$icon_path" ]; then
-        cp "$icon_path" "${pkgdir}/usr/share/pixmaps/verse-reader.png"
-    else
-        warning "Ícone não encontrado em $icon_path"
-    fi
+    cp "$project_root/composeApp/src/commonMain/composeResources/drawable/logo.png" "${pkgdir}/usr/share/pixmaps/bereia-verse.png"
 
-    # Cria entrada no menu (.desktop)
     mkdir -p "${pkgdir}/usr/share/applications"
-    cat > "${pkgdir}/usr/share/applications/verse-reader.desktop" <<EOF
+    cat > "${pkgdir}/usr/share/applications/bereia-verse.desktop" <<EOF
 [Desktop Entry]
-Name=Verse Reader
+Name=Bereia Verse
 Comment=Leitor Bíblico Automático
-Exec=verse-reader
-Icon=verse-reader
+Exec=bereia-verse
+Icon=bereia-verse
 Terminal=false
 Type=Application
 Categories=Utility;Education;

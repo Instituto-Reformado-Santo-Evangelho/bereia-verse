@@ -1,4 +1,4 @@
-package br.com.irse.writers
+package br.com.irse.verse
 
 import android.content.Intent
 import android.net.Uri

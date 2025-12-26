@@ -1,4 +1,4 @@
-!define APPNAME "Verse Reader IRSE"
+!define APPNAME "Bereia Verse"
 !define COMPANYNAME "IRSE"
 !define DESCRIPTION "Leitor de versiculos biblicos automatico"
 !define VERSIONMAJOR 1
@@ -12,9 +12,9 @@
 !endif
 
 Name "${APPNAME}"
-; Salva o instalador na pasta dist (um nível acima de dist/windows, ou seja, dist/)
-OutFile "${BUILD_DIR}\..\VerseReader_Setup_1.0.0.exe"
-InstallDir "$PROGRAMFILES64\VerseReader"
+; Salva o instalador na pasta dist
+OutFile "${BUILD_DIR}\..\BereiaVerse_Setup_1.0.0.exe"
+InstallDir "$PROGRAMFILES64\BereiaVerse"
 InstallDirRegKey HKLM "Software\${APPNAME}" "Install_Dir"
 
 RequestExecutionLevel admin
@@ -25,8 +25,8 @@ Page instfiles
 Section "Install"
     SetOutPath $INSTDIR
     
-    ; --- Arquivos Principais (Lendo de dist/windows) ---
-    File "${BUILD_DIR}\VerseReader.exe"
+    ; --- Arquivos Principais ---
+    File "${BUILD_DIR}\BereiaVerse.exe"
     File "${BUILD_DIR}\*.jar"
     File "${BUILD_DIR}\launch4j-config.xml"
     
@@ -38,8 +38,8 @@ Section "Install"
     
     ; --- Atalhos ---
     CreateDirectory "$SMPROGRAMS\${APPNAME}"
-    CreateShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\VerseReader.exe" "" "$INSTDIR\VerseReader.exe" 0
-    CreateShortCut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\VerseReader.exe" "" "$INSTDIR\VerseReader.exe" 0
+    CreateShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\BereiaVerse.exe" "" "$INSTDIR\BereiaVerse.exe" 0
+    CreateShortCut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\BereiaVerse.exe" "" "$INSTDIR\BereiaVerse.exe" 0
     
     ; --- Desinstalador ---
     WriteUninstaller "$INSTDIR\uninstall.exe"
@@ -47,7 +47,7 @@ Section "Install"
     ; --- Registro ---
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayIcon" "$INSTDIR\VerseReader.exe"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayIcon" "$INSTDIR\BereiaVerse.exe"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "${COMPANYNAME}"
     WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "NoModify" 1
     WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "NoRepair" 1

@@ -1,4 +1,4 @@
-package br.com.irse.writers
+package br.com.irse.verse
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
