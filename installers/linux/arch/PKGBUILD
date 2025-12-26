@@ -1,0 +1,87 @@
+# Maintainer: Heleno <seu-email@exemplo.com>
+pkgname=verse-reader-bin
+pkgver=1.0.0
+pkgrel=2
+pkgdesc="Leitor de versículos bíblicos (ACF) com detecção automática de clipboard."
+arch=('x86_64')
+url="https://github.com/heleno/verse-extension"
+license=('MIT')
+depends=('java-runtime>=17' 'gtk3')
+makedepends=('jdk17-openjdk' 'gradle')
+provides=('verse-reader')
+conflicts=('verse-reader')
+# Usamos 'file://' para referenciar os arquivos locais, assumindo que estamos na raiz do projeto
+# Mas em builds manuais, geralmente copiamos os artifacts.
+# Vamos manter a lógica de build local, mas com caminhos absolutos resolvidos dinamicamente ou instrução clara.
+
+options=('!strip') # Não tentar fazer strip em jars
+
+build() {
+    # Detecta onde estamos. O makepkg roda dentro de src/, então precisamos voltar.
+    # Mas o ideal para um pacote local é confiar que o usuário já rodou o build ou copiar tudo.
+    
+    # Abordagem Híbrida Robusta:
+    # 1. Se existir o build final, usa.
+    # 2. Se não, tenta construir.
+    
+    local project_root="${startdir}/../../../../.."
+    
+    msg2 "Localizando raiz do projeto em: $project_root"
+    
+    if [ ! -f "$project_root/gradlew" ]; then
+        error "Não foi possível encontrar o gradlew. Verifique se você está rodando makepkg de dentro de installers/linux/arch/"
+        return 1
+    fi
+
+    cd "$project_root"
+    msg2 "Iniciando build do Gradle..."
+    ./gradlew :composeApp:createDistributable --no-daemon
+}
+
+package() {
+    local project_root="${startdir}/../../../../.."
+    local build_dir="$project_root/composeApp/build/compose/binaries/main/app"
+    local dest_dir="${pkgdir}/opt/${pkgname}"
+
+    if [ ! -d "$build_dir" ]; then
+        error "Diretório de build não encontrado: $build_dir"
+        return 1
+    fi
+
+    msg2 "Instalando arquivos..."
+    
+    # Cria diretório de destino
+    mkdir -p "${dest_dir}"
+    
+    # Copia os arquivos gerados pelo Gradle
+    cp -r "${build_dir}"/* "${dest_dir}/"
+
+    # Permissões
+    chmod +x "${dest_dir}/bin/writers"
+
+    # Cria o link simbólico para o executável no PATH
+    mkdir -p "${pkgdir}/usr/bin"
+    ln -s "/opt/${pkgname}/bin/writers" "${pkgdir}/usr/bin/verse-reader"
+
+    # Instala o ícone
+    mkdir -p "${pkgdir}/usr/share/pixmaps"
+    local icon_path="$project_root/composeApp/src/commonMain/composeResources/drawable/logo.png"
+    if [ -f "$icon_path" ]; then
+        cp "$icon_path" "${pkgdir}/usr/share/pixmaps/verse-reader.png"
+    else
+        warning "Ícone não encontrado em $icon_path"
+    fi
+
+    # Cria entrada no menu (.desktop)
+    mkdir -p "${pkgdir}/usr/share/applications"
+    cat > "${pkgdir}/usr/share/applications/verse-reader.desktop" <<EOF
+[Desktop Entry]
+Name=Verse Reader
+Comment=Leitor Bíblico Automático
+Exec=verse-reader
+Icon=verse-reader
+Terminal=false
+Type=Application
+Categories=Utility;Education;
+EOF
+}

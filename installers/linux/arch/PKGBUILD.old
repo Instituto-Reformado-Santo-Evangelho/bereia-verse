@@ -1,0 +1,56 @@
+# Maintainer: Heleno <seu-email@exemplo.com>
+pkgname=verse-reader-bin
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Leitor de versículos bíblicos (ACF) com detecção automática de clipboard."
+arch=('x86_64')
+url="https://github.com/heleno/verse-extension"
+license=('MIT')
+depends=('java-runtime>=17' 'gtk3')
+makedepends=('jdk17-openjdk' 'gradle')
+provides=('verse-reader')
+conflicts=('verse-reader')
+source=()
+# Não checamos integridade pois estamos construindo localmente
+md5sums=()
+
+build() {
+    cd "${srcdir}/../../acf-desktop-compose"
+    # Garante que o gradlew seja executável
+    chmod +x gradlew
+    # Cria a distribuição (pasta com jars e launcher)
+    ./gradlew :composeApp:createDistributable
+}
+
+package() {
+    # Define caminhos
+    local build_dir="${srcdir}/../../acf-desktop-compose/composeApp/build/compose/binaries/main/app"
+    local dest_dir="${pkgdir}/opt/${pkgname}"
+
+    # Cria diretório de destino
+    mkdir -p "${dest_dir}"
+    
+    # Copia os arquivos gerados pelo Gradle para /opt/verse-reader-bin
+    cp -r "${build_dir}"/* "${dest_dir}/"
+
+    # Cria o link simbólico para o executável no PATH
+    mkdir -p "${pkgdir}/usr/bin"
+    ln -s "/opt/${pkgname}/bin/writers" "${pkgdir}/usr/bin/verse-reader"
+
+    # Instala o ícone (opcional, mas recomendado)
+    mkdir -p "${pkgdir}/usr/share/pixmaps"
+    cp "${srcdir}/../../acf-desktop-compose/composeApp/src/commonMain/composeResources/drawable/logo.png" "${pkgdir}/usr/share/pixmaps/verse-reader.png"
+
+    # Cria entrada no menu (.desktop)
+    mkdir -p "${pkgdir}/usr/share/applications"
+    cat > "${pkgdir}/usr/share/applications/verse-reader.desktop" <<EOF
+[Desktop Entry]
+Name=Verse Reader
+Comment=Leitor Bíblico Automático
+Exec=verse-reader
+Icon=verse-reader
+Terminal=false
+Type=Application
+Categories=Utility;Education;
+EOF
+}
