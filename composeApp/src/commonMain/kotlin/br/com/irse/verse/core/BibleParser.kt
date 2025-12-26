@@ -2,16 +2,40 @@ package br.com.irse.verse.core
 
 class BibleParser(val repository: BibleRepository) {
 
-    // Regex adaptada para Kotlin usando Raw String para evitar escapes duplos
-    private val refRegex = Regex(
-        """((?:[1-3]\s*)?[A-Za-zá-úÁ-Úçã]{2,}\.?\s*)?(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?(?:\s*[\u2013\u002d\u2014]\s*(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?)?"""
-    )
+    // Regex parts
+    private val suffixPattern = """(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?(?:\s*[\u2013\u002d\u2014]\s*(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?)?"""
+
+    // Construída dinamicamente para garantir que apenas livros válidos sejam detectados
+    // Usa Alternância para tratar separadamente "Com Livro" e "Sem Livro"
+    // "Sem Livro" usa Lookahead Negativo para não engolir prefixos de livros (ex: "1" de "1 João")
+    private val refRegex by lazy {
+        val allKeys = repository.getAllBooks().keys + BibleConstants.BOOK_ABBREVIATIONS.keys
+        val triggers = allKeys
+            .sortedByDescending { it.length }
+            .map { key -> 
+                key.split(" ").joinToString("\\s*") { part -> Regex.escape(part) }
+            }
+            .joinToString("|")
+
+        // Alt 1: Book + Suffix (Groups 1..5)
+        // Alt 2: Lookahead(!Book) + Suffix (Groups 6..9 - Group 6 is the first capture in suffix, etc)
+        // Note: Suffix has 4 capturing groups.
+        // Structure:
+        // (Book) (Cap) (Ver) (EndCap) (EndVer)  -> 5 groups
+        // |
+        // (?!) (Cap) (Ver) (EndCap) (EndVer)    -> 4 groups (start index 6)
+        
+        Regex(
+            """(?:((?:$triggers)\.?\s*)$suffixPattern)|(?:(?!(?:$triggers))$suffixPattern)""",
+            RegexOption.IGNORE_CASE
+        )
+    }
 
     fun processSelection(text: String): List<VerseRequest> {
         if (text.length < 3) return emptyList()
 
         // Remove footnote markers like [1], [12]
-        val cleanText = text.replace(Regex("""\[\d+]"""), "").replace(Regex("""\s+"""), " ")
+        val cleanText = text.replace(Regex("""\[\d+]"""), "").replace(Regex("""\s+""" ), " ")
         val chunks = cleanText.split(";")
         
         var currentBook: Book? = null
@@ -28,19 +52,38 @@ class BibleParser(val repository: BibleRepository) {
             for (match in matches) {
                 if (match.value.isEmpty()) continue
 
+                // Extraction Logic with Alternatives
+                // Alt 1 (With Book): Groups 1, 2, 3, 4, 5
+                // Alt 2 (No Book): Groups 6, 7, 8, 9
+                
+                // Group 1: Book
                 val rawBook = match.groupValues.getOrNull(1)?.takeIf { it.isNotBlank() }
-                val startCapStr = match.groupValues.getOrNull(2)
-                var startVersePart = match.groupValues.getOrNull(3)?.takeIf { it.isNotBlank() } ?: "1-999"
-                val endCapStr = match.groupValues.getOrNull(4)
-                var endVersePart = match.groupValues.getOrNull(5)?.takeIf { it.isNotBlank() } ?: "1-999"
+                
+                // Start Cap: Group 2 OR Group 6
+                val startCapStr = match.groupValues.getOrNull(2)?.takeIf { it.isNotBlank() }
+                    ?: match.groupValues.getOrNull(6)
+                
+                // Start Verse: Group 3 OR Group 7
+                var startVersePart = match.groupValues.getOrNull(3)?.takeIf { it.isNotBlank() }
+                    ?: match.groupValues.getOrNull(7)?.takeIf { it.isNotBlank() } 
+                    ?: "1-999"
+                    
+                // End Cap: Group 4 OR Group 8
+                val endCapStr = match.groupValues.getOrNull(4)?.takeIf { it.isNotBlank() }
+                    ?: match.groupValues.getOrNull(8)
+                    
+                // End Verse: Group 5 OR Group 9
+                var endVersePart = match.groupValues.getOrNull(5)?.takeIf { it.isNotBlank() }
+                    ?: match.groupValues.getOrNull(9)?.takeIf { it.isNotBlank() } 
+                    ?: "1-999"
 
                 if (startCapStr.isNullOrBlank()) continue
                 val startCap = startCapStr.toIntOrNull() ?: continue
                 val endCap = endCapStr?.takeIf { it.isNotBlank() }?.toIntOrNull()
 
                 // Clean trailing dashes
-                 startVersePart = startVersePart.replace(Regex("""[\s\u2013\u002d\u2014]+$"""), "")
-                 endVersePart = endVersePart.replace(Regex("""[\s\u2013\u002d\u2014]+$"""), "")
+                 startVersePart = startVersePart.replace(Regex("""[\s\u2013\u002d\u2014]+\$""" ), "")
+                 endVersePart = endVersePart.replace(Regex("""[\s\u2013\u002d\u2014]+\$""" ), "")
 
                 if (rawBook != null) {
                     val found = repository.findBook(rawBook.trim())
@@ -89,7 +132,7 @@ class BibleParser(val repository: BibleRepository) {
     }
 
     private fun getMinMaxVerses(versePart: String): VerseRange {
-        val cleanPart = versePart.replace(Regex("""[\u2013\u002d\u2014]"""), "-").replace(Regex("""\s+"""), "")
+        val cleanPart = versePart.replace(Regex("""[\u2013\u002d\u2014]""" ), "-").replace(Regex("""\s+""" ), "")
         val groups = cleanPart.split(",")
         var min = 9999
         var max = -1
@@ -113,7 +156,7 @@ class BibleParser(val repository: BibleRepository) {
     }
 
     private fun parseVerses(book: Book, chapter: Int, versePart: String): List<VerseRequest> {
-         val cleanPart = versePart.replace(Regex("""[\u2013\u002d\u2014]"""), "-").replace(Regex("""\s+"""), "")
+         val cleanPart = versePart.replace(Regex("""[\u2013\u002d\u2014]""" ), "-").replace(Regex("""\s+""" ), "")
          val ids = mutableListOf<VerseRequest>()
          
          // Calculate startId manually since Repository doesn't expose it anymore

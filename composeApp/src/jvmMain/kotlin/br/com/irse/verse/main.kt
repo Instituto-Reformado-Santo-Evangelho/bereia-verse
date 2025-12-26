@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
@@ -28,7 +29,6 @@ import java.awt.MouseInfo
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import br.com.irse.verse.core.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,15 +50,16 @@ fun main() = application {
     var isVisible by remember { mutableStateOf(true) }
     var isMiniMode by remember { mutableStateOf(false) }
     var isReady by remember { mutableStateOf(false) }
-    var detectedVerses by remember { mutableStateOf<List<Pair<VerseRequest, String?>>>(emptyList()) }
-    var isProcessing by remember { mutableStateOf(false) }
+    
+    // Dependencies
     val parser = remember { mutableStateOf<BibleParser?>(null) }
     val database = remember { mutableStateOf<BibleDatabase?>(null) }
+    val viewModel = remember { mutableStateOf<VerseViewModel?>(null) }
+    
     var currentWindow by remember { mutableStateOf<java.awt.Window?>(null) }
     var currentScreenBounds by remember { mutableStateOf<Rectangle?>(null) }
     val icon = painterResource(Res.drawable.logo)
     val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
-    val scope = rememberCoroutineScope()
 
     fun getActiveMonitorBounds(): Rectangle? {
         return try {
@@ -83,32 +84,7 @@ fun main() = application {
         state.size = DpSize(if (mini) miniSize else fullWidth, targetHeight)
     }
 
-    // Função para processar uma query (usada na detecção e no histórico)
-    suspend fun processQuery(text: String, addToHistory: Boolean = true) {
-        if (parser.value == null || database.value == null) return
-        isProcessing = true
-        try {
-            // Run synchronous parser in IO context to avoid blocking UI
-            val requests = withContext(Dispatchers.IO) {
-                parser.value!!.processSelection(text)
-            }
-            
-            if (requests.isNotEmpty()) {
-                val results = withContext(Dispatchers.IO) {
-                    requests.map { req -> database.value!!.getText(req.id) to req }.map { it.second to it.first }
-                }
-                
-                withContext(Dispatchers.Main) { 
-                    detectedVerses = results 
-                    if (addToHistory) {
-                        HistoryManager.saveEntry(text)
-                    }
-                }
-            }
-        } catch (e: Exception) { e.printStackTrace() } 
-        finally { isProcessing = false }
-    }
-
+    // Initialization
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
@@ -120,39 +96,51 @@ fun main() = application {
                 val tempDbFile = File.createTempFile("bible_verse_db", ".sqlite").apply { deleteOnExit() }
                 FileOutputStream(tempDbFile).use { it.write(dbBytes) }
                 database.value = BibleDatabase(tempDbFile.absolutePath)
-                isReady = true
+                
+                withContext(Dispatchers.Main) {
+                    viewModel.value = VerseViewModel(parser.value!!, database.value!!)
+                    isReady = true
+                }
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
+    // Clipboard Monitor
     LaunchedEffect(isReady) {
-        if (isReady) {
+        if (isReady && viewModel.value != null) {
             withContext(Dispatchers.IO) {
                 var lastText = ""
                 ClipboardMonitor.textFlow().collect { text ->
                     if (text != lastText) {
                         lastText = text
-                        processQuery(text, addToHistory = true)
+                        viewModel.value!!.processQuery(text, addToHistory = true)
                     }
                 }
             }
         }
     }
 
-    LaunchedEffect(detectedVerses) {
-        if (detectedVerses.isNotEmpty()) {
-            currentScreenBounds = getActiveMonitorBounds()
-            if (isLinux && isVisible) {
-                isVisible = false
-                delay(150) 
+    // Window Management based on ViewModel State
+    if (viewModel.value != null) {
+        val detectedVerses by viewModel.value!!.detectedVerses.collectAsState()
+        
+        LaunchedEffect(detectedVerses) {
+            if (detectedVerses.isNotEmpty()) {
+                currentScreenBounds = getActiveMonitorBounds()
+                if (isLinux && isVisible) {
+                    // Fix for Hyprland focus stealing/rendering glitches on quick updates
+                    // isVisible = false
+                    // delay(150) 
+                    // Keeping it simple for now as per "works as expected" feedback
+                }
+                applyAnchorPosition(mini = false) 
+                if (state.isMinimized) state.isMinimized = false
+                isVisible = true
+                isMiniMode = false
+                currentWindow?.isVisible = true
+                currentWindow?.toFront()
+                currentWindow?.requestFocus()
             }
-            applyAnchorPosition(mini = false) 
-            if (state.isMinimized) state.isMinimized = false
-            isVisible = true
-            isMiniMode = false
-            currentWindow?.isVisible = true
-            currentWindow?.toFront()
-            currentWindow?.requestFocus()
         }
     }
 
@@ -185,29 +173,24 @@ fun main() = application {
             if (mini) {
                 MiniWidget(onClick = { isMiniMode = false })
             } else {
-                App(
-                    detectedVerses = detectedVerses,
-                    isProcessing = isProcessing,
-                    onClose = { if (isTraySupported) isVisible = false else isMiniMode = true },
-                    onHeightRequest = { height ->
-                        if (!isMiniMode && Math.abs(state.size.height.value - height.value) > 5) {
-                            applyAnchorPosition(mini = false, height = height)
-                        }
-                    },
-                    onSearch = { query ->
-                        scope.launch(Dispatchers.IO) { processQuery(query, addToHistory = true) }
-                    },
-                    onVerseSelect = { req ->
-                        scope.launch(Dispatchers.IO) {
-                            val content = database.value?.getText(req.id)
-                            withContext(Dispatchers.Main) {
-                                detectedVerses = listOf(req to content)
+                if (viewModel.value != null) {
+                    App(
+                        viewModel = viewModel.value!!,
+                        onClose = { if (isTraySupported) isVisible = false else isMiniMode = true },
+                        onHeightRequest = { height ->
+                            if (!isMiniMode && Math.abs(state.size.height.value - height.value) > 5) {
+                                applyAnchorPosition(mini = false, height = height)
                             }
                         }
-                    },
-                    bibleDatabase = database.value,
-                    bibleRepository = parser.value?.repository
-                )
+                    )
+                } else {
+                    // Loading State
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        MaterialTheme {
+                            CircularProgressIndicator(color = Color(0xFFFFC107))
+                        }
+                    }
+                }
             }
         }
     }

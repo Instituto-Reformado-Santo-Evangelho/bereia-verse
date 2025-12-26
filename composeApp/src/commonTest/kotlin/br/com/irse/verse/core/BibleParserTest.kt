@@ -20,7 +20,7 @@ class BibleParserTest {
     private val parser = BibleParser(repository)
 
     @Test
-    fun `test simple reference detection`() = runTest {
+    fun `test simple reference detection`() {
         val text = "Texto aleatório João 3:16 mais texto"
         val result = parser.processSelection(text)
         
@@ -28,10 +28,14 @@ class BibleParserTest {
         assertEquals("João", result[0].book)
         assertEquals(3, result[0].chapter)
         assertEquals(16, result[0].verse)
+        
+        // ID Calc check:
+        // Start(100) + Offset(Chap 1(51) + Chap 2(25) = 76) + Verse(16-1=15) = 191
+        assertEquals(191, result[0].id)
     }
 
     @Test
-    fun `test short abbreviation Jo`() = runTest {
+    fun `test short abbreviation Jo`() {
         val text = "Lendo Jo 1:1 aqui"
         val result = parser.processSelection(text)
         
@@ -43,19 +47,18 @@ class BibleParserTest {
     }
 
     @Test
-    fun `test numbered book 1 Jo`() = runTest {
+    fun `test numbered book 1 Jo`() {
         val text = "Lendo 1 Jo 1:1 agora"
         val result = parser.processSelection(text)
         
         assertTrue(result.isNotEmpty(), "Deveria detectar '1 Jo 1:1'")
-        // FIXME: Regex atual detecta "1 Jo" como "João" (ignora número). Ajustar regex futuramente.
-        // assertEquals("1 João", result[0].book, "Livro incorreto. Retornou: '${result[0].book}'")
+        assertEquals("1 João", result[0].book, "Livro incorreto. Retornou: '${result[0].book}'")
         assertEquals(1, result[0].chapter)
         assertEquals(1, result[0].verse)
     }
 
     @Test
-    fun `test accent handling Jo vs Job`() = runTest {
+    fun `test accent handling Jo vs Job`() {
         val text1 = "Livro de Jó 1:1"
         val res1 = parser.processSelection(text1)
         assertEquals("Jó", res1.firstOrNull()?.book)
@@ -66,7 +69,7 @@ class BibleParserTest {
     }
 
     @Test
-    fun `test format variation dot and comma`() = runTest {
+    fun `test format variation dot and comma`() {
         val text = "Gn 1.1 e Gn 2,2"
         val result = parser.processSelection(text)
         
@@ -79,7 +82,7 @@ class BibleParserTest {
     }
     
     @Test
-    fun `test range detection`() = runTest {
+    fun `test range detection`() {
         val text = "João 1:1-3"
         val result = parser.processSelection(text)
         
@@ -90,13 +93,17 @@ class BibleParserTest {
     }
     
     @Test
-    fun `test complex range across chapters`() = runTest {
+    fun `test complex range across chapters`() {
         val text = "João 1:50-2:2"
         val result = parser.processSelection(text)
         
-        assertEquals(4, result.size)
+        assertEquals(4, result.size) // 1:50, 1:51, 2:1, 2:2
+        
         assertEquals(50, result[0].verse)
         assertEquals(1, result[0].chapter)
+        
+        assertEquals(1, result[2].verse)
+        assertEquals(2, result[2].chapter)
         
         assertEquals(2, result[3].verse)
         assertEquals(2, result[3].chapter)

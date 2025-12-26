@@ -4,6 +4,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Serializable
 data class HistoryEntry(
@@ -24,7 +26,7 @@ object HistoryManager {
         File(dir, "history.json")
     }
 
-    fun saveEntry(query: String) {
+    suspend fun saveEntry(query: String) = withContext(Dispatchers.IO) {
         try {
             val currentHistory = getHistory().toMutableList()
             
@@ -41,16 +43,16 @@ object HistoryManager {
         }
     }
 
-    fun getHistory(): List<HistoryEntry> {
-        return try {
-            if (!historyFile.exists()) return emptyList()
+    suspend fun getHistory(): List<HistoryEntry> = withContext(Dispatchers.IO) {
+        try {
+            if (!historyFile.exists()) return@withContext emptyList()
             json.decodeFromString<List<HistoryEntry>>(historyFile.readText())
         } catch (e: Exception) {
             emptyList()
         }
     }
     
-    fun clearHistory() {
+    suspend fun clearHistory() = withContext(Dispatchers.IO) {
         if (historyFile.exists()) historyFile.delete()
     }
 }

@@ -92,25 +92,23 @@ enum class AppTab { VERSES, HISTORY, SEARCH }
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
-@Preview
 fun App(
-    detectedVerses: List<Pair<VerseRequest, String?>>,
-    isProcessing: Boolean,
+    viewModel: VerseViewModel,
     onClose: () -> Unit = {},
-    onHeightRequest: (Dp) -> Unit = {},
-    onSearch: (String) -> Unit = {},
-    onVerseSelect: (VerseRequest) -> Unit = {},
-    bibleDatabase: BibleDatabase? = null,
-    bibleRepository: BibleRepository? = null
+    onHeightRequest: (Dp) -> Unit = {}
 ) {
+    val detectedVerses by viewModel.detectedVerses.collectAsState()
+    val isProcessing by viewModel.isProcessing.collectAsState()
+    val history by viewModel.history.collectAsState()
+    
     val clipboardManager = LocalClipboardManager.current
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
     
     val uniqueBooks = remember(detectedVerses) { detectedVerses.map { it.first.book }.distinct() }
     val titleDisplay = when (currentTab) {
-        AppTab.HISTORY -> "Histórico"
-        AppTab.SEARCH -> "Pesquisa"
-        AppTab.VERSES -> if (uniqueBooks.size == 1) uniqueBooks.first() else if (uniqueBooks.isEmpty()) "Versículos" else "${uniqueBooks.size} Livros"
+        AppTab.HISTORY -> Strings.HISTORY_TAB
+        AppTab.SEARCH -> Strings.SEARCH_TAB
+        AppTab.VERSES -> if (uniqueBooks.size == 1) uniqueBooks.first() else if (uniqueBooks.isEmpty()) Strings.VERSES_TAB else "${uniqueBooks.size} ${Strings.BOOKS_DETECTED}"
     }
     
     val isDark = isSystemInDarkTheme()
@@ -130,7 +128,7 @@ fun App(
             val baseHeight = 160.dp
             val targetHeight = when(currentTab) {
                 AppTab.SEARCH -> 450.dp
-                AppTab.HISTORY -> (150.dp + (80.dp * HistoryManager.getHistory().size)).coerceIn(350.dp, 600.dp)
+                AppTab.HISTORY -> (150.dp + (80.dp * history.size)).coerceIn(350.dp, 600.dp)
                 AppTab.VERSES -> (150.dp + (130.dp * detectedVerses.size)).coerceIn(350.dp, 600.dp)
             }
             onHeightRequest(targetHeight)
@@ -148,7 +146,7 @@ fun App(
                         Image(painter = painterResource(Res.drawable.logo), contentDescription = null, modifier = Modifier.size(36.dp))
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
-                            Text(text = "Bereia Verse", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = HeaderContentColor, fontSize = 16.sp)
+                            Text(text = Strings.APP_TITLE, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = HeaderContentColor, fontSize = 16.sp)
                             Text(text = titleDisplay, style = MaterialTheme.typography.bodySmall, color = HeaderContentColor.copy(alpha = 0.8f), fontSize = 12.sp)
                         }
                     }
@@ -167,22 +165,27 @@ fun App(
                 // Content
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     when (currentTab) {
-                        AppTab.HISTORY -> HistoryView(onSelect = { onSearch(it); currentTab = AppTab.VERSES }, textColor = textColor)
+                        AppTab.HISTORY -> HistoryView(
+                            history = history,
+                            onSelect = { 
+                                viewModel.processQuery(it)
+                                currentTab = AppTab.VERSES 
+                            }, 
+                            textColor = textColor
+                        )
                         AppTab.SEARCH -> SearchView(
-                            onSearch = { onSearch(it); currentTab = AppTab.VERSES },
+                            viewModel = viewModel,
                             onVerseSelect = { 
-                                onVerseSelect(it)
+                                viewModel.selectVerse(it)
                                 currentTab = AppTab.VERSES 
                             },
-                            bibleDatabase = bibleDatabase,
-                            bibleRepository = bibleRepository,
                             textColor = textColor
                         )
                         AppTab.VERSES -> {
                             if (detectedVerses.isEmpty()) {
                                 Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Copie um texto (Ctrl+C)", style = MaterialTheme.typography.titleMedium, color = textColor.copy(alpha = 0.7f))
-                                    Text("Ex: João 3:16", style = MaterialTheme.typography.bodyMedium, color = textColor.copy(alpha = 0.4f))
+                                    Text(Strings.COPY_HINT_TITLE, style = MaterialTheme.typography.titleMedium, color = textColor.copy(alpha = 0.7f))
+                                    Text(Strings.COPY_HINT_SUBTITLE, style = MaterialTheme.typography.bodyMedium, color = textColor.copy(alpha = 0.4f))
                                 }
                             } else {
                                 VersesView(detectedVerses, uniqueBooks, textColor)
@@ -197,11 +200,14 @@ fun App(
                         IconButton(onClick = { currentTab = AppTab.SEARCH }, modifier = Modifier.size(32.dp)) {
                             SearchIcon(color = if (currentTab == AppTab.SEARCH) PrimaryAmber else textColor.copy(alpha = 0.6f))
                         }
-                        IconButton(onClick = { currentTab = AppTab.HISTORY }, modifier = Modifier.size(32.dp)) {
+                        IconButton(onClick = { 
+                            currentTab = AppTab.HISTORY
+                            viewModel.refreshHistory()
+                        }, modifier = Modifier.size(32.dp)) {
                             HistoryIcon(color = if (currentTab == AppTab.HISTORY) PrimaryAmber else textColor.copy(alpha = 0.6f))
                         }
                         Spacer(modifier = Modifier.width(2.dp))
-                        Text(text = "ACF", style = MaterialTheme.typography.labelSmall, color = textColor.copy(alpha = 0.6f))
+                        Text(text = "ACF", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f))
                     }
                     
                     if (currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) {
@@ -212,7 +218,7 @@ fun App(
                             }
                             clipboardManager.setText(AnnotatedString(fullText))
                             isCopied = true
-                        }, modifier = Modifier.size(32.dp).padding(end = 8.dp)) { 
+                        }, modifier = Modifier.size(32.dp).padding(end = 8.dp)) {
                              if (isCopied) CheckIcon(color = Color(0xFF2E7D32)) else CopyIcon(color = textColor.copy(alpha = 0.6f))
                         }
                     }
@@ -223,49 +229,14 @@ fun App(
 }
 
 @Composable
-fun SearchView(onSearch: (String) -> Unit, onVerseSelect: (VerseRequest) -> Unit, bibleDatabase: BibleDatabase?, bibleRepository: BibleRepository?, textColor: Color) {
-    var query by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
+fun SearchView(viewModel: VerseViewModel, onVerseSelect: (Int) -> Unit, textColor: Color) {
+    val query by viewModel.searchQuery.collectAsState()
+    val results by viewModel.searchResults.collectAsState()
+    
     var selectedIndex by remember { mutableStateOf(-1) }
     val listState = rememberLazyListState()
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     
-    // Live Search + Reference Parsing
-    LaunchedEffect(query) {
-        if (query.length >= 2) {
-            delay(200)
-            
-            val hybridResults = mutableListOf<SearchResult>()
-            
-            // 1. Tenta tratar como referência
-            if (bibleRepository != null) {
-                // BibleParser now is simple synchronous class
-                val parser = BibleParser(bibleRepository)
-                val refs = parser.processSelection(query)
-                refs.forEach { ref ->
-                    val content = bibleDatabase?.getText(ref.id)
-                    if (content != null) {
-                        hybridResults.add(SearchResult(ref.id, content))
-                    }
-                }
-            }
-            
-            // 2. Busca por texto
-            val textResults = bibleDatabase?.searchVerses(query, limit = 20) ?: emptyList()
-            textResults.forEach { res ->
-                if (hybridResults.none { it.id == res.id }) {
-                    hybridResults.add(res)
-                }
-            }
-            
-            results = hybridResults
-            selectedIndex = if (results.isNotEmpty()) 0 else -1
-        } else {
-            results = emptyList()
-            selectedIndex = -1
-        }
-    }
-
     // Auto-scroll LazyColumn para acompanhar a seleção do teclado
     LaunchedEffect(selectedIndex) {
         if (selectedIndex >= 0 && results.isNotEmpty()) {
@@ -273,11 +244,16 @@ fun SearchView(onSearch: (String) -> Unit, onVerseSelect: (VerseRequest) -> Unit
         }
     }
 
+    // Reset selected index when results change
+    LaunchedEffect(results) {
+        selectedIndex = if (results.isNotEmpty()) 0 else -1
+    }
+
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         OutlinedTextField(
             value = query,
-            onValueChange = { query = it },
-            label = { Text("Pesquisar...") },
+            onValueChange = { viewModel.onSearchQueryChanged(it) },
+            label = { Text(Strings.SEARCH_HINT) },
             modifier = Modifier.fillMaxWidth()
                 .onKeyEvent { keyEvent ->
                     if (keyEvent.type == KeyEventType.KeyDown) {
@@ -296,14 +272,10 @@ fun SearchView(onSearch: (String) -> Unit, onVerseSelect: (VerseRequest) -> Unit
                             }
                             Key.Enter -> {
                                 if (selectedIndex >= 0 && selectedIndex < results.size) {
-                                    val res = results[selectedIndex]
-                                    val ref = bibleRepository?.getVerseRequest(res.id)
-                                    if (ref != null) {
-                                        onVerseSelect(ref)
-                                        focusManager.clearFocus()
-                                    }
+                                    onVerseSelect(results[selectedIndex].id)
+                                    focusManager.clearFocus()
                                 } else if (query.isNotBlank()) {
-                                    onSearch(query)
+                                    viewModel.processQuery(query)
                                     focusManager.clearFocus()
                                 }
                                 true
@@ -318,7 +290,7 @@ fun SearchView(onSearch: (String) -> Unit, onVerseSelect: (VerseRequest) -> Unit
             trailingIcon = {
                 IconButton(onClick = { 
                     if (query.isNotBlank()) {
-                        onSearch(query)
+                        viewModel.processQuery(query)
                         focusManager.clearFocus()
                     }
                 }) {
@@ -332,22 +304,19 @@ fun SearchView(onSearch: (String) -> Unit, onVerseSelect: (VerseRequest) -> Unit
         if (results.isNotEmpty()) {
             LazyColumn(modifier = Modifier.weight(1f), state = listState) {
                 itemsIndexed(results) { index, res ->
-                    val ref = remember(res.id) { bibleRepository?.getVerseRequest(res.id) }
                     val isSelected = index == selectedIndex
                     
                     Surface(
                         modifier = Modifier.fillMaxWidth().clickable {
-                            if (ref != null) {
-                                onVerseSelect(ref)
-                                focusManager.clearFocus()
-                            }
+                             onVerseSelect(res.id)
+                             focusManager.clearFocus()
                         },
                         color = if (isSelected) PrimaryAmber.copy(alpha = 0.15f) else Color.Transparent,
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
-                            if (ref != null) {
-                                Text(text = "${ref.book} ${ref.chapter}:${ref.verse}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PrimaryAmber)
+                            if (res.book.isNotEmpty()) {
+                                Text(text = "${res.book} ${res.chapter}:${res.verse}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PrimaryAmber)
                             }
                             
                             val highlightedText = buildAnnotatedString {
@@ -381,7 +350,7 @@ fun SearchView(onSearch: (String) -> Unit, onVerseSelect: (VerseRequest) -> Unit
             }
         } else if (query.length >= 3) {
              Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
-                 Text("Nenhum resultado encontrado", style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
+                 Text(Strings.NO_RESULTS, style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
              }
         }
     }
@@ -407,11 +376,10 @@ fun VersesView(detectedVerses: List<Pair<VerseRequest, String?>>, uniqueBooks: L
 }
 
 @Composable
-fun HistoryView(onSelect: (String) -> Unit, textColor: Color) {
-    val history = HistoryManager.getHistory()
+fun HistoryView(history: List<HistoryEntry>, onSelect: (String) -> Unit, textColor: Color) {
     val dateFormat = remember { SimpleDateFormat("HH:mm - dd/MM", Locale.getDefault()) }
     if (history.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Nenhum histórico disponível", color = textColor.copy(alpha = 0.5f)) }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(Strings.NO_HISTORY, color = textColor.copy(alpha = 0.5f)) }
     } else {
         LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(history) { _, entry ->
@@ -435,7 +403,7 @@ fun ContinuousVerseItem(request: VerseRequest, content: String?, textColor: Colo
             val formatted = remember(content) { HtmlTextFormatter.format(content) }
             append(formatted)
         } else {
-            withStyle(style = SpanStyle(fontStyle = FontStyle.Italic, color = Color.Red)) { append("Texto não disponível.") }
+            withStyle(style = SpanStyle(fontStyle = FontStyle.Italic, color = Color.Red)) { append(Strings.TEXT_NOT_AVAILABLE) }
         }
     }
     Text(text = annotatedString, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp), lineHeight = 24.sp, color = textColor)
