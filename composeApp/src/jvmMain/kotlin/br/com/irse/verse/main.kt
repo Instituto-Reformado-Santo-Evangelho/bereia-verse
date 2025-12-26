@@ -30,6 +30,7 @@ import java.awt.Rectangle
 import br.com.irse.verse.core.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -57,6 +58,7 @@ fun main() = application {
     var currentScreenBounds by remember { mutableStateOf<Rectangle?>(null) }
     val icon = painterResource(Res.drawable.logo)
     val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
+    val scope = rememberCoroutineScope()
 
     fun getActiveMonitorBounds(): Rectangle? {
         return try {
@@ -81,6 +83,32 @@ fun main() = application {
         state.size = DpSize(if (mini) miniSize else fullWidth, targetHeight)
     }
 
+    // Função para processar uma query (usada na detecção e no histórico)
+    suspend fun processQuery(text: String, addToHistory: Boolean = true) {
+        if (parser.value == null || database.value == null) return
+        isProcessing = true
+        try {
+            // Run synchronous parser in IO context to avoid blocking UI
+            val requests = withContext(Dispatchers.IO) {
+                parser.value!!.processSelection(text)
+            }
+            
+            if (requests.isNotEmpty()) {
+                val results = withContext(Dispatchers.IO) {
+                    requests.map { req -> database.value!!.getText(req.id) to req }.map { it.second to it.first }
+                }
+                
+                withContext(Dispatchers.Main) { 
+                    detectedVerses = results 
+                    if (addToHistory) {
+                        HistoryManager.saveEntry(text)
+                    }
+                }
+            }
+        } catch (e: Exception) { e.printStackTrace() } 
+        finally { isProcessing = false }
+    }
+
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
@@ -98,21 +126,13 @@ fun main() = application {
     }
 
     LaunchedEffect(isReady) {
-        if (isReady && parser.value != null && database.value != null) {
+        if (isReady) {
             withContext(Dispatchers.IO) {
                 var lastText = ""
                 ClipboardMonitor.textFlow().collect { text ->
                     if (text != lastText) {
                         lastText = text
-                        isProcessing = true
-                        try {
-                            val requests = parser.value!!.processSelection(text)
-                            if (requests.isNotEmpty()) {
-                                val results = requests.map { req -> database.value!!.getText(req.id) to req }.map { it.second to it.first }
-                                withContext(Dispatchers.Main) { detectedVerses = results }
-                            }
-                        } catch (e: Exception) { e.printStackTrace() } 
-                        finally { isProcessing = false }
+                        processQuery(text, addToHistory = true)
                     }
                 }
             }
@@ -126,9 +146,7 @@ fun main() = application {
                 isVisible = false
                 delay(150) 
             }
-            
             applyAnchorPosition(mini = false) 
-            
             if (state.isMinimized) state.isMinimized = false
             isVisible = true
             isMiniMode = false
@@ -175,7 +193,20 @@ fun main() = application {
                         if (!isMiniMode && Math.abs(state.size.height.value - height.value) > 5) {
                             applyAnchorPosition(mini = false, height = height)
                         }
-                    }
+                    },
+                    onSearch = { query ->
+                        scope.launch(Dispatchers.IO) { processQuery(query, addToHistory = true) }
+                    },
+                    onVerseSelect = { req ->
+                        scope.launch(Dispatchers.IO) {
+                            val content = database.value?.getText(req.id)
+                            withContext(Dispatchers.Main) {
+                                detectedVerses = listOf(req to content)
+                            }
+                        }
+                    },
+                    bibleDatabase = database.value,
+                    bibleRepository = parser.value?.repository
                 )
             }
         }

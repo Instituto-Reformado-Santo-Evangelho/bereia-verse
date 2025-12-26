@@ -1,70 +1,62 @@
 package br.com.irse.verse.core
 
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-
 class BibleRepository(private val mapping: Map<String, BookMetaData>) {
     
-    private val bookCache = mutableMapOf<String, Book?>()
-    private val chapterStartCache = mutableMapOf<String, Int>()
-    private val mutex = Mutex()
-
-    suspend fun getBookData(rawBookName: String): Book? {
-        if (rawBookName.isBlank()) return null
+    fun findBook(name: String): Book? {
+        val searchName = name.lowercase().trim()
         
-        mutex.withLock {
-            if (bookCache.containsKey(rawBookName)) {
-                return bookCache[rawBookName]
+        // 1. Check mapping keys directly (case-insensitive)
+        val directMatch = mapping.entries.find { it.key.lowercase() == searchName }
+        if (directMatch != null) {
+            return Book(name = directMatch.key, metaData = directMatch.value)
+        }
+        
+        // 2. Check abbreviations
+        val cleanName = searchName.replace(".", "")
+        val fullName = BibleConstants.BOOK_ABBREVIATIONS[cleanName]
+        if (fullName != null) {
+            val meta = mapping[fullName]
+            if (meta != null) {
+                return Book(name = fullName, metaData = meta)
             }
         }
-
-        val cleanName = rawBookName.lowercase().replace(".", "").trim()
-        var fullName = BibleConstants.BOOK_ABBREVIATIONS[cleanName]
-
-        if (fullName == null) {
-            fullName = mapping.keys.find { it.lowercase() == cleanName }
-        }
-
-        if (fullName == null && cleanName == "jo") fullName = "João"
-        if (fullName == null && cleanName == "jó") fullName = "Jó"
-
-        mutex.withLock {
-            if (fullName == null) {
-                bookCache[rawBookName] = null
-                return null
-            }
-
-            val metaData = mapping[fullName]
-            if (metaData == null) {
-                 bookCache[rawBookName] = null
-                 return null
-            }
-
-            val result = Book(fullName, metaData)
-            bookCache[rawBookName] = result
-            return result
-        }
+        
+        return null
     }
 
-    suspend fun getChapterStartId(bookData: BookMetaData, chapter: Int): Int? {
-        if (chapter < 1 || chapter > bookData.chapters.size) return null
+    // Retorna todos os livros para busca global
+    fun getAllBooks(): Map<String, BookMetaData> = mapping
 
-        val cacheKey = "${bookData.start}-$chapter"
+    fun getVerseRequest(verseId: Int): VerseRequest? {
+        // Find the book that contains this verseId
+        // We iterate through all books to find the one where the verseId falls within its range.
         
-        mutex.withLock {
-            if (chapterStartCache.containsKey(cacheKey)) {
-                return chapterStartCache[cacheKey]
+        val bookEntry = mapping.entries.find { (_, meta) ->
+            val totalVerses = meta.chapters.sum()
+            verseId >= meta.start && verseId < (meta.start + totalVerses)
+        } ?: return null
+
+        val bookName = bookEntry.key
+        val meta = bookEntry.value
+        
+        // Calculate relative index inside the book (0-based)
+        var relativeIndex = verseId - meta.start
+        
+        var chapter = 1
+        for (versesInChapter in meta.chapters) {
+            if (relativeIndex < versesInChapter) {
+                // Found the chapter
+                return VerseRequest(
+                    id = verseId,
+                    book = bookName.replaceFirstChar { it.uppercase() },
+                    chapter = chapter,
+                    verse = relativeIndex + 1 // Verse is 1-based
+                )
             }
+            relativeIndex -= versesInChapter
+            chapter++
         }
-
-        var id = bookData.start
-        for (i in 0 until chapter - 1) {
-            id += bookData.chapters[i]
-        }
-
-        mutex.withLock {
-            chapterStartCache[cacheKey] = id
-        }
-        return id
+        
+        return null
     }
 }

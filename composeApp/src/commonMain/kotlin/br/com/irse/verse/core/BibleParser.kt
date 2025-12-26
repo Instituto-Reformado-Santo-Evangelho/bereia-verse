@@ -1,13 +1,13 @@
 package br.com.irse.verse.core
 
-class BibleParser(private val repository: BibleRepository) {
+class BibleParser(val repository: BibleRepository) {
 
     // Regex adaptada para Kotlin usando Raw String para evitar escapes duplos
     private val refRegex = Regex(
         """((?:[1-3]\s*)?[A-Za-zá-úÁ-Úçã]{2,}\.?\s*)?(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?(?:\s*[\u2013\u002d\u2014]\s*(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?)?"""
     )
 
-    suspend fun processSelection(text: String): List<VerseRequest> {
+    fun processSelection(text: String): List<VerseRequest> {
         if (text.length < 3) return emptyList()
 
         // Remove footnote markers like [1], [12]
@@ -43,7 +43,7 @@ class BibleParser(private val repository: BibleRepository) {
                  endVersePart = endVersePart.replace(Regex("""[\s\u2013\u002d\u2014]+$"""), "")
 
                 if (rawBook != null) {
-                    val found = repository.getBookData(rawBook.trim())
+                    val found = repository.findBook(rawBook.trim())
                     if (found != null) currentBook = found
                 }
 
@@ -112,11 +112,16 @@ class BibleParser(private val repository: BibleRepository) {
         return VerseRange(if (min == 9999) 1 else min, if (max == -1) 1 else max)
     }
 
-    private suspend fun parseVerses(book: Book, chapter: Int, versePart: String): List<VerseRequest> {
+    private fun parseVerses(book: Book, chapter: Int, versePart: String): List<VerseRequest> {
          val cleanPart = versePart.replace(Regex("""[\u2013\u002d\u2014]"""), "-").replace(Regex("""\s+"""), "")
          val ids = mutableListOf<VerseRequest>()
          
-         val startId = repository.getChapterStartId(book.metaData, chapter) ?: return emptyList()
+         // Calculate startId manually since Repository doesn't expose it anymore
+         var startId = book.metaData.start
+         for (i in 0 until chapter - 1) {
+             startId += book.metaData.chapters[i]
+         }
+         
          val maxVerse = book.metaData.chapters.getOrNull(chapter - 1) ?: return emptyList()
 
          val groups = cleanPart.split(",")
