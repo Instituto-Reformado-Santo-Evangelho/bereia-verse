@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -58,6 +59,7 @@ import br.com.irse.verse.core.VerseViewModel
 import br.com.irse.verse.ui.components.BibleIcon
 import br.com.irse.verse.ui.components.CheckIcon
 import br.com.irse.verse.ui.components.CopyIcon
+import br.com.irse.verse.ui.components.FireAnimation
 import br.com.irse.verse.ui.components.HistoryIcon
 import br.com.irse.verse.ui.components.SearchIcon
 import br.com.irse.verse.ui.components.SettingsIcon
@@ -232,9 +234,26 @@ fun App(
                         AppTab.SETTINGS -> SettingsView(viewModel, textColor)
                         AppTab.VERSES -> {
                             if (detectedVerses.isEmpty()) {
-                                Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(Strings.COPY_HINT_TITLE, style = MaterialTheme.typography.titleMedium, color = textColor.copy(alpha = 0.7f))
-                                    Text(Strings.COPY_HINT_SUBTITLE, style = MaterialTheme.typography.bodyMedium, color = textColor.copy(alpha = 0.4f))
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    FireAnimation(modifier = Modifier.size(200.dp).alpha(0.7f))
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = Strings.COPY_HINT_TITLE, 
+                                            style = MaterialTheme.typography.titleLarge.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                shadow = androidx.compose.ui.graphics.Shadow(
+                                                    color = Color.Black.copy(alpha = 0.3f),
+                                                    blurRadius = 8f
+                                                )
+                                            ), 
+                                            color = textColor
+                                        )
+                                        Text(
+                                            text = Strings.COPY_HINT_SUBTITLE, 
+                                            style = MaterialTheme.typography.bodyLarge, 
+                                            color = textColor.copy(alpha = 0.6f)
+                                        )
+                                    }
                                 }
                             } else {
                                 VersesView(detectedVerses, uniqueBooks, textColor, fontSize, globalFontFamily, lineHeight)

@@ -27,8 +27,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.irse.verse.PrimaryAmber
+import androidx.compose.ui.draw.alpha
 import br.com.irse.verse.core.Strings
 import br.com.irse.verse.core.VerseViewModel
+import br.com.irse.verse.ui.components.FireAnimation
 import br.com.irse.verse.ui.pointerHoverIconHand
 
 @Composable
@@ -199,18 +201,28 @@ fun SearchView(
                         color = textColor.copy(alpha = 0.5f)
                     )
                  } else {
-                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
-                         Text(
-                            Strings.SEARCH_EXAMPLES_TITLE, 
-                            style = MaterialTheme.typography.titleMedium.copy(fontFamily = fontFamily), 
-                            color = textColor.copy(alpha = 0.7f)
-                        )
-                         Text(
-                             text = Strings.SEARCH_EXAMPLES_SUBTITLE, 
-                             style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily), 
-                             color = textColor.copy(alpha = 0.4f),
-                             textAlign = TextAlign.Center
-                         )
+                     Box(contentAlignment = Alignment.Center) {
+                         FireAnimation(modifier = Modifier.size(180.dp).alpha(0.6f))
+                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                             Text(
+                                text = Strings.SEARCH_EXAMPLES_TITLE, 
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = fontFamily,
+                                    shadow = androidx.compose.ui.graphics.Shadow(
+                                        color = Color.Black.copy(alpha = 0.3f),
+                                        blurRadius = 8f
+                                    )
+                                ), 
+                                color = textColor
+                            )
+                             Text(
+                                 text = Strings.SEARCH_EXAMPLES_SUBTITLE, 
+                                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily), 
+                                 color = textColor.copy(alpha = 0.6f),
+                                 textAlign = TextAlign.Center
+                             )
+                         }
                      }
                  }
              }
