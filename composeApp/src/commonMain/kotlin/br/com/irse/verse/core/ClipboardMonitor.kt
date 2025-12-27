@@ -9,7 +9,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 object ClipboardMonitor {
-    fun textFlow(pollingIntervalMs: Long = 1000): Flow<String> = flow {
+    fun textFlow(pollingIntervalMs: Long = 400): Flow<String> = flow {
         var lastText = ""
         while (true) {
             val currentText = getClipboardText()
@@ -31,10 +31,10 @@ object ClipboardMonitor {
                     return clipboard.getData(DataFlavor.stringFlavor) as? String ?: ""
                 }
                 break // Success but no text
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Ignore and retry
                 attempts++
-                try { Thread.sleep(50) } catch (ignore: Exception) {}
+                try { Thread.sleep(50) } catch (_: Exception) {}
             }
         }
 
@@ -53,7 +53,7 @@ object ClipboardMonitor {
             val reader = BufferedReader(InputStreamReader(p.inputStream))
             val text = reader.readText()
             if (p.waitFor() == 0 && text.isNotBlank()) return text
-        } catch (e: Exception) { }
+        } catch (_: Exception) { }
 
         // Try xclip (X11)
         try {
@@ -61,7 +61,7 @@ object ClipboardMonitor {
             val reader = BufferedReader(InputStreamReader(p.inputStream))
             val text = reader.readText()
             if (p.waitFor() == 0 && text.isNotBlank()) return text
-        } catch (e: Exception) { }
+        } catch (_: Exception) { }
 
         // Try xsel (X11)
         try {
@@ -69,7 +69,7 @@ object ClipboardMonitor {
             val reader = BufferedReader(InputStreamReader(p.inputStream))
             val text = reader.readText()
             if (p.waitFor() == 0 && text.isNotBlank()) return text
-        } catch (e: Exception) { }
+        } catch (_: Exception) { }
 
         return ""
     }

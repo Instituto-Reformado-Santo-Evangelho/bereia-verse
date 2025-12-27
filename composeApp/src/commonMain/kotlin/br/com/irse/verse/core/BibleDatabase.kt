@@ -2,7 +2,6 @@ package br.com.irse.verse.core
 
 import java.sql.DriverManager
 import java.sql.Connection
-import java.io.File
 
 data class SearchResult(
     val id: Int,

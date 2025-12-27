@@ -1,7 +1,10 @@
 package br.com.irse.verse
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,28 +16,45 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.window.*
-import writers.composeapp.generated.resources.Res
-import writers.composeapp.generated.resources.logo
-import org.jetbrains.compose.resources.painterResource
-import java.awt.MouseInfo
-import java.awt.GraphicsEnvironment
-import java.awt.Rectangle
-import br.com.irse.verse.core.*
+import androidx.compose.ui.window.Tray
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.isTraySupported
+import androidx.compose.ui.window.rememberWindowState
+import br.com.irse.verse.core.BibleDatabase
+import br.com.irse.verse.core.BibleParser
+import br.com.irse.verse.core.BibleRepository
+import br.com.irse.verse.core.BookMetaData
+import br.com.irse.verse.core.ClipboardMonitor
+import br.com.irse.verse.core.VerseViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import org.jetbrains.compose.resources.painterResource
+import verse.composeapp.generated.resources.Res
+import verse.composeapp.generated.resources.logo
+import java.awt.GraphicsEnvironment
+import java.awt.MouseInfo
+import java.awt.Rectangle
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.abs
 
 fun main() = application {
     val fullWidth = 400.dp
@@ -44,7 +64,7 @@ fun main() = application {
     val state = rememberWindowState(
         width = fullWidth, 
         height = 350.dp,
-        position = WindowPosition(androidx.compose.ui.Alignment.TopEnd)
+        position = WindowPosition(Alignment.TopEnd)
     )
     
     var isVisible by remember { mutableStateOf(true) }
@@ -75,7 +95,6 @@ fun main() = application {
 
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
         val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return
-        currentScreenBounds = bounds
         val anchorX = bounds.x + bounds.width - screenPadding
         val width = if (mini) miniSize.value.toInt() else fullWidth.value.toInt()
         val newX = anchorX - width
@@ -112,10 +131,9 @@ fun main() = application {
     LaunchedEffect(isReady) {
         if (isReady && viewModel.value != null) {
             withContext(Dispatchers.IO) {
-                var lastText = ""
+                val lastText = ""
                 ClipboardMonitor.textFlow().collect { text ->
                     if (text != lastText) {
-                        lastText = text
                         viewModel.value!!.processQuery(text)
                     }
                 }
@@ -190,7 +208,7 @@ fun main() = application {
                         viewModel = viewModel.value!!,
                         onClose = { if (actualIsTraySupported) isVisible = false else if (isWine) isVisible = false else isMiniMode = true },
                         onHeightRequest = { height ->
-                            if (!isMiniMode && Math.abs(state.size.height.value - height.value) > 10) {
+                            if (!isMiniMode && abs(state.size.height.value - height.value) > 10) {
                                 applyAnchorPosition(mini = false, height = height)
                             }
                         }

@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,15 +16,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import br.com.irse.verse.core.*
 import br.com.irse.verse.ui.components.*
 import br.com.irse.verse.ui.views.*
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import writers.composeapp.generated.resources.Res
-import writers.composeapp.generated.resources.logo
+import verse.composeapp.generated.resources.Res
+import verse.composeapp.generated.resources.logo
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -60,7 +62,8 @@ fun App(
     val isSerif by viewModel.isSerif.collectAsState()
     val lineHeight by viewModel.lineHeight.collectAsState()
     
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
     
     val uniqueBooks = remember(detectedVerses) { detectedVerses.map { it.first.book }.distinct() }
@@ -144,7 +147,7 @@ fun App(
                             .clickable { if (currentTab != AppTab.VERSES) currentTab = AppTab.VERSES else onClose() },
                         contentAlignment = Alignment.Center
                     ) {
-                        val icon = if (currentTab != AppTab.VERSES) Icons.Default.ArrowBack else Icons.Default.Close
+                        val icon = if (currentTab != AppTab.VERSES) Icons.Default.ArrowCircleLeft else Icons.Default.Close
                         Icon(icon, contentDescription = null, tint = HeaderContentColor, modifier = Modifier.size(20.dp))
                     }
                 }
@@ -265,9 +268,11 @@ fun App(
                             onClick = {
                                 val fullText = detectedVerses.joinToString("\n\n") { (req, content) ->
                                     val cleanContent = content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""
-                                    "${cleanContent} (${req.book} ${req.chapter}:${req.verse} - ACF)"
+                                    "$cleanContent (${req.book} ${req.chapter}:${req.verse} - ACF)"
                                 }
-                                clipboardManager.setText(AnnotatedString(fullText))
+                                scope.launch {
+                                    clipboard.setClipEntry(ClipEntry(AnnotatedString(fullText)))
+                                }
                                 isCopied = true
                             }, 
                             modifier = Modifier.size(32.dp).padding(end = 4.dp).pointerHoverIcon(PointerIcon.Hand)

@@ -8,9 +8,7 @@ plugins {
 kotlin {
     jvmToolchain(17)
     androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
+        compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
     
     listOf(
@@ -36,13 +34,19 @@ kotlin {
 }
 
 android {
-    namespace = "br.com.irse.writers.shared"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    namespace = "br.com.irse.verse.shared"
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
+    compileSdk {
+        version = release(36)
     }
+    buildToolsVersion = "36.1.0"
+    defaultConfig {
+        minSdk = 24
+    }
+}
+dependencies {
+    implementation(libs.androidx.lifecycle.runtime)
 }

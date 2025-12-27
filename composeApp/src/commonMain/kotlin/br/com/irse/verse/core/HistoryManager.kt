@@ -1,7 +1,6 @@
 package br.com.irse.verse.core
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +46,7 @@ object HistoryManager {
         try {
             if (!historyFile.exists()) return@withContext emptyList()
             json.decodeFromString<List<HistoryEntry>>(historyFile.readText())
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
     }

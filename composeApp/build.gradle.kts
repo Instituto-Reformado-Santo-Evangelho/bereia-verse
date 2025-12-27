@@ -12,15 +12,11 @@ plugins {
 }
 
 // Configuração para ferramentas de build externas
-val launch4jConfig by configurations.creating
+val launch4jConfig: Configuration? by configurations.creating
 
 dependencies {
-    launch4jConfig("net.sf.launch4j:launch4j:3.14") {
-        exclude(group = "net.java.abeille")
-        exclude(group = "org.eclipse.swt")
-        exclude(group = "dsol")
-    }
-    launch4jConfig("com.thoughtworks.xstream:xstream:1.4.20")
+    launch4jConfig?.invoke("net.sf.launch4j:launch4j:3.14")
+    launch4jConfig?.invoke("com.thoughtworks.xstream:xstream:1.4.20")
 }
 
 kotlin {
@@ -66,19 +62,16 @@ kotlin {
             implementation(compose.desktop.macos_arm64)
             
             implementation(libs.kotlinx.coroutinesSwing)
-            implementation("org.xerial:sqlite-jdbc:3.47.0.0")
+            implementation("org.xerial:sqlite-jdbc:3.51.1.0")
         }
     }
 }
 
 android {
     namespace = "br.com.irse.verse"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "br.com.irse.verse"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
     }
@@ -96,6 +89,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    compileSdk {
+        version = release(36)
+    }
+
+    buildToolsVersion = "36.1.0"
 }
 
 dependencies {

@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,11 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import br.com.irse.verse.core.VerseRequest
-import writers.composeapp.generated.resources.Res
-import writers.composeapp.generated.resources.logo
 import org.jetbrains.compose.resources.painterResource
+import verse.composeapp.generated.resources.Res
+import verse.composeapp.generated.resources.logo
 
 @Composable
 fun AndroidMiniBubble(onClick: () -> Unit) {

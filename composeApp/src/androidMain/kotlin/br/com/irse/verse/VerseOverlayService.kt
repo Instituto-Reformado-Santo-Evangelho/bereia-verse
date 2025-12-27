@@ -2,17 +2,24 @@ package br.com.irse.verse
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
-import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
 import android.view.Gravity
-import android.view.View
 import android.view.WindowManager
-import androidx.compose.runtime.*
+import androidx.annotation.RequiresApi
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.*
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -25,13 +32,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import writers.composeapp.generated.resources.Res
+import verse.composeapp.generated.resources.Res
 import java.io.File
 import java.io.FileOutputStream
 
 class VerseOverlayService : LifecycleService(), SavedStateRegistryOwner {
 
-    private val windowManager by lazy { getSystemService(Context.WINDOW_SERVICE) as WindowManager }
+    private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
     private var composeView: ComposeView? = null
     private var params: WindowManager.LayoutParams? = null
     
@@ -41,6 +48,7 @@ class VerseOverlayService : LifecycleService(), SavedStateRegistryOwner {
     private var parser: BibleParser? = null
     private var database: BibleDatabase? = null
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate() {
         super.onCreate()
         savedStateRegistryController.performRestore(null)
@@ -50,17 +58,16 @@ class VerseOverlayService : LifecycleService(), SavedStateRegistryOwner {
         createOverlay()
     }
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun startForegroundService() {
         val channelId = "verse_overlay_channel"
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Verse Overlay Service",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(
+            channelId,
+            "Verse Overlay Service",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(channel)
 
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("Bereia Verse Ativo")
@@ -68,11 +75,7 @@ class VerseOverlayService : LifecycleService(), SavedStateRegistryOwner {
             .setSmallIcon(android.R.drawable.ic_menu_agenda)
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(1, notification)
-        }
+        startForeground(1, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
     }
 
     private fun initializeData() {
@@ -142,7 +145,7 @@ class VerseOverlayService : LifecycleService(), SavedStateRegistryOwner {
     }
 
     private fun checkForVerses(): List<Pair<VerseRequest, String?>> {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
         val clipData = clipboard.primaryClip
         if (clipData != null && clipData.itemCount > 0) {
             val text = clipData.getItemAt(0).text.toString()
@@ -187,13 +190,11 @@ class VerseOverlayService : LifecycleService(), SavedStateRegistryOwner {
             AndroidMiniBubble(
                 onClick = {
                     val verses = onCheckClipboard()
-                    if (verses.isNotEmpty()) {
-                        detectedVerses = verses
-                        isExpanded = true
+                    isExpanded = if (verses.isNotEmpty()) {
+                        true
                     } else {
                         // Optional: Show empty state or just expand
-                        detectedVerses = emptyList()
-                        isExpanded = true 
+                        true
                     }
                 }
             )

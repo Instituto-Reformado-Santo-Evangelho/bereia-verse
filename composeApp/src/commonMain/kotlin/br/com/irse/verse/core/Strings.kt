@@ -13,9 +13,7 @@ object Strings {
     const val SEARCH_EXAMPLES_TITLE = "Busca Bíblica"
     const val SEARCH_EXAMPLES_SUBTITLE = "Pesquise por referência (Ex: João 3:16)\nou por palavras-chave (Ex: amor, fé)"
     const val TEXT_NOT_AVAILABLE = "Texto não disponível."
-    const val VERSION_LABEL = "Almeida Corrigida Fiel (ACF)"
     const val BOOKS_DETECTED = "Livros"
-    const val ERROR_LOADING_DB = "Erro ao carregar banco de dados."
     
     // Novas Strings
     const val ABOUT_TAB = "Sobre"
@@ -31,7 +29,6 @@ object Strings {
     // Sobre o App
     const val ABOUT_DESC_1 = "Bereia Verse é um popup simples que exibe referências bíblicas detectadas na área de transferência do seu computador."
     const val ABOUT_DESC_2 = "Quando você copiar uma referência como João 1:1 via botão direito do mouse ou atalho Ctrl+C, o popup com o texto bíblico será exibido imediatamente."
-    const val ABOUT_SEARCH_HISTORY_HINT = "Você também pode pesquisar internamente ou navegar pelo histórico via rodapé."
 
     // Sobre ACF
     const val ABOUT_ACF_TITLE = "SOBRE A VERSÃO ACF"

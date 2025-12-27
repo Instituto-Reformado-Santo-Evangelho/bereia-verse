@@ -11,11 +11,9 @@ class BibleParser(val repository: BibleRepository) {
     private val refRegex by lazy {
         val allKeys = repository.getAllBooks().keys + BibleConstants.BOOK_ABBREVIATIONS.keys
         val triggers = allKeys
-            .sortedByDescending { it.length }
-            .map { key -> 
+            .sortedByDescending { it.length }.joinToString("|") { key ->
                 key.split(" ").joinToString("\\s*") { part -> Regex.escape(part) }
             }
-            .joinToString("|")
 
         // Alt 1: Book + Suffix (Groups 1..5)
         // Alt 2: Lookahead(!Book) + Suffix (Groups 6..9 - Group 6 is the first capture in suffix, etc)

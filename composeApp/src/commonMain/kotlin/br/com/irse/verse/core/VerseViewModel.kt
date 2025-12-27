@@ -3,6 +3,7 @@ package br.com.irse.verse.core
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
+@OptIn(FlowPreview::class)
 class VerseViewModel(
     private val parser: BibleParser,
     private val database: BibleDatabase

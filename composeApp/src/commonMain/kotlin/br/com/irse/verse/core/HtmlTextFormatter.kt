@@ -6,7 +6,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 
 object HtmlTextFormatter {
     
@@ -29,7 +28,7 @@ object HtmlTextFormatter {
                 if (isClosing) {
                     when (tagName) {
                         "b", "strong", "i", "em", "span", "font", "cite" -> { 
-                            try { pop() } catch (e: Exception) { }
+                            try { pop() } catch (_: Exception) { }
                         }
                     }
                 } else {

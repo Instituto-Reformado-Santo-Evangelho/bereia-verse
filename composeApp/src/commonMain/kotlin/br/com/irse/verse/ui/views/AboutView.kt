@@ -17,8 +17,8 @@ import br.com.irse.verse.core.Strings
 import br.com.irse.verse.ui.components.ExternalLinkIcon
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import writers.composeapp.generated.resources.Res
-import writers.composeapp.generated.resources.logo
+import verse.composeapp.generated.resources.Res
+import verse.composeapp.generated.resources.logo
 import java.awt.Desktop
 import java.net.URI
 
