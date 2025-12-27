@@ -60,6 +60,8 @@ fun main() = application {
     var currentScreenBounds by remember { mutableStateOf<Rectangle?>(null) }
     val icon = painterResource(Res.drawable.logo)
     val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
+    val isWine = remember { System.getProperty("os.name").lowercase().contains("windows") && 
+                            (System.getenv("WINEPREFIX") != null || System.getenv("WINELOADERNOEXEC") != null) }
 
     fun getActiveMonitorBounds(): Rectangle? {
         return try {
@@ -72,7 +74,8 @@ fun main() = application {
     }
 
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
-        val bounds = currentScreenBounds ?: return
+        val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return
+        currentScreenBounds = bounds
         val anchorX = bounds.x + bounds.width - screenPadding
         val width = if (mini) miniSize.value.toInt() else fullWidth.value.toInt()
         val newX = anchorX - width
@@ -113,7 +116,7 @@ fun main() = application {
                 ClipboardMonitor.textFlow().collect { text ->
                     if (text != lastText) {
                         lastText = text
-                        viewModel.value!!.processQuery(text, addToHistory = true)
+                        viewModel.value!!.processQuery(text)
                     }
                 }
             }
@@ -126,30 +129,36 @@ fun main() = application {
         
         LaunchedEffect(detectedVerses) {
             if (detectedVerses.isNotEmpty()) {
-                currentScreenBounds = getActiveMonitorBounds()
+                // Para Hyprland/Wayland, sempre forçamos o ciclo Hide->Show quando o conteúdo muda.
+                // Isso garante que a janela 'caminhe' para o workspace onde o mouse está.
                 if (isLinux && isVisible) {
-                    // Fix for Hyprland focus stealing/rendering glitches on quick updates
-                    // isVisible = false
-                    // delay(150) 
-                    // Keeping it simple for now as per "works as expected" feedback
+                    isVisible = false
+                    kotlinx.coroutines.delay(150) 
                 }
+
+                currentScreenBounds = getActiveMonitorBounds()
                 applyAnchorPosition(mini = false) 
+                
                 if (state.isMinimized) state.isMinimized = false
                 isVisible = true
                 isMiniMode = false
-                currentWindow?.isVisible = true
-                currentWindow?.toFront()
-                currentWindow?.requestFocus()
+                
+                currentWindow?.let { win ->
+                    win.isVisible = true
+                    win.toFront()
+                    win.requestFocus()
+                }
             }
         }
     }
 
     LaunchedEffect(isMiniMode) {
-        if (currentScreenBounds == null) currentScreenBounds = getActiveMonitorBounds()
-        applyAnchorPosition(mini = isMiniMode)
+        if (isReady) applyAnchorPosition(mini = isMiniMode)
     }
 
-    if (isTraySupported) {
+    val actualIsTraySupported = isTraySupported && !isLinux && !isWine
+
+    if (actualIsTraySupported) {
         Tray(icon = icon, tooltip = "Bereia Verse", onAction = { isVisible = !isVisible }, menu = {
             Item("Exibir/Ocultar", onClick = { isVisible = !isVisible })
             Separator()
@@ -158,7 +167,9 @@ fun main() = application {
     }
 
     Window(
-        onCloseRequest = { exitApplication() },
+        onCloseRequest = { 
+            exitApplication() // Win + C ou fechar via gerenciador de janelas mata o processo
+        },
         title = "Bereia Verse",
         state = state,
         icon = icon,
@@ -166,6 +177,7 @@ fun main() = application {
         undecorated = true, transparent = true, alwaysOnTop = true, resizable = false
     ) {
         SideEffect { currentWindow = window }
+        
         AnimatedContent(
             targetState = isMiniMode,
             transitionSpec = { fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300)) }
@@ -176,15 +188,14 @@ fun main() = application {
                 if (viewModel.value != null) {
                     App(
                         viewModel = viewModel.value!!,
-                        onClose = { if (isTraySupported) isVisible = false else isMiniMode = true },
+                        onClose = { if (actualIsTraySupported) isVisible = false else if (isWine) isVisible = false else isMiniMode = true },
                         onHeightRequest = { height ->
-                            if (!isMiniMode && Math.abs(state.size.height.value - height.value) > 5) {
+                            if (!isMiniMode && Math.abs(state.size.height.value - height.value) > 10) {
                                 applyAnchorPosition(mini = false, height = height)
                             }
                         }
                     )
                 } else {
-                    // Loading State
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         MaterialTheme {
                             CircularProgressIndicator(color = Color(0xFFFFC107))

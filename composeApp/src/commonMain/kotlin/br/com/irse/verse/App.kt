@@ -2,43 +2,36 @@ package br.com.irse.verse
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.irse.verse.core.*
+import br.com.irse.verse.ui.components.*
+import br.com.irse.verse.ui.views.*
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import writers.composeapp.generated.resources.Res
 import writers.composeapp.generated.resources.logo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.foundation.Canvas
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.text.style.TextOverflow
-import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.*
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.ExperimentalComposeUiApi
 
 // Cores de Identidade
 val PrimaryAmber = Color(0xFFFFC107)
@@ -51,46 +44,9 @@ val DarkText = Color(0xFFE0E0E0)
 val DarkFooter = Color(0xFF2D2D2D)
 val DarkBorder = Color(0xFF444444)
 
-@Composable
-fun CopyIcon(color: Color) {
-    Canvas(modifier = Modifier.size(18.dp)) {
-        drawRect(color = color.copy(alpha = 0.5f), topLeft = androidx.compose.ui.geometry.Offset(x = 3.dp.toPx(), y = 3.dp.toPx()), size = androidx.compose.ui.geometry.Size(width = 10.dp.toPx(), height = 10.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx()))
-        drawRect(color = color, topLeft = androidx.compose.ui.geometry.Offset(x = 6.dp.toPx(), y = 6.dp.toPx()), size = androidx.compose.ui.geometry.Size(width = 10.dp.toPx(), height = 10.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx()))
-    }
-}
+enum class AppTab { VERSES, HISTORY, SEARCH, ABOUT, SETTINGS }
 
-@Composable
-fun HistoryIcon(color: Color) {
-    Canvas(modifier = Modifier.size(18.dp)) {
-        drawCircle(color = color, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
-        drawLine(color = color, start = center, end = androidx.compose.ui.geometry.Offset(center.x, center.y - 5.dp.toPx()), strokeWidth = 2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-        drawLine(color = color, start = center, end = androidx.compose.ui.geometry.Offset(center.x + 3.dp.toPx(), center.y), strokeWidth = 2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-    }
-}
-
-@Composable
-fun SearchIcon(color: Color) {
-    Canvas(modifier = Modifier.size(18.dp)) {
-        drawCircle(color = color, radius = 6.dp.toPx(), center = androidx.compose.ui.geometry.Offset(7.dp.toPx(), 7.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
-        drawLine(color = color, start = androidx.compose.ui.geometry.Offset(12.dp.toPx(), 12.dp.toPx()), end = androidx.compose.ui.geometry.Offset(16.dp.toPx(), 16.dp.toPx()), strokeWidth = 2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-    }
-}
-
-@Composable
-fun CheckIcon(color: Color) {
-    Canvas(modifier = Modifier.size(18.dp)) {
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(4.dp.toPx(), 9.dp.toPx())
-            lineTo(8.dp.toPx(), 13.dp.toPx())
-            lineTo(15.dp.toPx(), 5.dp.toPx())
-        }
-        drawPath(path = path, color = color, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
-    }
-}
-
-enum class AppTab { VERSES, HISTORY, SEARCH }
-
-@OptIn(ExperimentalResourceApi::class)
+@OptIn(ExperimentalResourceApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun App(
     viewModel: VerseViewModel,
@@ -100,6 +56,9 @@ fun App(
     val detectedVerses by viewModel.detectedVerses.collectAsState()
     val isProcessing by viewModel.isProcessing.collectAsState()
     val history by viewModel.history.collectAsState()
+    val fontSize by viewModel.fontSize.collectAsState()
+    val isSerif by viewModel.isSerif.collectAsState()
+    val lineHeight by viewModel.lineHeight.collectAsState()
     
     val clipboardManager = LocalClipboardManager.current
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
@@ -108,6 +67,8 @@ fun App(
     val titleDisplay = when (currentTab) {
         AppTab.HISTORY -> Strings.HISTORY_TAB
         AppTab.SEARCH -> Strings.SEARCH_TAB
+        AppTab.ABOUT -> Strings.ABOUT_TAB
+        AppTab.SETTINGS -> Strings.SETTINGS_TAB
         AppTab.VERSES -> if (uniqueBooks.size == 1) uniqueBooks.first() else if (uniqueBooks.isEmpty()) Strings.VERSES_TAB else "${uniqueBooks.size} ${Strings.BOOKS_DETECTED}"
     }
     
@@ -117,6 +78,8 @@ fun App(
     val footerColor = if (isDark) DarkFooter else Color(0xFFF5F5F5)
     val borderColor = if (isDark) DarkBorder else Color.LightGray
 
+    val globalFontFamily = if (isSerif) androidx.compose.ui.text.font.FontFamily.Serif else androidx.compose.ui.text.font.FontFamily.SansSerif
+
     MaterialTheme(
         colorScheme = if (isDark) darkColorScheme(primary = PrimaryAmber, surface = surfaceColor, onSurface = textColor)
         else lightColorScheme(primary = PrimaryAmber, surface = surfaceColor, onSurface = textColor)
@@ -125,16 +88,36 @@ fun App(
         
         LaunchedEffect(detectedVerses, currentTab) {
             isCopied = false
-            val baseHeight = 160.dp
             val targetHeight = when(currentTab) {
-                AppTab.SEARCH -> 450.dp
-                AppTab.HISTORY -> (150.dp + (80.dp * history.size)).coerceIn(350.dp, 600.dp)
-                AppTab.VERSES -> (150.dp + (130.dp * detectedVerses.size)).coerceIn(350.dp, 600.dp)
+                AppTab.VERSES -> if (detectedVerses.isEmpty()) 350.dp else (150.dp + (130.dp * detectedVerses.size)).coerceIn(400.dp, 600.dp)
+                else -> 600.dp // Altura fixa para abas internas para estabilidade do rodapé
             }
             onHeightRequest(targetHeight)
         }
 
-        Surface(modifier = Modifier.fillMaxSize(), shape = RoundedCornerShape(16.dp), color = surfaceColor, shadowElevation = 8.dp, border = androidx.compose.foundation.BorderStroke(1.dp, borderColor.copy(alpha = 0.5f))) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown) {
+                        val isCtrl = event.isCtrlPressed
+                        when (event.key) {
+                            Key.Escape -> { onClose(); true }
+                            Key.M -> if (isCtrl) { onClose(); true } else false
+                            Key.F -> if (isCtrl) { currentTab = AppTab.SEARCH; true } else false
+                            Key.H -> if (isCtrl) { currentTab = AppTab.HISTORY; true } else false
+                            Key.V -> if (isCtrl) { currentTab = AppTab.VERSES; true } else false
+                            Key.S -> if (isCtrl) { currentTab = AppTab.SETTINGS; true } else false
+                            Key.I -> if (isCtrl) { currentTab = AppTab.ABOUT; true } else false
+                            else -> false
+                        }
+                    } else false
+                }, 
+            shape = RoundedCornerShape(16.dp), 
+            color = surfaceColor, 
+            shadowElevation = 8.dp, 
+            border = BorderStroke(1.dp, borderColor.copy(alpha = 0.5f))
+        ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Header
                 Row(
@@ -142,7 +125,12 @@ fun App(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically, 
+                        modifier = Modifier.weight(1f)
+                            .pointerHoverIcon(PointerIcon.Hand)
+                            .clickable { currentTab = AppTab.ABOUT }
+                    ) {
                         Image(painter = painterResource(Res.drawable.logo), contentDescription = null, modifier = Modifier.size(36.dp))
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
@@ -152,6 +140,7 @@ fun App(
                     }
                     Box(
                         modifier = Modifier.size(32.dp).clip(CircleShape).background(HeaderContentColor.copy(alpha = 0.1f))
+                            .pointerHoverIcon(PointerIcon.Hand)
                             .clickable { if (currentTab != AppTab.VERSES) currentTab = AppTab.VERSES else onClose() },
                         contentAlignment = Alignment.Center
                     ) {
@@ -171,7 +160,9 @@ fun App(
                                 viewModel.processQuery(it)
                                 currentTab = AppTab.VERSES 
                             }, 
-                            textColor = textColor
+                            textColor = textColor,
+                            fontSize = fontSize,
+                            fontFamily = globalFontFamily
                         )
                         AppTab.SEARCH -> SearchView(
                             viewModel = viewModel,
@@ -179,8 +170,12 @@ fun App(
                                 viewModel.selectVerse(it)
                                 currentTab = AppTab.VERSES 
                             },
-                            textColor = textColor
+                            textColor = textColor,
+                            fontSize = fontSize,
+                            fontFamily = globalFontFamily
                         )
+                        AppTab.ABOUT -> AboutView(textColor)
+                        AppTab.SETTINGS -> SettingsView(viewModel, textColor)
                         AppTab.VERSES -> {
                             if (detectedVerses.isEmpty()) {
                                 Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -188,37 +183,95 @@ fun App(
                                     Text(Strings.COPY_HINT_SUBTITLE, style = MaterialTheme.typography.bodyMedium, color = textColor.copy(alpha = 0.4f))
                                 }
                             } else {
-                                VersesView(detectedVerses, uniqueBooks, textColor)
+                                VersesView(detectedVerses, uniqueBooks, textColor, fontSize, isSerif, lineHeight)
                             }
                         }
                     }
                 }
 
                 // Footer
-                Row(modifier = Modifier.fillMaxWidth().background(footerColor).padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(start = 8.dp)) {
-                        IconButton(onClick = { currentTab = AppTab.SEARCH }, modifier = Modifier.size(32.dp)) {
-                            SearchIcon(color = if (currentTab == AppTab.SEARCH) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                Row(modifier = Modifier.fillMaxWidth().background(footerColor).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 4.dp)) {
+                        // Search Button
+                        var isSearchHovered by remember { mutableStateOf(false) }
+                        Surface(
+                            color = if (currentTab == AppTab.SEARCH || isSearchHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier
+                                .pointerHoverIcon(PointerIcon.Hand)
+                                .onPointerEvent(PointerEventType.Enter) { isSearchHovered = true }
+                                .onPointerEvent(PointerEventType.Exit) { isSearchHovered = false }
+                                .clickable { currentTab = AppTab.SEARCH }
+                        ) {
+                            Box(modifier = Modifier.padding(8.dp)) {
+                                SearchIcon(color = if (currentTab == AppTab.SEARCH || isSearchHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                            }
                         }
-                        IconButton(onClick = { 
-                            currentTab = AppTab.HISTORY
-                            viewModel.refreshHistory()
-                        }, modifier = Modifier.size(32.dp)) {
-                            HistoryIcon(color = if (currentTab == AppTab.HISTORY) PrimaryAmber else textColor.copy(alpha = 0.6f))
+
+                        // History Button
+                        var isHistoryHovered by remember { mutableStateOf(false) }
+                        Surface(
+                            color = if (currentTab == AppTab.HISTORY || isHistoryHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier
+                                .pointerHoverIcon(PointerIcon.Hand)
+                                .onPointerEvent(PointerEventType.Enter) { isHistoryHovered = true }
+                                .onPointerEvent(PointerEventType.Exit) { isHistoryHovered = false }
+                                .clickable { 
+                                    currentTab = AppTab.HISTORY
+                                    viewModel.refreshHistory()
+                                }
+                        ) {
+                            Box(modifier = Modifier.padding(8.dp)) {
+                                HistoryIcon(color = if (currentTab == AppTab.HISTORY || isHistoryHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                            }
                         }
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(text = "ACF", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f))
+
+                        // Settings Button
+                        var isSettingsHovered by remember { mutableStateOf(false) }
+                        Surface(
+                            color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier
+                                .pointerHoverIcon(PointerIcon.Hand)
+                                .onPointerEvent(PointerEventType.Enter) { isSettingsHovered = true }
+                                .onPointerEvent(PointerEventType.Exit) { isSettingsHovered = false }
+                                .clickable { currentTab = AppTab.SETTINGS }
+                        ) {
+                            Box(modifier = Modifier.padding(8.dp)) {
+                                SettingsIcon(color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                            }
+                        }
+
+                        // About Button (Bible Icon)
+                        var isAboutHovered by remember { mutableStateOf(false) }
+                        Surface(
+                            color = if (currentTab == AppTab.ABOUT || isAboutHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier
+                                .pointerHoverIcon(PointerIcon.Hand)
+                                .onPointerEvent(PointerEventType.Enter) { isAboutHovered = true }
+                                .onPointerEvent(PointerEventType.Exit) { isAboutHovered = false }
+                                .clickable { currentTab = AppTab.ABOUT }
+                        ) {
+                            Box(modifier = Modifier.padding(8.dp)) {
+                                BibleIcon(color = if (currentTab == AppTab.ABOUT || isAboutHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                            }
+                        }
                     }
                     
                     if (currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) {
-                        IconButton(onClick = {
-                            val fullText = detectedVerses.joinToString("\n\n") { (req, content) ->
-                                val cleanContent = content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""
-                                "${cleanContent} (${req.book} ${req.chapter}:${req.verse} - ACF)"
-                            }
-                            clipboardManager.setText(AnnotatedString(fullText))
-                            isCopied = true
-                        }, modifier = Modifier.size(32.dp).padding(end = 8.dp)) {
+                        IconButton(
+                            onClick = {
+                                val fullText = detectedVerses.joinToString("\n\n") { (req, content) ->
+                                    val cleanContent = content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""
+                                    "${cleanContent} (${req.book} ${req.chapter}:${req.verse} - ACF)"
+                                }
+                                clipboardManager.setText(AnnotatedString(fullText))
+                                isCopied = true
+                            }, 
+                            modifier = Modifier.size(32.dp).padding(end = 4.dp).pointerHoverIcon(PointerIcon.Hand)
+                        ) {
                              if (isCopied) CheckIcon(color = Color(0xFF2E7D32)) else CopyIcon(color = textColor.copy(alpha = 0.6f))
                         }
                     }
@@ -226,202 +279,4 @@ fun App(
             }
         }
     }
-}
-
-@Composable
-fun SearchView(viewModel: VerseViewModel, onVerseSelect: (Int) -> Unit, textColor: Color) {
-    val query by viewModel.searchQuery.collectAsState()
-    val results by viewModel.searchResults.collectAsState()
-    
-    var selectedIndex by remember { mutableStateOf(-1) }
-    val listState = rememberLazyListState()
-    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
-    
-    // Auto-scroll LazyColumn para acompanhar a seleção do teclado
-    LaunchedEffect(selectedIndex) {
-        if (selectedIndex >= 0 && results.isNotEmpty()) {
-            listState.animateScrollToItem(selectedIndex)
-        }
-    }
-
-    // Reset selected index when results change
-    LaunchedEffect(results) {
-        selectedIndex = if (results.isNotEmpty()) 0 else -1
-    }
-
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = { viewModel.onSearchQueryChanged(it) },
-            placeholder = { Text(Strings.SEARCH_HINT, color = textColor.copy(alpha = 0.4f)) },
-            modifier = Modifier.fillMaxWidth()
-                .onKeyEvent { keyEvent ->
-                    if (keyEvent.type == KeyEventType.KeyDown) {
-                        when (keyEvent.key) {
-                            Key.DirectionDown -> {
-                                if (results.isNotEmpty()) {
-                                    selectedIndex = (selectedIndex + 1).coerceAtMost(results.size - 1)
-                                    true
-                                } else false
-                            }
-                            Key.DirectionUp -> {
-                                if (results.isNotEmpty()) {
-                                    selectedIndex = (selectedIndex - 1).coerceAtLeast(0)
-                                    true
-                                } else false
-                            }
-                            Key.Enter -> {
-                                if (selectedIndex >= 0 && selectedIndex < results.size) {
-                                    onVerseSelect(results[selectedIndex].id)
-                                    focusManager.clearFocus()
-                                } else if (query.isNotBlank()) {
-                                    viewModel.processQuery(query)
-                                    focusManager.clearFocus()
-                                }
-                                true
-                            }
-                            else -> false
-                        }
-                    } else false
-                },
-            singleLine = true,
-            shape = RoundedCornerShape(24.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryAmber, 
-                unfocusedBorderColor = textColor.copy(alpha = 0.1f),
-                focusedContainerColor = textColor.copy(alpha = 0.02f),
-                unfocusedContainerColor = textColor.copy(alpha = 0.02f)
-            ),
-            trailingIcon = {
-                IconButton(onClick = { 
-                    if (query.isNotBlank()) {
-                        viewModel.processQuery(query)
-                        focusManager.clearFocus()
-                    }
-                }) {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = PrimaryAmber)
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        if (results.isNotEmpty()) {
-            LazyColumn(modifier = Modifier.weight(1f), state = listState) {
-                itemsIndexed(results) { index, res ->
-                    val isSelected = index == selectedIndex
-                    
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().clickable {
-                             onVerseSelect(res.id)
-                             focusManager.clearFocus()
-                        },
-                        color = if (isSelected) PrimaryAmber.copy(alpha = 0.15f) else Color.Transparent,
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
-                            if (res.book.isNotEmpty()) {
-                                Text(text = "${res.book} ${res.chapter}:${res.verse}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PrimaryAmber)
-                            }
-                            
-                            val highlightedText = buildAnnotatedString {
-                                val cleanContent = res.content.replace(Regex("<[^>]*>"), "")
-                                val lowerContent = cleanContent.lowercase()
-                                val lowerQuery = query.lowercase()
-                                var start = 0
-                                
-                                if (lowerQuery.isNotBlank() && lowerContent.contains(lowerQuery)) {
-                                    while (true) {
-                                        val idx = lowerContent.indexOf(lowerQuery, start)
-                                        if (idx == -1) {
-                                            append(cleanContent.substring(start))
-                                            break
-                                        }
-                                        append(cleanContent.substring(start, idx))
-                                        withStyle(SpanStyle(fontWeight = FontWeight.Black, color = PrimaryAmber)) {
-                                            append(cleanContent.substring(idx, idx + query.length))
-                                        }
-                                        start = idx + query.length
-                                    }
-                                } else {
-                                    append(cleanContent)
-                                }
-                            }
-                            Text(text = highlightedText, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis, color = textColor)
-                        }
-                    }
-                    HorizontalDivider(color = textColor.copy(alpha = 0.05f))
-                }
-            }
-        } else {
-             Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                 if (query.length >= 2) {
-                     Text(Strings.NO_RESULTS, style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
-                 } else {
-                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                         Text(Strings.SEARCH_EXAMPLES_TITLE, style = MaterialTheme.typography.titleMedium, color = textColor.copy(alpha = 0.7f))
-                         Text(
-                             text = Strings.SEARCH_EXAMPLES_SUBTITLE, 
-                             style = MaterialTheme.typography.bodyMedium, 
-                             color = textColor.copy(alpha = 0.4f),
-                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                         )
-                     }
-                 }
-             }
-        }
-    }
-}
-
-@Composable
-fun VersesView(detectedVerses: List<Pair<VerseRequest, String?>>, uniqueBooks: List<String>, textColor: Color) {
-    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
-        var lastBook = ""
-        detectedVerses.forEach { (req, content) ->
-            if (uniqueBooks.size > 1 && req.book != lastBook) {
-                item {
-                    Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
-                        Text(text = req.book.uppercase(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, color = PrimaryAmber)
-                        HorizontalDivider(modifier = Modifier.padding(top = 4.dp), thickness = 1.dp, color = PrimaryAmber.copy(alpha = 0.3f))
-                    }
-                }
-                lastBook = req.book
-            }
-            item { ContinuousVerseItem(req, content, textColor) }
-        }
-    }
-}
-
-@Composable
-fun HistoryView(history: List<HistoryEntry>, onSelect: (String) -> Unit, textColor: Color) {
-    val dateFormat = remember { SimpleDateFormat("HH:mm - dd/MM", Locale.getDefault()) }
-    if (history.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(Strings.NO_HISTORY, color = textColor.copy(alpha = 0.5f)) }
-    } else {
-        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            itemsIndexed(history) { _, entry ->
-                Surface(modifier = Modifier.fillMaxWidth().clickable { onSelect(entry.query) }, color = Color.Transparent, shape = RoundedCornerShape(8.dp)) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        Text(text = entry.query, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = textColor)
-                        Text(text = dateFormat.format(Date(entry.timestamp)), style = MaterialTheme.typography.labelSmall, color = textColor.copy(alpha = 0.5f))
-                    }
-                }
-                HorizontalDivider(color = textColor.copy(alpha = 0.05f))
-            }
-        }
-    }
-}
-
-@Composable
-fun ContinuousVerseItem(request: VerseRequest, content: String?, textColor: Color) {
-    val annotatedString = buildAnnotatedString {
-        withStyle(style = SpanStyle(color = PrimaryAmber, fontWeight = FontWeight.Bold, fontSize = 14.sp)) { append("${request.chapter}:${request.verse}  ") }
-        if (content != null) {
-            val formatted = remember(content) { HtmlTextFormatter.format(content) }
-            append(formatted)
-        } else {
-            withStyle(style = SpanStyle(fontStyle = FontStyle.Italic, color = Color.Red)) { append(Strings.TEXT_NOT_AVAILABLE) }
-        }
-    }
-    Text(text = annotatedString, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp), lineHeight = 24.sp, color = textColor)
 }

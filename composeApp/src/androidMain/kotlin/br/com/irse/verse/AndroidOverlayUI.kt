@@ -57,20 +57,14 @@ fun AndroidOverlayExpanded(
         Column {
             // Header
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF0000FD))
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().background(Color(0xFFFFC107)).padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Verse Reader", color = Color.White, style = MaterialTheme.typography.titleMedium)
-                Icon(
-                    painter = painterResource(Res.drawable.logo), // Using logo as icon placeholder or X
-                    contentDescription = "Minimize",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp).clickable { onClose() }
-                )
+                Text("Bereia Verse", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White)
+                }
             }
 
             // Content reusing common App logic

@@ -52,6 +52,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.feather.icons)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -236,7 +237,7 @@ tasks.register<JavaExec>("createExe") {
               <headerType>gui</headerType>
               <jar>${jarFile.name}</jar>
               <outfile>${outputExe.absolutePath}</outfile>
-              <errTitle>Verse Reader Error</errTitle>
+              <errTitle>Bereia Verse Error</errTitle>
               <cmdLine></cmdLine>
               <chdir>.</chdir>
               <priority>normal</priority>

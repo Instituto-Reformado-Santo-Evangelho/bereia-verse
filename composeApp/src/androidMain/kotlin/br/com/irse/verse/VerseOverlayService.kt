@@ -63,7 +63,7 @@ class VerseOverlayService : LifecycleService(), SavedStateRegistryOwner {
         }
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Verse Reader Ativo")
+            .setContentTitle("Bereia Verse Ativo")
             .setContentText("Toque no ícone flutuante para ler versículos")
             .setSmallIcon(android.R.drawable.ic_menu_agenda)
             .build()

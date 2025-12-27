@@ -34,6 +34,7 @@ androidx-savedstate = { module = "androidx.savedstate:savedstate", version = "1.
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+feather-icons = { module = "br.com.devsrsouza.compose.icons:feather", version = "1.1.1" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

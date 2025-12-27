@@ -25,10 +25,24 @@ class VerseViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    // Settings State
+    private val _fontSize = MutableStateFlow(16)
+    val fontSize = _fontSize.asStateFlow()
+
+    private val _isSerif = MutableStateFlow(false)
+    val isSerif = _isSerif.asStateFlow()
+
+    private val _lineHeight = MutableStateFlow(1.4f)
+    val lineHeight = _lineHeight.asStateFlow()
+
     init {
-        // Inicializa histórico
+        // Inicializa histórico e configurações
         viewModelScope.launch {
             _history.value = HistoryManager.getHistory()
+            val savedSettings = SettingsManager.getSettings()
+            _fontSize.value = savedSettings.fontSize
+            _isSerif.value = savedSettings.isSerif
+            _lineHeight.value = savedSettings.lineHeight
         }
 
         // Setup Search Debounce
@@ -143,6 +157,28 @@ class VerseViewModel(
     fun refreshHistory() {
         viewModelScope.launch {
              _history.value = HistoryManager.getHistory()
+        }
+    }
+
+    fun updateFontSize(size: Int) {
+        val newSize = size.coerceIn(12, 32)
+        _fontSize.value = newSize
+        viewModelScope.launch {
+            SettingsManager.saveSettings(UserSettings(fontSize = newSize, isSerif = _isSerif.value, lineHeight = _lineHeight.value))
+        }
+    }
+
+    fun toggleFontSerif(serif: Boolean) {
+        _isSerif.value = serif
+        viewModelScope.launch {
+            SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, isSerif = serif, lineHeight = _lineHeight.value))
+        }
+    }
+
+    fun updateLineHeight(height: Float) {
+        _lineHeight.value = height
+        viewModelScope.launch {
+            SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, isSerif = _isSerif.value, lineHeight = height))
         }
     }
 }
