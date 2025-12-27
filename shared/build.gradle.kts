@@ -6,11 +6,13 @@ plugins {
 }
 
 kotlin {
+
     jvmToolchain(17)
-    androidTarget {
-        compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
-    }
+
+    androidTarget()
+
     
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -47,6 +49,4 @@ android {
         minSdk = 24
     }
 }
-dependencies {
-    implementation(libs.androidx.lifecycle.runtime)
-}
+

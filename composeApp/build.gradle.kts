@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
@@ -21,11 +21,7 @@ dependencies {
 
 kotlin {
     jvmToolchain(17)
-    androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
-    }
+    androidTarget()
     
     jvm()
     
@@ -68,13 +64,8 @@ kotlin {
 }
 
 android {
-    namespace = "br.com.irse.verse"
+    namespace = "br.com.irse.verse.ui"
 
-    defaultConfig {
-        applicationId = "br.com.irse.verse"
-        versionCode = 1
-        versionName = "1.0"
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -97,7 +88,6 @@ android {
 }
 
 dependencies {
-    debugImplementation(compose.uiTooling)
 }
 
 compose.desktop {

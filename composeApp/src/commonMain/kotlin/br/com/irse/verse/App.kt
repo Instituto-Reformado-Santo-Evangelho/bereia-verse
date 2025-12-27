@@ -1,39 +1,79 @@
 package br.com.irse.verse
 
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.irse.verse.core.Strings
+import br.com.irse.verse.core.VerseViewModel
+import br.com.irse.verse.ui.components.BibleIcon
+import br.com.irse.verse.ui.components.CheckIcon
+import br.com.irse.verse.ui.components.CopyIcon
+import br.com.irse.verse.ui.components.HistoryIcon
+import br.com.irse.verse.ui.components.SearchIcon
+import br.com.irse.verse.ui.components.SettingsIcon
+import br.com.irse.verse.ui.copyToClipboard
+import br.com.irse.verse.ui.onHover
+import br.com.irse.verse.ui.pointerHoverIconHand
+import br.com.irse.verse.ui.views.AboutView
+import br.com.irse.verse.ui.views.HistoryView
+import br.com.irse.verse.ui.views.SearchView
+import br.com.irse.verse.ui.views.SettingsView
+import br.com.irse.verse.ui.views.VersesView
 import kotlinx.coroutines.launch
-import br.com.irse.verse.core.*
-import br.com.irse.verse.ui.components.*
-import br.com.irse.verse.ui.views.*
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.input.key.*
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.ExperimentalComposeUiApi
 
 // Cores de Identidade
 val PrimaryAmber = Color(0xFFFFC107)
@@ -131,19 +171,19 @@ fun App(
                     Row(
                         verticalAlignment = Alignment.CenterVertically, 
                         modifier = Modifier.weight(1f)
-                            .pointerHoverIcon(PointerIcon.Hand)
+                            .pointerHoverIconHand()
                             .clickable { currentTab = AppTab.ABOUT }
                     ) {
                         Image(painter = painterResource(Res.drawable.logo), contentDescription = null, modifier = Modifier.size(36.dp))
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(text = Strings.APP_TITLE, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = HeaderContentColor, fontSize = 16.sp)
-                            Text(text = titleDisplay, style = MaterialTheme.typography.bodySmall, color = HeaderContentColor.copy(alpha = 0.8f), fontSize = 12.sp)
+                            Text(text = titleDisplay, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = HeaderContentColor.copy(alpha = 0.8f), fontSize = 13.sp)
                         }
                     }
                     Box(
                         modifier = Modifier.size(32.dp).clip(CircleShape).background(HeaderContentColor.copy(alpha = 0.1f))
-                            .pointerHoverIcon(PointerIcon.Hand)
+                            .pointerHoverIconHand()
                             .clickable { if (currentTab != AppTab.VERSES) currentTab = AppTab.VERSES else onClose() },
                         contentAlignment = Alignment.Center
                     ) {
@@ -201,9 +241,8 @@ fun App(
                             color = if (currentTab == AppTab.SEARCH || isSearchHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier
-                                .pointerHoverIcon(PointerIcon.Hand)
-                                .onPointerEvent(PointerEventType.Enter) { isSearchHovered = true }
-                                .onPointerEvent(PointerEventType.Exit) { isSearchHovered = false }
+                                .pointerHoverIconHand()
+                                .onHover(onEnter = { isSearchHovered = true }, onExit = { isSearchHovered = false })
                                 .clickable { currentTab = AppTab.SEARCH }
                         ) {
                             Box(modifier = Modifier.padding(8.dp)) {
@@ -217,9 +256,8 @@ fun App(
                             color = if (currentTab == AppTab.HISTORY || isHistoryHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier
-                                .pointerHoverIcon(PointerIcon.Hand)
-                                .onPointerEvent(PointerEventType.Enter) { isHistoryHovered = true }
-                                .onPointerEvent(PointerEventType.Exit) { isHistoryHovered = false }
+                                .pointerHoverIconHand()
+                                .onHover(onEnter = { isHistoryHovered = true }, onExit = { isHistoryHovered = false })
                                 .clickable { 
                                     currentTab = AppTab.HISTORY
                                     viewModel.refreshHistory()
@@ -236,9 +274,8 @@ fun App(
                             color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier
-                                .pointerHoverIcon(PointerIcon.Hand)
-                                .onPointerEvent(PointerEventType.Enter) { isSettingsHovered = true }
-                                .onPointerEvent(PointerEventType.Exit) { isSettingsHovered = false }
+                                .pointerHoverIconHand()
+                                .onHover(onEnter = { isSettingsHovered = true }, onExit = { isSettingsHovered = false })
                                 .clickable { currentTab = AppTab.SETTINGS }
                         ) {
                             Box(modifier = Modifier.padding(8.dp)) {
@@ -252,9 +289,8 @@ fun App(
                             color = if (currentTab == AppTab.ABOUT || isAboutHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier
-                                .pointerHoverIcon(PointerIcon.Hand)
-                                .onPointerEvent(PointerEventType.Enter) { isAboutHovered = true }
-                                .onPointerEvent(PointerEventType.Exit) { isAboutHovered = false }
+                                .pointerHoverIconHand()
+                                .onHover(onEnter = { isAboutHovered = true }, onExit = { isAboutHovered = false })
                                 .clickable { currentTab = AppTab.ABOUT }
                         ) {
                             Box(modifier = Modifier.padding(8.dp)) {
@@ -271,11 +307,11 @@ fun App(
                                     "$cleanContent (${req.book} ${req.chapter}:${req.verse} - ACF)"
                                 }
                                 scope.launch {
-                                    clipboard.setClipEntry(ClipEntry(AnnotatedString(fullText)))
+                                    copyToClipboard(clipboard, fullText)
                                 }
                                 isCopied = true
                             }, 
-                            modifier = Modifier.size(32.dp).padding(end = 4.dp).pointerHoverIcon(PointerIcon.Hand)
+                            modifier = Modifier.size(32.dp).padding(end = 4.dp).pointerHoverIconHand()
                         ) {
                              if (isCopied) CheckIcon(color = Color(0xFF2E7D32)) else CopyIcon(color = textColor.copy(alpha = 0.6f))
                         }

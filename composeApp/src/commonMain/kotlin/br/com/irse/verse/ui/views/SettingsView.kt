@@ -36,7 +36,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             Text(
                 Strings.FONT_SIZE, 
                 style = MaterialTheme.typography.titleSmall, 
-                color = PrimaryAmber, 
+                color = textColor,
                 fontWeight = FontWeight.Bold
             )
             Row(
@@ -67,7 +67,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             Text(
                 Strings.LINE_HEIGHT, 
                 style = MaterialTheme.typography.titleSmall, 
-                color = PrimaryAmber, 
+                color = textColor,
                 fontWeight = FontWeight.Bold
             )
             Row(
@@ -85,7 +85,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                     )
                 )
                 Text(
-                    String.format("%.1fx", lineHeight), 
+                    String.format("%.1fx", lineHeight),
                     style = MaterialTheme.typography.bodyMedium, 
                     fontWeight = FontWeight.Bold, 
                     color = textColor
@@ -98,7 +98,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             Text(
                 Strings.FONT_FAMILY, 
                 style = MaterialTheme.typography.titleSmall, 
-                color = PrimaryAmber, 
+                color = textColor,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))

@@ -1,14 +1,13 @@
 [versions]
 agp = "8.13.2"
 androidx-activity = "1.12.2"
-androidx-lifecycle = "2.9.6"
+androidx-lifecycle = "2.8.4"
 composeHotReload = "1.0.0"
 composeMultiplatform = "1.9.3"
 kotlin = "2.3.0"
 kotlinx-coroutines = "1.10.2"
 kotlinx-serialization = "1.9.0"
 shadow = "8.1.1"
-lifecycleRuntime = "2.10.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -21,7 +20,6 @@ kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-s
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 feather-icons = { module = "br.com.devsrsouza.compose.icons:feather", version = "1.1.1" }
-androidx-lifecycle-runtime = { group = "androidx.lifecycle", name = "lifecycle-runtime", version.ref = "kotlin" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

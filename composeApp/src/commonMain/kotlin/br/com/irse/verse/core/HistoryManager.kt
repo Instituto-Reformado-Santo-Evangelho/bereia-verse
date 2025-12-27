@@ -15,11 +15,11 @@ data class HistoryEntry(
 object HistoryManager {
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
     private val historyFile: File by lazy {
-        val os = System.getProperty("os.name").lowercase()
+        val os = System.getProperty("os.name")?.lowercase() ?: ""
         val dir = if (os.contains("win")) {
             File(System.getenv("APPDATA"), "BereiaVerse")
         } else {
-            File(System.getProperty("user.home"), ".local/share/bereia-verse")
+            File(System.getProperty("user.home") ?: "", ".local/share/bereia-verse")
         }
         if (!dir.exists()) dir.mkdirs()
         File(dir, "history.json")

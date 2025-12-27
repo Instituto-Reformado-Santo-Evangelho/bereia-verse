@@ -39,7 +39,7 @@ object ClipboardMonitor {
         }
 
         // 2. Try Linux Native (Wayland/X11) as fallback
-        if (System.getProperty("os.name").lowercase().contains("linux")) {
+        if (System.getProperty("os.name")?.lowercase()?.contains("linux") == true) {
             return getLinuxClipboard()
         }
 
