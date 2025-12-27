@@ -19,12 +19,14 @@ object Strings {
     const val ABOUT_TAB = "Sobre"
     const val SETTINGS_TAB = "Ajustes"
     const val APP_VERSION = "Versão 1.1.0"
-    const val COPYRIGHT = "© 2025 IRSE - Instituto Reformado Santo Evangelho"
+    const val COPYRIGHT = "© 2025 Instituto Reformado Santo Evangelho - IRSE"
     const val FONT_SIZE = "Tamanho da Fonte"
     const val LINE_HEIGHT = "Espaçamento entre linhas"
     const val FONT_FAMILY = "Estilo da Fonte"
     const val SANS_SERIF = "Moderna (Sans)"
     const val SERIF = "Clássica (Serif)"
+    const val MONOSPACE = "Máquina (Mono)"
+    const val CURSIVE = "Manuscrita (Script)"
 
     // Sobre o App
     const val ABOUT_DESC_1 = "Bereia Verse é um popup simples que exibe referências bíblicas detectadas na área de transferência do seu computador."

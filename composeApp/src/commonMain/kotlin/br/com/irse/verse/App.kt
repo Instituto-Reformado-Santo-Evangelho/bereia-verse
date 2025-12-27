@@ -99,7 +99,7 @@ fun App(
     val isProcessing by viewModel.isProcessing.collectAsState()
     val history by viewModel.history.collectAsState()
     val fontSize by viewModel.fontSize.collectAsState()
-    val isSerif by viewModel.isSerif.collectAsState()
+    val fontFamily by viewModel.fontFamily.collectAsState()
     val lineHeight by viewModel.lineHeight.collectAsState()
     
     val clipboard = LocalClipboard.current
@@ -121,7 +121,23 @@ fun App(
     val footerColor = if (isDark) DarkFooter else Color(0xFFF5F5F5)
     val borderColor = if (isDark) DarkBorder else Color.LightGray
 
-    val globalFontFamily = if (isSerif) androidx.compose.ui.text.font.FontFamily.Serif else androidx.compose.ui.text.font.FontFamily.SansSerif
+    val globalFontFamily = when (fontFamily) {
+        "serif" -> androidx.compose.ui.text.font.FontFamily.Serif
+        "monospace" -> androidx.compose.ui.text.font.FontFamily.Monospace
+        "cursive" -> androidx.compose.ui.text.font.FontFamily.Cursive
+        else -> androidx.compose.ui.text.font.FontFamily.SansSerif
+    }
+
+    val targetHeight = remember(detectedVerses, currentTab) {
+        when(currentTab) {
+            AppTab.VERSES -> if (detectedVerses.isEmpty()) 350.dp else (150.dp + (130.dp * detectedVerses.size)).coerceIn(400.dp, 600.dp)
+            else -> 600.dp 
+        }
+    }
+
+    LaunchedEffect(targetHeight) {
+        onHeightRequest(targetHeight)
+    }
 
     MaterialTheme(
         colorScheme = if (isDark) darkColorScheme(primary = PrimaryAmber, surface = surfaceColor, onSurface = textColor)
@@ -131,11 +147,6 @@ fun App(
         
         LaunchedEffect(detectedVerses, currentTab) {
             isCopied = false
-            val targetHeight = when(currentTab) {
-                AppTab.VERSES -> if (detectedVerses.isEmpty()) 350.dp else (150.dp + (130.dp * detectedVerses.size)).coerceIn(400.dp, 600.dp)
-                else -> 600.dp // Altura fixa para abas internas para estabilidade do rodapé
-            }
-            onHeightRequest(targetHeight)
         }
 
         Surface(
@@ -226,7 +237,7 @@ fun App(
                                     Text(Strings.COPY_HINT_SUBTITLE, style = MaterialTheme.typography.bodyMedium, color = textColor.copy(alpha = 0.4f))
                                 }
                             } else {
-                                VersesView(detectedVerses, uniqueBooks, textColor, fontSize, isSerif, lineHeight)
+                                VersesView(detectedVerses, uniqueBooks, textColor, fontSize, globalFontFamily, lineHeight)
                             }
                         }
                     }

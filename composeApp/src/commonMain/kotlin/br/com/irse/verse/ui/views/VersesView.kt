@@ -28,7 +28,7 @@ fun VersesView(
     uniqueBooks: List<String>, 
     textColor: Color, 
     fontSize: Int = 16, 
-    isSerif: Boolean = false,
+    fontFamily: FontFamily = FontFamily.SansSerif,
     lineHeight: Float = 1.4f
 ) {
     LazyColumn(
@@ -56,7 +56,7 @@ fun VersesView(
                 }
                 lastBook = req.book
             }
-            item { ContinuousVerseItem(req, content, textColor, fontSize, isSerif, lineHeight) }
+            item { ContinuousVerseItem(req, content, textColor, fontSize, fontFamily, lineHeight) }
         }
     }
 }
@@ -67,7 +67,7 @@ fun ContinuousVerseItem(
     content: String?, 
     textColor: Color, 
     fontSize: Int = 16, 
-    isSerif: Boolean = false,
+    fontFamily: FontFamily = FontFamily.SansSerif,
     lineHeight: Float = 1.4f
 ) {
     val annotatedString = buildAnnotatedString {
@@ -95,7 +95,7 @@ fun ContinuousVerseItem(
         text = annotatedString, 
         style = MaterialTheme.typography.bodyLarge.copy(
             fontSize = fontSize.sp,
-            fontFamily = if (isSerif) FontFamily.Serif else FontFamily.SansSerif
+            fontFamily = fontFamily
         ), 
         lineHeight = (fontSize * lineHeight).sp, 
         color = textColor

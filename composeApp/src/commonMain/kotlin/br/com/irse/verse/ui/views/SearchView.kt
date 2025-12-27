@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import br.com.irse.verse.PrimaryAmber
 import br.com.irse.verse.core.Strings
 import br.com.irse.verse.core.VerseViewModel
+import br.com.irse.verse.ui.pointerHoverIconHand
 
 @Composable
 fun SearchView(
@@ -60,7 +61,8 @@ fun SearchView(
         OutlinedTextField(
             value = query,
             onValueChange = { viewModel.onSearchQueryChanged(it) },
-            placeholder = { Text(Strings.SEARCH_HINT, color = textColor.copy(alpha = 0.4f)) },
+            placeholder = { Text(Strings.SEARCH_HINT, color = textColor.copy(alpha = 0.4f), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily)) },
+            textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily, color = textColor),
             modifier = Modifier.fillMaxWidth()
                 .onKeyEvent { keyEvent ->
                     if (keyEvent.type == KeyEventType.KeyDown) {
@@ -107,7 +109,7 @@ fun SearchView(
                             focusManager.clearFocus()
                         }
                     }, 
-                    modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)
+                    modifier = Modifier.pointerHoverIconHand()
                 ) {
                     Icon(Icons.Default.Search, contentDescription = null, tint = PrimaryAmber)
                 }
@@ -127,7 +129,7 @@ fun SearchView(
                     
                     Surface(
                         modifier = Modifier.fillMaxWidth()
-                            .pointerHoverIcon(PointerIcon.Hand)
+                            .pointerHoverIconHand()
                             .clickable {
                                 onVerseSelect(res.id)
                                 focusManager.clearFocus()
@@ -193,19 +195,19 @@ fun SearchView(
                  if (query.length >= 2) {
                      Text(
                         Strings.NO_RESULTS, 
-                        style = MaterialTheme.typography.bodySmall, 
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = fontFamily), 
                         color = textColor.copy(alpha = 0.5f)
                     )
                  } else {
                      Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                          Text(
                             Strings.SEARCH_EXAMPLES_TITLE, 
-                            style = MaterialTheme.typography.titleMedium, 
+                            style = MaterialTheme.typography.titleMedium.copy(fontFamily = fontFamily), 
                             color = textColor.copy(alpha = 0.7f)
                         )
                          Text(
                              text = Strings.SEARCH_EXAMPLES_SUBTITLE, 
-                             style = MaterialTheme.typography.bodyMedium, 
+                             style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily), 
                              color = textColor.copy(alpha = 0.4f),
                              textAlign = TextAlign.Center
                          )

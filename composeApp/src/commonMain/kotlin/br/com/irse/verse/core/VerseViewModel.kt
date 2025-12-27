@@ -26,12 +26,16 @@ class VerseViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    // Flag para controle de interface (Desktop)
+    private val _isInternalUpdate = MutableStateFlow(false)
+    val isInternalUpdate = _isInternalUpdate.asStateFlow()
+
     // Settings State
     private val _fontSize = MutableStateFlow(16)
     val fontSize = _fontSize.asStateFlow()
 
-    private val _isSerif = MutableStateFlow(false)
-    val isSerif = _isSerif.asStateFlow()
+    private val _fontFamily = MutableStateFlow("sans-serif")
+    val fontFamily = _fontFamily.asStateFlow()
 
     private val _lineHeight = MutableStateFlow(1.4f)
     val lineHeight = _lineHeight.asStateFlow()
@@ -42,7 +46,7 @@ class VerseViewModel(
             _history.value = HistoryManager.getHistory()
             val savedSettings = SettingsManager.getSettings()
             _fontSize.value = savedSettings.fontSize
-            _isSerif.value = savedSettings.isSerif
+            _fontFamily.value = savedSettings.fontFamily
             _lineHeight.value = savedSettings.lineHeight
         }
 
@@ -95,13 +99,15 @@ class VerseViewModel(
     }
     
     fun selectVerse(verseId: Int) {
+        _isInternalUpdate.value = true
         val req = parser.repository.getVerseRequest(verseId)
         if (req != null) {
             selectVerse(req)
         }
     }
 
-    fun processQuery(text: String, addToHistory: Boolean = true) {
+    fun processQuery(text: String, addToHistory: Boolean = true, isExternal: Boolean = false) {
+        _isInternalUpdate.value = !isExternal
         viewModelScope.launch {
             _isProcessing.value = true
             try {
@@ -165,21 +171,21 @@ class VerseViewModel(
         val newSize = size.coerceIn(12, 32)
         _fontSize.value = newSize
         viewModelScope.launch {
-            SettingsManager.saveSettings(UserSettings(fontSize = newSize, isSerif = _isSerif.value, lineHeight = _lineHeight.value))
+            SettingsManager.saveSettings(UserSettings(fontSize = newSize, fontFamily = _fontFamily.value, lineHeight = _lineHeight.value))
         }
     }
 
-    fun toggleFontSerif(serif: Boolean) {
-        _isSerif.value = serif
+    fun updateFontFamily(family: String) {
+        _fontFamily.value = family
         viewModelScope.launch {
-            SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, isSerif = serif, lineHeight = _lineHeight.value))
+            SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, fontFamily = family, lineHeight = _lineHeight.value))
         }
     }
 
     fun updateLineHeight(height: Float) {
         _lineHeight.value = height
         viewModelScope.launch {
-            SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, isSerif = _isSerif.value, lineHeight = height))
+            SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, fontFamily = _fontFamily.value, lineHeight = height))
         }
     }
 }

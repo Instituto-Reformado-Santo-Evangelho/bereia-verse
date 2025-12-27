@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.irse.verse.core.HistoryEntry
 import br.com.irse.verse.core.Strings
+import br.com.irse.verse.ui.pointerHoverIconHand
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -46,7 +47,7 @@ fun HistoryView(
             itemsIndexed(history) { _, entry ->
                 Surface(
                     modifier = Modifier.fillMaxWidth()
-                        .pointerHoverIcon(PointerIcon.Hand)
+                        .pointerHoverIconHand()
                         .clickable { onSelect(entry.query) }, 
                     color = Color.Transparent, 
                     shape = RoundedCornerShape(8.dp)

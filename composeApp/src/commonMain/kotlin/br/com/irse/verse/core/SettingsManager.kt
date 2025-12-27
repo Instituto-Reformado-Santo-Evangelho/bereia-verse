@@ -9,7 +9,7 @@ import java.io.File
 @Serializable
 data class UserSettings(
     val fontSize: Int = 16,
-    val isSerif: Boolean = false,
+    val fontFamily: String = "sans-serif",
     val lineHeight: Float = 1.4f
 )
 

@@ -134,7 +134,7 @@ fun main() = application {
                 val lastText = ""
                 ClipboardMonitor.textFlow().collect { text ->
                     if (text != lastText) {
-                        viewModel.value!!.processQuery(text)
+                        viewModel.value!!.processQuery(text, isExternal = true)
                     }
                 }
             }
@@ -144,12 +144,14 @@ fun main() = application {
     // Window Management based on ViewModel State
     if (viewModel.value != null) {
         val detectedVerses by viewModel.value!!.detectedVerses.collectAsState()
+        val isInternalUpdate by viewModel.value!!.isInternalUpdate.collectAsState()
         
         LaunchedEffect(detectedVerses) {
             if (detectedVerses.isNotEmpty()) {
-                // Para Hyprland/Wayland, sempre forçamos o ciclo Hide->Show quando o conteúdo muda.
-                // Isso garante que a janela 'caminhe' para o workspace onde o mouse está.
-                if (isLinux && isVisible) {
+                // Para Hyprland/Wayland, forçamos o ciclo Hide->Show apenas se conteúdo mudou externamente.
+                // Isso garante que a janela 'caminhe' para o workspace atual se for uma nova cópia,
+                // mas evita o piscar incômodo se o usuário estiver clicando no histórico/pesquisa.
+                if (isLinux && isVisible && !isInternalUpdate) {
                     isVisible = false
                     kotlinx.coroutines.delay(150) 
                 }
@@ -157,12 +159,10 @@ fun main() = application {
                 currentScreenBounds = getActiveMonitorBounds()
                 applyAnchorPosition(mini = false) 
                 
-                if (state.isMinimized) state.isMinimized = false
                 isVisible = true
                 isMiniMode = false
                 
                 currentWindow?.let { win ->
-                    win.isVisible = true
                     win.toFront()
                     win.requestFocus()
                 }
@@ -208,8 +208,12 @@ fun main() = application {
                         viewModel = viewModel.value!!,
                         onClose = { if (actualIsTraySupported) isVisible = false else if (isWine) isVisible = false else isMiniMode = true },
                         onHeightRequest = { height ->
-                            if (!isMiniMode && abs(state.size.height.value - height.value) > 10) {
-                                applyAnchorPosition(mini = false, height = height)
+                            if (!isMiniMode) {
+                                // Apenas atualiza a altura sem recalcular a posição da âncora a cada frame da animação
+                                // Isso evita o efeito de 'piscar' causado pelo reposicionamento forçado da janela
+                                if (abs(state.size.height.value - height.value) > 0.5) {
+                                    state.size = DpSize(fullWidth, height.coerceAtLeast(350.dp))
+                                }
                             }
                         }
                     )

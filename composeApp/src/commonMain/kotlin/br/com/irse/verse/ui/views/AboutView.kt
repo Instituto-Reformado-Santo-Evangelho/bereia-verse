@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.sp
 import br.com.irse.verse.PrimaryAmber
 import br.com.irse.verse.core.Strings
 import br.com.irse.verse.ui.components.ExternalLinkIcon
+import br.com.irse.verse.ui.pointerHoverIconHand
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import verse.composeapp.generated.resources.Res
@@ -49,7 +50,7 @@ fun AboutView(textColor: Color) {
         )
         Text(
             Strings.APP_VERSION,
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleMedium,
             color = PrimaryAmber,
             fontWeight = FontWeight.Bold
         )
@@ -65,14 +66,14 @@ fun AboutView(textColor: Color) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     text = Strings.ABOUT_DESC_1,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 22.sp),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 24.sp),
                     color = textColor,
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = Strings.ABOUT_DESC_2,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp, lineHeight = 22.sp),
                     color = textColor.copy(alpha = 0.7f)
                 )
             }
@@ -81,26 +82,32 @@ fun AboutView(textColor: Color) {
         Spacer(modifier = Modifier.height(32.dp))
 
         // Seção ACF
-        SectionHeader(Strings.ABOUT_ACF_TITLE, textColor)
+        SectionHeader(
+            title = Strings.ABOUT_ACF_TITLE, 
+            textColor = textColor,
+            trailing = { IconButton(onClick = { openUrl(Strings.ABOUT_ACF_URL) }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = PrimaryAmber) } }
+        )
         Text(
             text = Strings.ABOUT_ACF_DESC,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 22.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp, lineHeight = 24.sp),
             color = textColor.copy(alpha = 0.8f),
             modifier = Modifier.fillMaxWidth()
         )
-        LinkItem(Strings.ABOUT_ACF_LINK_LABEL, Strings.ABOUT_ACF_URL)
 
         Spacer(modifier = Modifier.height(32.dp))
 
         // Seção IRSE
-        SectionHeader(Strings.ABOUT_IRSE_TITLE, textColor)
+        SectionHeader(
+            title = Strings.ABOUT_IRSE_TITLE, 
+            textColor = textColor,
+            trailing = { IconButton(onClick = { openUrl(Strings.ABOUT_IRSE_URL) }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = PrimaryAmber) } }
+        )
         Text(
             text = Strings.ABOUT_IRSE_DESC,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 22.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp, lineHeight = 24.sp),
             color = textColor.copy(alpha = 0.8f),
             modifier = Modifier.fillMaxWidth()
         )
-        LinkItem(Strings.ABOUT_IRSE_LINK_LABEL, Strings.ABOUT_IRSE_URL)
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -112,9 +119,9 @@ fun AboutView(textColor: Color) {
             modifier = Modifier.fillMaxWidth(),
             border = BorderStroke(1.dp, textColor.copy(alpha = 0.05f))
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 val shortcutStyle = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = textColor.copy(alpha = 0.7f)
                 )
@@ -131,8 +138,8 @@ fun AboutView(textColor: Color) {
         
         Text(
             Strings.COPYRIGHT,
-            style = MaterialTheme.typography.labelSmall,
-            color = textColor.copy(alpha = 0.3f),
+            style = MaterialTheme.typography.bodySmall,
+            color = textColor.copy(alpha = 0.4f),
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -140,37 +147,33 @@ fun AboutView(textColor: Color) {
 }
 
 @Composable
-fun SectionHeader(title: String, textColor: Color) {
+fun SectionHeader(
+    title: String, 
+    textColor: Color, 
+    trailing: @Composable (() -> Unit)? = null
+) {
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.2.sp),
-            fontWeight = FontWeight.ExtraBold,
-            color = PrimaryAmber
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.2.sp),
+                fontWeight = FontWeight.ExtraBold,
+                color = PrimaryAmber,
+                modifier = Modifier.weight(1f)
+            )
+            if (trailing != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(modifier = Modifier.size(32.dp)) {
+                    trailing()
+                }
+            }
+        }
         Spacer(modifier = Modifier.height(6.dp))
         HorizontalDivider(color = textColor.copy(alpha = 0.1f), thickness = 1.dp)
-    }
-}
-
-@Composable
-fun LinkItem(label: String, url: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp)
-            .clickable { openUrl(url) }
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label, 
-            color = PrimaryAmber, 
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.width(6.dp))
-        ExternalLinkIcon(color = PrimaryAmber)
     }
 }
 
