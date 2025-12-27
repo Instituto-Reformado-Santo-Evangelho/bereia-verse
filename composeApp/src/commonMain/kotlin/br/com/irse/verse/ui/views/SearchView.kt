@@ -202,7 +202,7 @@ fun SearchView(
                     )
                  } else {
                      Box(contentAlignment = Alignment.Center) {
-                         FireAnimation(modifier = Modifier.size(180.dp).alpha(0.6f))
+                         FireAnimation(modifier = Modifier.fillMaxSize().alpha(0.5f))
                          Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                              Text(
                                 text = Strings.SEARCH_EXAMPLES_TITLE, 

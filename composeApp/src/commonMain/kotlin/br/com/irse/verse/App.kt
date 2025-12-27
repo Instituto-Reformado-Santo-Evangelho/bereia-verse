@@ -235,7 +235,7 @@ fun App(
                         AppTab.VERSES -> {
                             if (detectedVerses.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    FireAnimation(modifier = Modifier.size(200.dp).alpha(0.7f))
+                                    FireAnimation(modifier = Modifier.fillMaxSize().alpha(0.6f))
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(
                                             text = Strings.COPY_HINT_TITLE, 
