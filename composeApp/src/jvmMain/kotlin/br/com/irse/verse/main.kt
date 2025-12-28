@@ -200,6 +200,11 @@ fun main() = application {
     ) {
         SideEffect { currentWindow = window }
         
+        // Fix para Windows: Força a transparência da janela nativa para evitar "orelhas" pretas/brancas
+        LaunchedEffect(Unit) {
+            window.setBackground(java.awt.Color(0, 0, 0, 0))
+        }
+        
         AnimatedContent(
             targetState = isMiniMode,
             transitionSpec = { fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300)) }
