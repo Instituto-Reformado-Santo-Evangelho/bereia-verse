@@ -1,11 +1,11 @@
-# Verse Reader (ACF) - IRSE
+# IRSE | Bereia Verse
 
 Um leitor de versículos bíblicos (Almeida Corrigida Fiel) moderno e flutuante, construído com Kotlin Multiplatform (Compose Desktop + Android). Detecta automaticamente referências bíblicas na área de transferência (ex: `Jo 3:16`) e exibe o texto instantaneamente.
 
 ## Funcionalidades
 *   **Detecção Automática:** Monitora o clipboard e exibe versículos automaticamente.
-*   **Modo Widget:** Minimiza para um pequeno ícone flutuante.
-*   **Multi-janela (Android):** Suporte a janelas flutuantes (Overlay) no Android.
+*   **Modo Widget:** Minimiza para um pequeno ícone flutuante no linux com hyprland.
+*   **Multi-janela (Android):** Suporte a janelas flutuantes (Overlay) no Android e Windows.
 *   **Offline:** Banco de dados SQLite embutido (ACF).
 
 ---
@@ -13,7 +13,7 @@ Um leitor de versículos bíblicos (Almeida Corrigida Fiel) moderno e flutuante,
 ## Instalação e Configuração
 
 ### Windows
-*   **Recomendado:** Utilize o instalador `VerseReader_Setup_X.X.X.exe`.
+*   **Recomendado:** Utilize o instalador `BereiaVerse_Setup_X.X.X.exe`.
 *   Este instalador configura tudo automaticamente, cria atalhos e **já inclui o Java 21**.
 
 ### Linux / Mac
@@ -74,7 +74,7 @@ Este projeto suporta cross-compilation para Windows usando Launch4j e NSIS.
     ```bash
     ./gradlew :composeApp:packageWindows
     ```
-    O instalador será gerado na raiz do projeto.
+    O instalador será gerado na pasta dist/.
 
 **Rodar Android:**
 ```bash
