@@ -290,3 +290,69 @@ tasks.register<Exec>("packageWindows") {
         }
     }
 }
+
+// Tarefa para copiar os instaladores Linux (.deb) para a pasta dist
+val copyLinuxDistributables by tasks.registering(Copy::class) {
+    group = "distribution"
+    description = "Copia os pacotes Linux (.deb) gerados para a pasta dist/linux"
+
+    val debSourceDir = project.layout.buildDirectory.dir("compose/binaries/main/deb")
+    val distDir = project.rootProject.layout.projectDirectory.dir("dist/linux")
+
+    from(debSourceDir)
+    into(distDir)
+
+    doLast {
+        println("Pacote .deb copiado com sucesso para: ${distDir.asFile.absolutePath}")
+    }
+}
+
+// Intercepta a tarefa padrão 'packageDeb' para rodar a cópia automaticamente ao final
+tasks.matching { it.name == "packageDeb" }.all {
+    finalizedBy(copyLinuxDistributables)
+}
+
+// --- MAC OS ---
+val copyMacDistributables by tasks.registering(Copy::class) {
+    group = "distribution"
+    description = "Copia instaladores macOS (.dmg) para dist/mac"
+
+    val dmgSourceDir = project.layout.buildDirectory.dir("compose/binaries/main/dmg")
+    val distDir = project.rootProject.layout.projectDirectory.dir("dist/mac")
+
+    from(dmgSourceDir)
+    into(distDir)
+
+    doLast {
+        println("DMG copiado para: ${distDir.asFile.absolutePath}")
+    }
+}
+
+tasks.matching { it.name == "packageDmg" }.all {
+    finalizedBy(copyMacDistributables)
+}
+
+// --- ANDROID ---
+val copyAndroidDistributables by tasks.registering(Copy::class) {
+    group = "distribution"
+    description = "Copia APKs gerados (Debug e Release) para dist/android"
+
+    val androidBuildDir = project.rootProject.file("androidApp/build/outputs/apk")
+    val distDir = project.rootProject.layout.projectDirectory.dir("dist/android")
+
+    from(androidBuildDir)
+    into(distDir)
+
+    doLast {
+        println("APKs copiados para: ${distDir.asFile.absolutePath}")
+    }
+}
+
+// Automatiza a cópia do Android após o build
+project.rootProject.allprojects {
+    tasks.matching { it.name == "assembleDebug" || it.name == "assembleRelease" }.all {
+        if (project.name == "androidApp") {
+            finalizedBy(copyAndroidDistributables)
+        }
+    }
+}

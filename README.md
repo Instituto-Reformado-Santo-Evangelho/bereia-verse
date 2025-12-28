@@ -4,38 +4,41 @@ Um leitor de versículos bíblicos (Almeida Corrigida Fiel) moderno e flutuante,
 
 ## Funcionalidades
 *   **Detecção Automática:** Monitora o clipboard e exibe versículos automaticamente.
-*   **Modo Widget:** Minimiza para um pequeno ícone flutuante no linux com hyprland.
+*   **Modo Widget:** Minimiza para um pequeno ícone flutuante no Linux com Hyprland.
 *   **Multi-janela (Android):** Suporte a janelas flutuantes (Overlay) no Android e Windows.
 *   **Offline:** Banco de dados SQLite embutido (ACF).
 
 ---
 
-## Instalação e Configuração
+## Distribuição e Instaladores
 
-### Windows
-*   **Recomendado:** Utilize o instalador `BereiaVerse_Setup_X.X.X.exe`.
-*   Este instalador configura tudo automaticamente, cria atalhos e **já inclui o Java 21**.
+Todos os binários gerados são centralizados na pasta `/dist`.
 
-### Linux / Mac
-*   **Requisito:** Java Runtime Environment (JRE) 21 ou superior instalado.
-*   **Universal:** Execute o arquivo `.jar` distribuído:
-    ```bash
-    java -jar VerseReaderIRSE-linux-x64-X.X.X.jar
-    ```
+### 🪟 Windows
+*   **Instalador:** `VerseReader_Setup_X.X.X.exe` (gerado na raiz).
+*   **Comando:** `./gradlew :composeApp:packageWindows` (Requer NSIS).
+*   O instalador configura tudo automaticamente, cria atalhos e **já inclui o Java 21**.
 
-### Arch Linux (Manualmente via PKGBUILD)
-O projeto inclui um script de empacotamento para Arch Linux que compila e instala o binário corretamente.
+### 🐧 Linux
+*   **Debian/Ubuntu (.deb):** Localizado em `dist/linux/`.
+    *   **Comando:** `./gradlew :composeApp:packageDeb`.
+*   **Arch Linux:** Localizado em `dist/linux/`.
+    *   **Como gerar:** `cd dist/linux && makepkg -si`.
+*   **Universal:** Execute o arquivo `.jar` distribuído com `java -jar`.
 
-1.  Navegue até a pasta de instaladores:
-    ```bash
-    cd installers/linux/arch
-    ```
-2.  Gere e instale o pacote:
-    ```bash
-    makepkg -si
-    ```
+### 🤖 Android
+*   **APKs:** Localizados em `dist/android/`.
+    *   **Comando:** `./gradlew :androidApp:assembleRelease` (Cópia automática para dist).
 
-### Configuração para Hyprland (Linux Wayland)
+### 🍎 macOS
+*   **Disco (.dmg):** Localizado em `dist/mac/`.
+    *   **Comando:** `./gradlew :composeApp:packageDmg`.
+
+---
+
+## Configuração Específica (Linux)
+
+### Hyprland (Wayland)
 Para que o popup funcione corretamente (flutue, siga o foco e não sofra tiling), adicione as seguintes regras ao seu `hyprland.conf`:
 
 ```ini
@@ -45,10 +48,6 @@ windowrulev2 = noanim,class:^(VerseReaderIRSE)$
 windowrulev2 = nofocus,class:^(VerseReaderIRSE)$
 windowrulev2 = pin,class:^(VerseReaderIRSE)$
 ```
-*Nota: A regra `nofocus` é opcional, mas ajuda a não roubar o foco enquanto você digita, a menos que você clique na janela.*
-
-### Configuração para GNOME/KDE (X11/Wayland)
-Geralmente funciona "out-of-the-box". Se a janela aparecer atrás de outras ou com bordas estranhas, verifique se sua DE suporta "Always on Top" ou configure nas regras de janela do sistema.
 
 ---
 
@@ -65,16 +64,6 @@ Geralmente funciona "out-of-the-box". Se a janela aparecer atrás de outras ou c
 ```bash
 ./gradlew :composeApp:createDistributable
 ```
-Os arquivos gerados estarão em `composeApp/build/compose/binaries/main/`.
-
-**Gerar Instalador Windows (.exe) via Linux:**
-Este projeto suporta cross-compilation para Windows usando Launch4j e NSIS.
-1.  Instale o NSIS: `sudo pacman -S nsis` (Arch) ou `sudo apt install nsis` (Debian/Ubuntu).
-2.  Execute a task:
-    ```bash
-    ./gradlew :composeApp:packageWindows
-    ```
-    O instalador será gerado na pasta dist/.
 
 **Rodar Android:**
 ```bash
@@ -91,15 +80,6 @@ Este projeto suporta cross-compilation para Windows usando Launch4j e NSIS.
 ---
 
 ## Solução de Problemas
-
-**A janela não aparece no Hyprland?**
-Certifique-se de ter aplicado as regras de `windowrulev2` acima. O Hyprland tende a forçar tiling em todas as janelas por padrão.
-
-**Erro "Unresolved reference" no Build?**
-Tente limpar o cache do Gradle:
-```bash
-./gradlew clean
-```
-
-**Texto não detectado?**
-O app suporta o formato `Livro Cap:Verso` (ex: `Gênesis 1:1`, `Gn 1.1`, `Jo 3:16`). Certifique-se de que a abreviação é válida.
+*   **Erro de Build:** `./gradlew clean`
+*   **Versão do Java:** Certifique-se de estar usando o **JDK 21**.
+*   **Texto não detectado?** O app suporta o formato `Livro Cap:Verso` (ex: `Gênesis 1:1`, `Gn 1.1`, `Jo 3:16`).
