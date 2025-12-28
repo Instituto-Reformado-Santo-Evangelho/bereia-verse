@@ -123,8 +123,8 @@ fun main() = application {
     var currentWindow by remember { mutableStateOf<java.awt.Window?>(null) }
     val icon = painterResource(Res.drawable.logo)
     val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
-    val isWine = remember { System.getProperty("os.name").lowercase().contains("windows") && 
-                            (System.getenv("WINEPREFIX") != null || System.getenv("WINELOADERNOEXEC") != null) }
+    val isWindows = remember { System.getProperty("os.name").lowercase().contains("win") }
+    val isWine = remember { isWindows && (System.getenv("WINEPREFIX") != null || System.getenv("WINELOADERNOEXEC") != null) }
 
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
         val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return
@@ -207,19 +207,23 @@ fun main() = application {
                 
                 val newBounds = getActiveMonitorBounds()
                 
-                // SÓ RE-ANCORA SE:
-                // Já tínhamos um monitor salvo E o novo é diferente (mudança de workspace/monitor)
                 if (currentScreenBounds != null && newBounds != currentScreenBounds) {
                     currentScreenBounds = newBounds
                     applyAnchorPosition(mini = false)
                 } else if (currentScreenBounds == null) {
-                    // Primeira detecção: apenas salva onde estamos, sem forçar o pulo
                     currentScreenBounds = newBounds
-                    hasSetInitialPosition = true // Consideramos a posição atual como a "inicial"
+                    hasSetInitialPosition = true
                 }
                 
                 isVisible = true
                 isMiniMode = false
+                
+                // Correção Windows: Forçar restauração se minimizado e aguardar estabilidade
+                if (isWindows && !isLinux) {
+                    state.isMinimized = false
+                    delay(200) // Delay maior para Windows processar a composição transparente
+                }
+
                 currentWindow?.let { win ->
                     win.toFront()
                     win.requestFocus()
