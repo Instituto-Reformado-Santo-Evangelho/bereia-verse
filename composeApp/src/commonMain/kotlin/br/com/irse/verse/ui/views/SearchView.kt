@@ -1,4 +1,5 @@
 package br.com.irse.verse.ui.views
+import br.com.irse.verse.PrimaryAmber
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

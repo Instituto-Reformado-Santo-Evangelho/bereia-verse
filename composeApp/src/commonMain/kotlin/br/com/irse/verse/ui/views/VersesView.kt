@@ -1,4 +1,5 @@
 package br.com.irse.verse.ui.views
+import br.com.irse.verse.PrimaryAmber
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn

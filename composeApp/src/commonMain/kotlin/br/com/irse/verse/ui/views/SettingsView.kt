@@ -1,4 +1,5 @@
 package br.com.irse.verse.ui.views
+import br.com.irse.verse.PrimaryAmber
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*

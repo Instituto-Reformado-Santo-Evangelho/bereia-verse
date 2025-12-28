@@ -1,4 +1,5 @@
 package br.com.irse.verse.ui.components
+import br.com.irse.verse.PrimaryAmber
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize

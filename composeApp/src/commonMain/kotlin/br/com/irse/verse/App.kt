@@ -1,5 +1,8 @@
 package br.com.irse.verse
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -162,6 +165,7 @@ fun App(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
+                .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessLow))
                 .onPreviewKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
                         val isCtrl = event.isCtrlPressed
