@@ -29,6 +29,7 @@ import androidx.compose.material3.HorizontalDivider
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
 import compose.icons.feathericons.ArrowRight
+import compose.icons.feathericons.Camera
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -393,7 +394,21 @@ fun App(
                         }
                     }
                     
+
                     if (currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) {
+                        // Snapshot Button
+                        IconButton(
+                            onClick = { viewModel.captureSnapshot() },
+                            modifier = Modifier.size(32.dp).padding(end = 4.dp).pointerHoverIconHand()
+                        ) {
+                             Icon(
+                                 imageVector = FeatherIcons.Camera,
+                                 contentDescription = "Salvar Imagem",
+                                 tint = textColor.copy(alpha = 0.6f),
+                                 modifier = Modifier.size(20.dp)
+                             )
+                        }
+
                         IconButton(
                             onClick = {
                                 val fullText = detectedVerses.joinToString("\n\n") { (req, content) ->

@@ -6,7 +6,8 @@ import kotlinx.coroutines.flow.*
 @OptIn(FlowPreview::class)
 class VerseViewModel(
     private val parser: BibleParser,
-    private val database: BibleDatabase
+    private val database: BibleDatabase,
+    private val snapshotHandler: SnapshotHandler
 ) {
     private val viewModelScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
@@ -412,6 +413,23 @@ class VerseViewModel(
         _showFireAnimation.value = enabled
         viewModelScope.launch {
             SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, fontFamily = _fontFamily.value, lineHeight = _lineHeight.value, showFireAnimation = enabled))
+        }
+    }
+
+    fun captureSnapshot() {
+        val currentVerses = _detectedVerses.value
+        if (currentVerses.isEmpty()) return
+
+        val template = _selectedTemplate.value
+        viewModelScope.launch {
+            _isProcessing.value = true
+            try {
+                snapshotHandler.captureAndSave(currentVerses, template)
+            } catch (e: Exception) {
+                e.printStackTrace() // Logar erro
+            } finally {
+                _isProcessing.value = false
+            }
         }
     }
 }

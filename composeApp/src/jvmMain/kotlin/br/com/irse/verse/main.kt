@@ -56,6 +56,8 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.abs
 
+import br.com.irse.verse.platform.JvmSnapshotHandler
+
 fun main() = application {
     val fullWidth = 400.dp
     val miniSize = 64.dp
@@ -120,7 +122,9 @@ fun main() = application {
                 database.value = BibleDatabase(tempDbFile.absolutePath)
                 
                 withContext(Dispatchers.Main) {
-                    viewModel.value = VerseViewModel(parser.value!!, database.value!!)
+                    // Inicializa Handler de Snapshot
+                    val snapshotHandler = JvmSnapshotHandler()
+                    viewModel.value = VerseViewModel(parser.value!!, database.value!!, snapshotHandler)
                     isReady = true
                 }
             } catch (e: Exception) { e.printStackTrace() }
