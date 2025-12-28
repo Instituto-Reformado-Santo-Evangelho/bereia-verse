@@ -117,70 +117,69 @@ fun ContextControlZone(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp) // Altura fixa para ser uma zona clicável fácil
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        when (event.type) {
-                            PointerEventType.Enter -> isHovered = true
-                            PointerEventType.Exit -> isHovered = false
+            .height(48.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Zona de detecção restrita ao centro
+        Box(
+            modifier = Modifier
+                .width(160.dp) // Apenas a área central detecta o mouse
+                .fillMaxHeight()
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            when (event.type) {
+                                PointerEventType.Enter -> isHovered = true
+                                PointerEventType.Exit -> isHovered = false
+                            }
                         }
                     }
                 }
-            }
-            .pointerHoverIconHand(),
-        contentAlignment = Alignment.Center
-    ) {
-        // Indicador visual passivo (opcional, ex: linha sutil) quando não está hover
-        AnimatedVisibility(
-            visible = !isHovered,
-            enter = fadeIn(),
-            exit = fadeOut()
+                .pointerHoverIconHand(),
+            contentAlignment = Alignment.Center
         ) {
-             Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(iconColor.copy(alpha = 0.2f)))
-        }
-
-        // Controles Ativos (Hover)
-        AnimatedVisibility(
-            visible = isHovered,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Controles Ativos (Hover)
+            AnimatedVisibility(
+                visible = isHovered,
+                enter = fadeIn() + androidx.compose.animation.scaleIn(initialScale = 0.8f),
+                exit = fadeOut() + androidx.compose.animation.scaleOut(targetScale = 0.8f)
             ) {
-                // Botão Expandir
-                Surface(
-                    shape = CircleShape,
-                    color = iconColor.copy(alpha = 0.1f),
-                    modifier = Modifier.size(32.dp).clickable { onExpand() }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        androidx.compose.material3.Icon(
-                            imageVector = if (isTop) FeatherIcons.ChevronUp else FeatherIcons.ChevronDown,
-                            contentDescription = "Expandir",
-                            tint = iconColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                // Botão Recolher (se aplicável)
-                if (canRemove) {
+                    // Botão Expandir
                     Surface(
                         shape = CircleShape,
-                        color = iconColor.copy(alpha = 0.1f),
-                        modifier = Modifier.size(32.dp).clickable { onRemove() }
+                        color = iconColor.copy(alpha = 0.15f),
+                        modifier = Modifier.size(42.dp).clickable { onExpand() }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             androidx.compose.material3.Icon(
-                                imageVector = FeatherIcons.Minus,
-                                contentDescription = "Recolher",
-                                tint = iconColor, // Mesma cor, consistência
-                                modifier = Modifier.size(20.dp)
+                                imageVector = if (isTop) FeatherIcons.ChevronUp else FeatherIcons.ChevronDown,
+                                contentDescription = "Expandir",
+                                tint = iconColor,
+                                modifier = Modifier.size(26.dp)
                             )
+                        }
+                    }
+
+                    // Botão Recolher (se aplicável)
+                    if (canRemove) {
+                        Surface(
+                            shape = CircleShape,
+                            color = iconColor.copy(alpha = 0.15f),
+                            modifier = Modifier.size(42.dp).clickable { onRemove() }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = FeatherIcons.Minus,
+                                    contentDescription = "Recolher",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
                         }
                     }
                 }
