@@ -11,7 +11,9 @@ data class UserSettings(
     val fontSize: Int = 16,
     val fontFamily: String = "sans-serif",
     val lineHeight: Float = 1.4f,
-    val showFireAnimation: Boolean = true
+    val showFireAnimation: Boolean = true,
+    val animatedWindow: Boolean = true,
+    val signature: String = ""
 )
 
 object SettingsManager {

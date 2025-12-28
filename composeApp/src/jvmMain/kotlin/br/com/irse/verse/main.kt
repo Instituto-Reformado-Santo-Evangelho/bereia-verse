@@ -1,6 +1,9 @@
 package br.com.irse.verse
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,15 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,16 +33,19 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.isTraySupported
 import androidx.compose.ui.window.rememberWindowState
-import br.com.irse.verse.core.BibleDatabase
-import br.com.irse.verse.core.BibleParser
-import br.com.irse.verse.core.BibleRepository
-import br.com.irse.verse.core.BookMetaData
-import br.com.irse.verse.core.ClipboardMonitor
-import br.com.irse.verse.core.VerseViewModel
+import br.com.irse.verse.core.*
+import br.com.irse.verse.di.appModule
+import br.com.irse.verse.platform.JvmSnapshotHandler
+import br.com.irse.verse.platform.JvmGoogleDriveProvider
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.painterResource
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.java.KoinJavaComponent.get
+import org.koin.dsl.module
 import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
 import java.awt.GraphicsEnvironment
@@ -57,13 +55,15 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.abs
 
-import br.com.irse.verse.di.appModule
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.java.KoinJavaComponent.get
-import org.koin.dsl.module
-import br.com.irse.verse.core.SnapshotHandler
-import br.com.irse.verse.platform.JvmSnapshotHandler
+fun getActiveMonitorBounds(): Rectangle? {
+    return try {
+        val pointerInfo = MouseInfo.getPointerInfo()
+        val mousePoint = pointerInfo.location
+        val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        ge.screenDevices.firstOrNull { it.defaultConfiguration.bounds.contains(mousePoint) }?.defaultConfiguration?.bounds
+        ?: ge.defaultScreenDevice.defaultConfiguration.bounds
+    } catch (e: Exception) { e.printStackTrace(); null }
+}
 
 fun main() = application {
     val fullWidth = 400.dp
@@ -79,55 +79,83 @@ fun main() = application {
     var isVisible by remember { mutableStateOf(true) }
     var isMiniMode by remember { mutableStateOf(false) }
     var isReady by remember { mutableStateOf(false) }
+    var hasSetInitialPosition by remember { mutableStateOf(false) }
+    var currentScreenBounds by remember { mutableStateOf<Rectangle?>(null) }
+
+    // Gerenciamento de altura
+    var targetHeight by remember { mutableStateOf(400.dp) }
     
     // Dependencies via Koin
     val viewModel = remember { mutableStateOf<VerseViewModel?>(null) }
     
+    // Coletar a preferência do ViewModel
+    val isAnimatedWindow by if (viewModel.value != null) {
+        viewModel.value!!.animatedWindow.collectAsState()
+    } else {
+        remember { mutableStateOf(true) }
+    }
+
+    val animatedHeight by animateDpAsState(
+        targetValue = targetHeight,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "WindowHeightAnimation"
+    )
+
+    val finalHeight = if (isAnimatedWindow) animatedHeight else targetHeight
+
+    // Efeito de redimensionamento: Ajusta apenas Y se sair da tela, mantém X intacto
+    LaunchedEffect(finalHeight) {
+        if (!isMiniMode && isReady) {
+            val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return@LaunchedEffect
+            val currentX = state.position.x
+            val currentY = state.position.y.value
+            
+            var adjustedY = currentY
+            if (currentY + finalHeight.value > bounds.y + bounds.height - screenPadding) {
+                adjustedY = bounds.y + bounds.height - screenPadding - finalHeight.value
+            }
+            
+            state.position = WindowPosition(currentX, adjustedY.dp)
+            state.size = DpSize(fullWidth, finalHeight)
+        }
+    }
+    
     var currentWindow by remember { mutableStateOf<java.awt.Window?>(null) }
-    var currentScreenBounds by remember { mutableStateOf<Rectangle?>(null) }
     val icon = painterResource(Res.drawable.logo)
     val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
     val isWine = remember { System.getProperty("os.name").lowercase().contains("windows") && 
                             (System.getenv("WINEPREFIX") != null || System.getenv("WINELOADERNOEXEC") != null) }
 
-    fun getActiveMonitorBounds(): Rectangle? {
-        return try {
-            val pointerInfo = MouseInfo.getPointerInfo()
-            val mousePoint = pointerInfo.location
-            val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-            ge.screenDevices.firstOrNull { it.defaultConfiguration.bounds.contains(mousePoint) }?.defaultConfiguration?.bounds
-            ?: ge.defaultScreenDevice.defaultConfiguration.bounds
-        } catch (e: Exception) { e.printStackTrace(); null }
-    }
-
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
         val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return
-        val anchorX = bounds.x + bounds.width - screenPadding
-        val width = if (mini) miniSize.value.toInt() else fullWidth.value.toInt()
-        val newX = anchorX - width
-        val newY = if (mini) bounds.y + (bounds.height / 2) - (miniSize.value.toInt() / 2) else bounds.y + screenPadding
+        val targetWidth = if (mini) miniSize else fullWidth
+        val h = if (mini) miniSize else (height ?: targetHeight).coerceAtLeast(400.dp)
         
-        state.position = WindowPosition(newX.dp, newY.dp)
+        if (mini) {
+            val newX = bounds.x + bounds.width - screenPadding - miniSize.value.toInt()
+            val newY = bounds.y + (bounds.height / 2) - (miniSize.value.toInt() / 2)
+            state.position = WindowPosition(newX.dp, newY.dp)
+        } else {
+            val newX = bounds.x + bounds.width - screenPadding - targetWidth.value.toInt()
+            val newY = bounds.y + screenPadding
+            state.position = WindowPosition(newX.dp, newY.dp)
+            hasSetInitialPosition = true
+        }
         
-        val targetHeight = if (mini) miniSize else (height ?: state.size.height).coerceAtLeast(400.dp)
-        state.size = DpSize(if (mini) miniSize else fullWidth, targetHeight)
+        state.size = DpSize(targetWidth, h)
     }
 
     // Initialization
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
-                // Load Resources
                 val mappingBytes = Res.readBytes("files/bible_mapping.json")
                 val mapping = Json.decodeFromString<Map<String, BookMetaData>>(mappingBytes.decodeToString())
-                
-                // Prepara DB File
                 val dbBytes = Res.readBytes("files/bible.sqlite")
                 val tempDbFile = File.createTempFile("bible_verse_db", ".sqlite").apply { deleteOnExit() }
                 FileOutputStream(tempDbFile).use { it.write(dbBytes) }
                 
                 withContext(Dispatchers.Main) {
-                    // Start Koin with Platform Module
                     startKoin {
                         modules(
                             appModule,
@@ -135,58 +163,63 @@ fun main() = application {
                                 single { mapping }
                                 single { BibleDatabase(tempDbFile.absolutePath) }
                                 single<SnapshotHandler> { JvmSnapshotHandler() }
+                                single<CloudSyncProvider> { JvmGoogleDriveProvider() }
                             }
                         )
                     }
                     
-                    // Inject ViewModel
-                    viewModel.value = get(VerseViewModel::class.java)
+                    val vm: VerseViewModel = get(VerseViewModel::class.java)
+                    viewModel.value = vm
+                    
+                    val syncManager: SyncManager = get(SyncManager::class.java)
+                    syncManager.startAutoSync()
+                    
                     isReady = true
                 }
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
-    
-    // Cleanup Koin
-    DisposableEffect(Unit) {
-        onDispose { stopKoin() }
-    }
 
-    // Clipboard Monitor
     LaunchedEffect(isReady) {
         if (isReady && viewModel.value != null) {
             withContext(Dispatchers.IO) {
-                val lastText = ""
+                var lastText = ""
                 ClipboardMonitor.textFlow().collect { text ->
                     if (text != lastText) {
                         viewModel.value!!.processQuery(text, isExternal = true)
+                        lastText = text
                     }
                 }
             }
         }
     }
 
-    // Window Management based on ViewModel State
     if (viewModel.value != null) {
         val detectedVerses by viewModel.value!!.detectedVerses.collectAsState()
         val isInternalUpdate by viewModel.value!!.isInternalUpdate.collectAsState()
         
         LaunchedEffect(detectedVerses) {
             if (detectedVerses.isNotEmpty()) {
-                // Para Hyprland/Wayland, forçamos o ciclo Hide->Show apenas se conteúdo mudou externamente.
-                // Isso garante que a janela 'caminhe' para o workspace atual se for uma nova cópia,
-                // mas evita o piscar incômodo se o usuário estiver clicando no histórico/pesquisa.
                 if (isLinux && isVisible && !isInternalUpdate) {
                     isVisible = false
-                    kotlinx.coroutines.delay(150) 
+                    delay(150) 
                 }
-
-                currentScreenBounds = getActiveMonitorBounds()
-                applyAnchorPosition(mini = false) 
+                
+                val newBounds = getActiveMonitorBounds()
+                
+                // SÓ RE-ANCORA SE:
+                // Já tínhamos um monitor salvo E o novo é diferente (mudança de workspace/monitor)
+                if (currentScreenBounds != null && newBounds != currentScreenBounds) {
+                    currentScreenBounds = newBounds
+                    applyAnchorPosition(mini = false)
+                } else if (currentScreenBounds == null) {
+                    // Primeira detecção: apenas salva onde estamos, sem forçar o pulo
+                    currentScreenBounds = newBounds
+                    hasSetInitialPosition = true // Consideramos a posição atual como a "inicial"
+                }
                 
                 isVisible = true
                 isMiniMode = false
-                
                 currentWindow?.let { win ->
                     win.toFront()
                     win.requestFocus()
@@ -195,12 +228,11 @@ fun main() = application {
         }
     }
 
-    LaunchedEffect(isMiniMode) {
-        if (isReady) applyAnchorPosition(mini = isMiniMode)
-    }
+    LaunchedEffect(isMiniMode) { if (isReady) applyAnchorPosition(mini = isMiniMode) }
+
+    DisposableEffect(Unit) { onDispose { stopKoin() } }
 
     val actualIsTraySupported = isTraySupported && !isLinux && !isWine
-
     if (actualIsTraySupported) {
         Tray(icon = icon, tooltip = "Bereia Verse", onAction = { isVisible = !isVisible }, menu = {
             Item("Exibir/Ocultar", onClick = { isVisible = !isVisible })
@@ -210,9 +242,7 @@ fun main() = application {
     }
 
     Window(
-        onCloseRequest = { 
-            exitApplication() // Win + C ou fechar via gerenciador de janelas mata o processo
-        },
+        onCloseRequest = { exitApplication() },
         title = "Bereia Verse",
         state = state,
         icon = icon,
@@ -220,11 +250,7 @@ fun main() = application {
         undecorated = true, transparent = true, alwaysOnTop = true, resizable = false
     ) {
         SideEffect { currentWindow = window }
-        
-        // Fix para Windows: Força a transparência da janela nativa para evitar "orelhas" pretas/brancas
-        LaunchedEffect(Unit) {
-            window.setBackground(java.awt.Color(0, 0, 0, 0))
-        }
+        LaunchedEffect(Unit) { window.setBackground(java.awt.Color(0, 0, 0, 0)) }
         
         AnimatedContent(
             targetState = isMiniMode,
@@ -239,19 +265,13 @@ fun main() = application {
                         onClose = { if (actualIsTraySupported) isVisible = false else if (isWine) isVisible = false else isMiniMode = true },
                         onHeightRequest = { height ->
                             if (!isMiniMode) {
-                                // Apenas atualiza a altura sem recalcular a posição da âncora a cada frame da animação
-                                // Isso evita o efeito de 'piscar' causado pelo reposicionamento forçado da janela
-                                if (abs(state.size.height.value - height.value) > 0.5) {
-                                    state.size = DpSize(fullWidth, height.coerceAtLeast(400.dp))
-                                }
+                                targetHeight = height
                             }
                         }
                     )
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        MaterialTheme {
-                            CircularProgressIndicator(color = Color(0xFFFFC107))
-                        }
+                        MaterialTheme { CircularProgressIndicator(color = Color(0xFFFFC107)) }
                     }
                 }
             }

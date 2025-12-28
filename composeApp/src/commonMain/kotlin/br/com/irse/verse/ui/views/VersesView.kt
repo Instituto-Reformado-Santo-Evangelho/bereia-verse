@@ -1,22 +1,17 @@
 package br.com.irse.verse.ui.views
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddComment
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,18 +26,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.irse.verse.ui.theme.VerseColors
-import br.com.irse.verse.core.HtmlTextFormatter
-import br.com.irse.verse.core.Strings
-import br.com.irse.verse.core.VerseRequest
+import br.com.irse.verse.core.*
 import br.com.irse.verse.ui.pointerHoverIconHand
+import br.com.irse.verse.ui.theme.VerseColors
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.ChevronUp
 import compose.icons.feathericons.Minus
+import kotlinx.coroutines.delay
 
 @Composable
 fun VersesView(
+    viewModel: VerseViewModel,
     detectedVerses: List<Pair<VerseRequest, String?>>, 
     uniqueBooks: List<String>, 
     textColor: Color, 
@@ -52,54 +47,97 @@ fun VersesView(
     onLoadContext: (Int) -> Unit = {},
     onRemoveContext: (Int) -> Unit = {}
 ) {
-    LazyColumn(
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp), 
-        verticalArrangement = Arrangement.spacedBy(16.dp), 
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Zona Superior (Anterior)
-        item {
-            ContextControlZone(
-                isTop = true,
-                canRemove = detectedVerses.size > 1,
-                onExpand = { onLoadContext(-1) },
-                onRemove = { onRemoveContext(-1) },
-                iconColor = VerseColors.PrimaryAmber
-            )
-        }
+    val listState = rememberLazyListState()
+    val notes by viewModel.notes.collectAsState()
+    val isNoteEditorOpen by viewModel.isNoteEditorOpen.collectAsState()
+    val editingVerseRequest by viewModel.editingVerseRequest.collectAsState()
+    val editingNote by viewModel.editingNote.collectAsState()
+    
+    var previousLastId by remember { mutableStateOf<Int?>(null) }
 
-        var lastBook = ""
-        detectedVerses.forEach { (req, content) ->
-            if (uniqueBooks.size > 1 && req.book != lastBook) {
-                item {
-                    Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
-                        Text(
-                            text = req.book.uppercase(), 
-                            style = MaterialTheme.typography.labelLarge, 
-                            fontWeight = FontWeight.ExtraBold, 
-                            color = VerseColors.PrimaryAmber
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(top = 4.dp), 
-                            thickness = 1.dp, 
-                            color = VerseColors.PrimaryAmber.copy(alpha = 0.3f)
-                        )
-                    }
-                }
-                lastBook = req.book
+    LaunchedEffect(detectedVerses) {
+        val currentLastId = detectedVerses.lastOrNull()?.first?.id
+        // Auto-scroll suave apenas se o fim mudou (expansão inferior)
+        if (previousLastId != null && currentLastId != previousLastId) {
+            delay(100) // Pequeno delay para o Compose processar os novos itens no layout
+            listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+        }
+        previousLastId = currentLastId
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp), 
+            verticalArrangement = Arrangement.spacedBy(16.dp), 
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Zona Superior (Anterior)
+            item(key = "top_control") {
+                ContextControlZone(
+                    isTop = true, 
+                    canRemove = detectedVerses.size > 1, 
+                    onExpand = { onLoadContext(-1) }, 
+                    onRemove = { onRemoveContext(-1) }, 
+                    iconColor = VerseColors.PrimaryAmber
+                )
             }
-            item { ContinuousVerseItem(req, content, textColor, fontSize, fontFamily, lineHeight) }
+
+            var lastBook = ""
+            detectedVerses.forEach { (req, content) ->
+                if (uniqueBooks.size > 1 && req.book != lastBook) {
+                    item(key = "header_${req.book}_${req.id}") {
+                        Column {
+                            Text(text = req.book.uppercase(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, color = VerseColors.PrimaryAmber)
+                            HorizontalDivider(modifier = Modifier.padding(top = 4.dp), thickness = 1.dp, color = VerseColors.PrimaryAmber.copy(alpha = 0.3f))
+                        }
+                    }
+                    lastBook = req.book
+                }
+                item(key = "verse_${req.id}") {
+                    val note = notes.find { it.verseId == req.id }
+                    ContinuousVerseItem(
+                        request = req, content = content, textColor = textColor, fontSize = fontSize, fontFamily = fontFamily, lineHeight = lineHeight,
+                        hasNote = note != null,
+                        onNoteClick = {
+                            viewModel.openNoteEditor(request = req, note = note)
+                        }
+                    )
+                }
+            }
+
+            // Zona Inferior (Próximo)
+            item(key = "bottom_control") {
+                 ContextControlZone(
+                    isTop = false, 
+                    canRemove = detectedVerses.size > 1, 
+                    onExpand = { onLoadContext(1) }, 
+                    onRemove = { onRemoveContext(1) }, 
+                    iconColor = VerseColors.PrimaryAmber
+                )
+            }
         }
 
-        // Zona Inferior (Próximo)
-        item {
-             ContextControlZone(
-                isTop = false,
-                canRemove = detectedVerses.size > 1,
-                onExpand = { onLoadContext(1) },
-                onRemove = { onRemoveContext(1) },
-                iconColor = VerseColors.PrimaryAmber
-            )
+        // Editor integrado persistente
+        AnimatedVisibility(
+            visible = isNoteEditorOpen,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            editingVerseRequest?.let { req ->
+                InlineNoteEditor(
+                    initialText = editingNote?.content ?: "",
+                    reference = "${req.book} ${req.chapter}:${req.verse}",
+                    textColor = textColor,
+                    fontFamily = fontFamily,
+                    onSave = { content ->
+                        viewModel.saveNote(req.id, content)
+                        viewModel.closeNoteEditor()
+                    },
+                    onDismiss = { viewModel.closeNoteEditor() }
+                )
+            }
         }
     }
 }
@@ -150,36 +188,30 @@ fun ContextControlZone(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Botão Expandir
-                    Surface(
-                        shape = CircleShape,
-                        color = iconColor.copy(alpha = 0.15f),
-                        modifier = Modifier.size(42.dp).clickable { onExpand() }
+                    IconButton(
+                        onClick = onExpand,
+                        modifier = Modifier.size(42.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            androidx.compose.material3.Icon(
-                                imageVector = if (isTop) FeatherIcons.ChevronUp else FeatherIcons.ChevronDown,
-                                contentDescription = "Expandir",
-                                tint = iconColor,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
+                        Icon(
+                            imageVector = if (isTop) FeatherIcons.ChevronUp else FeatherIcons.ChevronDown,
+                            contentDescription = "Expandir",
+                            tint = iconColor,
+                            modifier = Modifier.size(26.dp)
+                        )
                     }
 
                     // Botão Recolher (se aplicável)
                     if (canRemove) {
-                        Surface(
-                            shape = CircleShape,
-                            color = iconColor.copy(alpha = 0.15f),
-                            modifier = Modifier.size(42.dp).clickable { onRemove() }
+                        IconButton(
+                            onClick = onRemove,
+                            modifier = Modifier.size(42.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = FeatherIcons.Minus,
-                                    contentDescription = "Recolher",
-                                    tint = iconColor,
-                                    modifier = Modifier.size(26.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = FeatherIcons.Minus,
+                                contentDescription = "Recolher",
+                                tint = iconColor,
+                                modifier = Modifier.size(26.dp)
+                            )
                         }
                     }
                 }
@@ -189,42 +221,18 @@ fun ContextControlZone(
 }
 
 @Composable
-fun ContinuousVerseItem(
-    request: VerseRequest, 
-    content: String?, 
-    textColor: Color, 
-    fontSize: Int = 16, 
-    fontFamily: FontFamily = FontFamily.SansSerif,
-    lineHeight: Float = 1.4f
-) {
-    val annotatedString = buildAnnotatedString {
-        withStyle(
-            style = SpanStyle(
-                color = VerseColors.PrimaryAmber, 
-                fontWeight = FontWeight.Bold, 
-                fontSize = (fontSize - 2).sp
-            )
-        ) { 
-            append("${request.chapter}:${request.verse}  ") 
-        }
-        
-        if (content != null) {
-            val formatted = remember(content) { HtmlTextFormatter.format(content) }
-            append(formatted)
-        } else {
-            withStyle(style = SpanStyle(fontStyle = FontStyle.Italic, color = Color.Red)) { 
-                append(Strings.TEXT_NOT_AVAILABLE) 
+fun ContinuousVerseItem(request: VerseRequest, content: String?, textColor: Color, fontSize: Int = 16, fontFamily: FontFamily = FontFamily.SansSerif, lineHeight: Float = 1.4f, hasNote: Boolean = false, onNoteClick: () -> Unit = {}) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        Column(modifier = Modifier.weight(1f)) {
+            val annotatedString = buildAnnotatedString {
+                withStyle(style = SpanStyle(color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold, fontSize = (fontSize - 2).sp)) { append("${request.chapter}:${request.verse}  ") }
+                if (content != null) { append(remember(content) { HtmlTextFormatter.format(content) }) }
+                else { withStyle(style = SpanStyle(fontStyle = FontStyle.Italic, color = Color.Red)) { append(Strings.TEXT_NOT_AVAILABLE) } }
             }
+            Text(text = annotatedString, style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize.sp, fontFamily = fontFamily), lineHeight = (fontSize * lineHeight).sp, color = textColor)
+        }
+        IconButton(onClick = onNoteClick, modifier = Modifier.size(32.dp).pointerHoverIconHand()) {
+            Icon(imageVector = if (hasNote) Icons.Default.EditNote else Icons.Default.AddComment, contentDescription = null, tint = if (hasNote) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.2f), modifier = Modifier.size(20.dp))
         }
     }
-    
-    Text(
-        text = annotatedString, 
-        style = MaterialTheme.typography.bodyLarge.copy(
-            fontSize = fontSize.sp,
-            fontFamily = fontFamily
-        ), 
-        lineHeight = (fontSize * lineHeight).sp, 
-        color = textColor
-    )
 }

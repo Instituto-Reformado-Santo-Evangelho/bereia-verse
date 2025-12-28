@@ -24,6 +24,8 @@ object Strings {
     const val LINE_HEIGHT = "Espaçamento entre linhas"
     const val FIRE_ANIMATION = "Animação de Fogo"
     const val FIRE_ANIMATION_DESC = "Exibir chamas nos estados vazios"
+    const val WINDOW_ANIMATION = "Animações de Janela"
+    const val WINDOW_ANIMATION_DESC = "Suaviza o redimensionamento (Pode causar lentidão no Linux)"
     const val FONT_FAMILY = "Estilo da Fonte"
     const val SANS_SERIF = "Moderna (Sans)"
     const val SERIF = "Clássica (Serif)"

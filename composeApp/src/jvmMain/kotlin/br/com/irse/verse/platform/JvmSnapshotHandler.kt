@@ -79,6 +79,112 @@ class JvmSnapshotHandler : SnapshotHandler {
         }
     }
 
+    override suspend fun captureNoteAndSave(
+        content: String,
+        reference: String?,
+        signature: String?,
+        template: VerseViewModel.SnapshotTemplate
+    ) {
+        withContext(Dispatchers.IO) {
+            val width = 1080
+            val height = 1080
+            
+            val scene = ImageComposeScene(
+                width = width,
+                height = height,
+                density = Density(2f),
+                coroutineContext = Dispatchers.Unconfined
+            )
+
+            scene.setContent {
+                NoteSnapshotLayout(content, reference, signature, template)
+            }
+
+            val image = scene.render()
+            val data = image.encodeToData(EncodedImageFormat.PNG) ?: return@withContext
+
+            val fileName = "note_snapshot_${System.currentTimeMillis()}.png"
+            val dialog = FileDialog(null as Frame?, "Salvar Nota como Imagem", FileDialog.SAVE)
+            dialog.file = fileName
+            dialog.isVisible = true
+            
+            if (dialog.directory != null && dialog.file != null) {
+                val file = File(dialog.directory, dialog.file)
+                file.writeBytes(data.bytes)
+            }
+        }
+    }
+
+    @Composable
+    fun NoteSnapshotLayout(
+        content: String,
+        reference: String?,
+        signature: String?,
+        template: VerseViewModel.SnapshotTemplate
+    ) {
+        val fontFamily = when (template.fontFamilyName) {
+            "Serif" -> FontFamily.Serif
+            "Monospace" -> FontFamily.Monospace
+            "Cursive" -> FontFamily.Cursive
+            else -> FontFamily.SansSerif
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(template.backgroundBrush)
+                .padding(80.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (!reference.isNullOrBlank()) {
+                    Text(
+                        text = reference.uppercase(),
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 24.sp,
+                            fontFamily = fontFamily,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 2.sp
+                        ),
+                        color = template.contentColor.copy(alpha = 0.6f),
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+
+                Text(
+                    text = content,
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontSize = 36.sp,
+                        lineHeight = 52.sp,
+                        fontFamily = fontFamily,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    color = template.contentColor,
+                    textAlign = TextAlign.Start
+                )
+
+                if (!signature.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(48.dp))
+                    Text(
+                        text = signature,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontSize = 22.sp,
+                            fontFamily = fontFamily,
+                            fontStyle = FontStyle.Italic,
+                            fontWeight = FontWeight.Light
+                        ),
+                        color = template.contentColor.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Start
+                    )
+                }
+            }
+        }
+    }
+
     @Composable
     fun SnapshotLayout(
         verses: List<Pair<VerseRequest, String?>>,

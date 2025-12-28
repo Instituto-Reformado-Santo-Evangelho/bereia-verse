@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,7 +48,7 @@ import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
 
 // App tabs
-enum class AppTab { VERSES, HISTORY, SEARCH, ABOUT, SETTINGS }
+enum class AppTab { VERSES, HISTORY, SEARCH, NOTES, ABOUT, SETTINGS }
 
 @OptIn(ExperimentalResourceApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -67,6 +68,7 @@ fun App(
     val canGoBack by viewModel.canGoBack.collectAsState()
     val canGoForward by viewModel.canGoForward.collectAsState()
     val errorState by viewModel.errorState.collectAsState()
+    val isNoteEditorOpen by viewModel.isNoteEditorOpen.collectAsState()
 
     val clipboard = LocalClipboardManager.current
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
@@ -75,6 +77,7 @@ fun App(
     val titleDisplay = when (currentTab) {
         AppTab.HISTORY -> Strings.HISTORY_TAB
         AppTab.SEARCH -> Strings.SEARCH_TAB
+        AppTab.NOTES -> "Anotações"
         AppTab.ABOUT -> Strings.ABOUT_TAB
         AppTab.SETTINGS -> Strings.SETTINGS_TAB
         AppTab.VERSES -> if (uniqueBooks.size == 1) uniqueBooks.first() else if (uniqueBooks.isEmpty()) Strings.VERSES_TAB else "${uniqueBooks.size} ${Strings.BOOKS_DETECTED}"
@@ -93,8 +96,9 @@ fun App(
         else -> androidx.compose.ui.text.font.FontFamily.SansSerif
     }
 
-    val targetHeight = remember(detectedVerses, currentTab) {
-        when(currentTab) {
+    val targetHeight = remember(detectedVerses, currentTab, isNoteEditorOpen) {
+        if (isNoteEditorOpen) 600.dp
+        else when(currentTab) {
             AppTab.VERSES -> if (detectedVerses.isEmpty()) 350.dp else (150.dp + (130.dp * detectedVerses.size)).coerceIn(400.dp, 600.dp)
             else -> 600.dp 
         }
@@ -126,6 +130,7 @@ fun App(
                             Key.M -> if (isCtrl) { onClose(); true } else false
                             Key.F -> if (isCtrl) { currentTab = AppTab.SEARCH; true } else false
                             Key.H -> if (isCtrl) { currentTab = AppTab.HISTORY; true } else false
+                            Key.N -> if (isCtrl) { currentTab = AppTab.NOTES; true } else false
                             Key.V -> if (isCtrl) { currentTab = AppTab.VERSES; true } else false
                             Key.S -> if (isCtrl) { currentTab = AppTab.SETTINGS; true } else false
                             Key.I -> if (isCtrl) { currentTab = AppTab.ABOUT; true } else false
@@ -198,6 +203,7 @@ fun App(
                         when (currentTab) {
                             AppTab.HISTORY -> HistoryView(history = history, onSelect = { viewModel.processQuery(it); currentTab = AppTab.VERSES }, textColor = textColor, fontSize = fontSize, fontFamily = globalFontFamily)
                             AppTab.SEARCH -> SearchView(viewModel = viewModel, onVerseSelect = { viewModel.selectVerse(it); currentTab = AppTab.VERSES }, textColor = textColor, fontSize = fontSize, fontFamily = globalFontFamily)
+                            AppTab.NOTES -> NotesView(viewModel, textColor)
                             AppTab.ABOUT -> AboutView(textColor)
                             AppTab.SETTINGS -> SettingsView(viewModel, textColor)
                             AppTab.VERSES -> {
@@ -214,7 +220,17 @@ fun App(
                                         }
                                     }
                                 } else {
-                                    VersesView(detectedVerses, uniqueBooks, textColor, fontSize, globalFontFamily, lineHeight, onLoadContext = viewModel::loadContext, onRemoveContext = viewModel::removeContext)
+                                    VersesView(
+                                        viewModel = viewModel,
+                                        detectedVerses = detectedVerses, 
+                                        uniqueBooks = uniqueBooks, 
+                                        textColor = textColor, 
+                                        fontSize = fontSize, 
+                                        fontFamily = globalFontFamily, 
+                                        lineHeight = lineHeight, 
+                                        onLoadContext = viewModel::loadContext, 
+                                        onRemoveContext = viewModel::removeContext
+                                    )
                                 }
                             }
                         }
@@ -233,6 +249,11 @@ fun App(
                                 Box(modifier = Modifier.padding(8.dp)) { HistoryIcon(color = if (currentTab == AppTab.HISTORY || isHistoryHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
                             }
 
+                            var isNotesHovered by remember { mutableStateOf(false) }
+                            Surface(color = if (currentTab == AppTab.NOTES || isNotesHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isNotesHovered = true }, onExit = { isNotesHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.NOTES }) {
+                                Box(modifier = Modifier.padding(8.dp)) { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = if (currentTab == AppTab.NOTES || isNotesHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) }
+                            }
+
                             var isSettingsHovered by remember { mutableStateOf(false) }
                             Surface(color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isSettingsHovered = true }, onExit = { isSettingsHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.SETTINGS }) {
                                 Box(modifier = Modifier.padding(8.dp)) { SettingsIcon(color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
@@ -244,16 +265,27 @@ fun App(
                             }
                         }
                         
-                        if (currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) {
+                        val showCamera = (currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) || isNoteEditorOpen
+                        if (showCamera) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 var isCameraHovered by remember { mutableStateOf(false) }
-                                Surface(color = if (isCameraHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isCameraHovered = true }, onExit = { isCameraHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { viewModel.captureSnapshot() }) {
+                                Surface(
+                                    color = if (isCameraHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, 
+                                    shape = RoundedCornerShape(8.dp), 
+                                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isCameraHovered = true }, onExit = { isCameraHovered = false })
+                                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { 
+                                            if (isNoteEditorOpen) viewModel.captureNoteSnapshot() else viewModel.captureSnapshot()
+                                        }
+                                ) {
                                     Box(modifier = Modifier.padding(8.dp)) { Icon(imageVector = FeatherIcons.Camera, contentDescription = "Salvar Imagem", tint = if (isCameraHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) }
                                 }
-                                Spacer(modifier = Modifier.width(4.dp))
-                                var isCopyHovered by remember { mutableStateOf(false) }
-                                Surface(color = if (isCopyHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isCopyHovered = true }, onExit = { isCopyHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { val fullText = detectedVerses.joinToString("\n\n") { (req, content) -> val cleanContent = content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""; "$cleanContent (${req.book} ${req.chapter}:${req.verse} - ACF)" }; clipboard.setText(AnnotatedString(fullText)); isCopied = true }) {
-                                    Box(modifier = Modifier.padding(8.dp)) { if (isCopied) CheckIcon(color = VerseColors.SuccessGreen) else CopyIcon(color = if (isCopyHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
+                                
+                                if (currentTab == AppTab.VERSES && !isNoteEditorOpen) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    var isCopyHovered by remember { mutableStateOf(false) }
+                                    Surface(color = if (isCopyHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isCopyHovered = true }, onExit = { isCopyHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { val fullText = detectedVerses.joinToString("\n\n") { (req, content) -> val cleanContent = content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""; "$cleanContent (${req.book} ${req.chapter}:${req.verse} - ACF)" }; clipboard.setText(AnnotatedString(fullText)); isCopied = true }) {
+                                        Box(modifier = Modifier.padding(8.dp)) { if (isCopied) CheckIcon(color = VerseColors.SuccessGreen) else CopyIcon(color = if (isCopyHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
+                                    }
                                 }
                             }
                         }

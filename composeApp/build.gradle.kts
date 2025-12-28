@@ -61,6 +61,11 @@ kotlin {
             
             implementation(libs.kotlinx.coroutinesSwing)
             implementation("org.xerial:sqlite-jdbc:3.51.1.0")
+
+            // Google Drive JVM
+            implementation("com.google.api-client:google-api-client:2.2.0")
+            implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
+            implementation("com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0")
         }
     }
 }
@@ -71,6 +76,10 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Corrigir conflitos de recursos do Google Client
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE*"
+            excludes += "META-INF/NOTICE*"
         }
     }
     buildTypes {

@@ -11,6 +11,10 @@ import br.com.irse.verse.core.SettingsRepository
 import br.com.irse.verse.core.SearchUseCase
 import br.com.irse.verse.core.HistoryRepository
 import br.com.irse.verse.core.CoroutineDispatchers
+import br.com.irse.verse.core.NotesRepository
+import br.com.irse.verse.core.LocalNotesRepository
+import br.com.irse.verse.core.SyncManager
+import br.com.irse.verse.core.CloudSyncProvider
 
 val appModule = module {
     // Repository expects Map<String, BookMetaData> to be provided
@@ -21,8 +25,12 @@ val appModule = module {
     
     single { SettingsRepository() }
     single { HistoryRepository() }
+    single<NotesRepository> { LocalNotesRepository() }
     single { SearchUseCase(get(), get()) }
     single { CoroutineDispatchers() }
+    
+    // SyncManager - cloudProvider must be provided by platform
+    single { SyncManager(get(), getOrNull(), get()) }
     
     // ViewModel expects Parser, Database, and SnapshotHandler
     // Database and SnapshotHandler must be provided by the platform module
@@ -34,6 +42,8 @@ val appModule = module {
             settingsRepository = get(),
             searchUseCase = get(),
             historyRepository = get(),
+            notesRepository = get(),
+            syncManager = get(),
             dispatchers = get()
         )
     }

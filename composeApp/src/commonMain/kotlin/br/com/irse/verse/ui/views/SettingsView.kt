@@ -16,17 +16,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.irse.verse.core.Strings
@@ -34,309 +33,186 @@ import br.com.irse.verse.core.VerseViewModel
 import br.com.irse.verse.ui.pointerHoverIconHand
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
     val fontSize by viewModel.fontSize.collectAsState()
     val currentFontFamily by viewModel.fontFamily.collectAsState()
     val lineHeight by viewModel.lineHeight.collectAsState()
     val selectedTemplate by viewModel.selectedTemplate.collectAsState()
+    val showFireAnimation by viewModel.showFireAnimation.collectAsState()
+    val animatedWindow by viewModel.animatedWindow.collectAsState()
+    val signature by viewModel.signature.collectAsState()
+
+    // TextFieldValue para evitar o bug do cursor
+    var signatureValue by remember(signature) { 
+        mutableStateOf(TextFieldValue(text = signature, selection = TextRange(signature.length))) 
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), 
+        modifier = Modifier.fillMaxSize().padding(20.dp).verticalScroll(rememberScrollState()), 
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Font Family
-        Column {
-            Text(
-                Strings.FONT_FAMILY, 
-                style = MaterialTheme.typography.titleSmall, 
-                color = textColor,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            val fontOptions = listOf(
-                "sans-serif" to Strings.SANS_SERIF,
-                "serif" to Strings.SERIF,
-                "monospace" to Strings.MONOSPACE,
-                "cursive" to Strings.CURSIVE
-            )
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                fontOptions.forEach { (key, label) ->
-                    val isSelected = currentFontFamily == key
-                    Surface(
-                        onClick = { viewModel.updateFontFamily(key) },
-                        selected = isSelected,
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) VerseColors.PrimaryAmber.copy(alpha = 0.15f) else textColor.copy(alpha = 0.03f),
-                        border = BorderStroke(1.dp, if (isSelected) VerseColors.PrimaryAmber else Color.Transparent),
-                        modifier = Modifier.fillMaxWidth().pointerHoverIconHand()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontFamily = when (key) {
-                                        "serif" -> FontFamily.Serif
-                                        "monospace" -> FontFamily.Monospace
-                                        "cursive" -> FontFamily.Cursive
-                                        else -> FontFamily.SansSerif
-                                    }
-                                ),
-                                color = if (isSelected) VerseColors.PrimaryAmber else textColor
-                            )
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = VerseColors.PrimaryAmber,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Fire Animation Toggle
-        val showFireAnimation by viewModel.showFireAnimation.collectAsState()
-        Surface(
-            modifier = Modifier.fillMaxWidth().pointerHoverIconHand(),
-            color = textColor.copy(alpha = 0.03f),
-            shape = RoundedCornerShape(12.dp),
-            onClick = { viewModel.updateShowFireAnimation(!showFireAnimation) }
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        Strings.FIRE_ANIMATION, 
-                        style = MaterialTheme.typography.bodyMedium, 
-                        fontWeight = FontWeight.Bold, 
-                        color = textColor
-                    )
-                    Text(
-                        Strings.FIRE_ANIMATION_DESC, 
-                        style = MaterialTheme.typography.bodySmall, 
-                        color = textColor.copy(alpha = 0.6f)
-                    )
-                }
-                Switch(
-                    checked = showFireAnimation,
-                    onCheckedChange = { viewModel.updateShowFireAnimation(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = VerseColors.PrimaryAmber,
-                        checkedTrackColor = VerseColors.PrimaryAmber.copy(alpha = 0.5f),
-                        uncheckedThumbColor = textColor.copy(alpha = 0.4f),
-                        uncheckedTrackColor = textColor.copy(alpha = 0.1f)
-                    )
-                )
-            }
-        }
-
-        // Font Size
-        Column {
-            Text(
-                Strings.FONT_SIZE, 
-                style = MaterialTheme.typography.titleSmall, 
-                color = textColor,
-                fontWeight = FontWeight.Bold
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically, 
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Slider(
-                    value = fontSize.toFloat(),
-                    onValueChange = { viewModel.updateFontSize(it.toInt()) },
-                    valueRange = 12f..32f,
-                    modifier = Modifier.weight(1f).pointerHoverIconHand(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = VerseColors.PrimaryAmber, 
-                        activeTrackColor = VerseColors.PrimaryAmber
-                    )
-                )
-                Text(
-                    "${fontSize}px", 
-                    style = MaterialTheme.typography.bodyMedium, 
-                    fontWeight = FontWeight.Bold, 
-                    color = textColor
-                )
-            }
-        }
-
-        // Line Height
-        Column {
-            Text(
-                Strings.LINE_HEIGHT, 
-                style = MaterialTheme.typography.titleSmall, 
-                color = textColor,
-                fontWeight = FontWeight.Bold
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically, 
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Slider(
-                    value = lineHeight,
-                    onValueChange = { viewModel.updateLineHeight(it) },
-                    valueRange = 1.0f..2.5f,
-                    modifier = Modifier.weight(1f).pointerHoverIconHand(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = VerseColors.PrimaryAmber, 
-                        activeTrackColor = VerseColors.PrimaryAmber
-                    )
-                )
-                Text(
-                    String.format("%.1fx", lineHeight),
-                    style = MaterialTheme.typography.bodyMedium, 
-                    fontWeight = FontWeight.Bold, 
-                    color = textColor
-                )
-            }
-        }
-
-        // Preview
-        Surface(
-            modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
-            color = textColor.copy(alpha = 0.05f),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Box(modifier = Modifier.padding(16.dp), contentAlignment = Alignment.Center) {
-                val previewFontFamily = when (currentFontFamily) {
-                    "serif" -> FontFamily.Serif
-                    "monospace" -> FontFamily.Monospace
-                    "cursive" -> FontFamily.Cursive
-                    else -> FontFamily.SansSerif
-                }
-                Text(
-                    "No princípio criou Deus os céus e a terra. E a terra era sem forma e vazia; e havia trevas sobre a face do abismo; e o Espírito de Deus se movia sobre a face das águas.", 
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontSize = fontSize.sp,
-                        fontFamily = previewFontFamily,
-                        lineHeight = (fontSize * lineHeight).sp
-                    ),
-                    color = textColor,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
-        }
-
-        // Snapshot Template Selector
-        Column {
-            Text(
-                "Modelo de Compartilhamento", 
-                style = MaterialTheme.typography.titleSmall,
-                color = textColor,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            val listState = rememberLazyListState()
-            val coroutineScope = rememberCoroutineScope()
-
-            LazyRow(
-                state = listState,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp)
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                if (event.type == PointerEventType.Scroll) {
-                                    val delta = event.changes.first().scrollDelta
-                                    // Bloquear scroll vertical do pai
-                                    event.changes.forEach { it.consume() }
-                                    
-                                    val scrollAmount = delta.y * 30 
-                                    coroutineScope.launch {
-                                        listState.scrollBy(scrollAmount)
-                                    }
-                                }
-                            }
-                        }
-                    }
-            ) {
-                items(viewModel.templatesList) { template ->
-                    val isSelected = selectedTemplate.id == template.id
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .width(120.dp)
-                            .pointerHoverIconHand()
-                            .clickable { viewModel.setTemplate(template) }
-                    ) {
+        // --- SEÇÃO: APARÊNCIA DO TEXTO ---
+        SettingsSection(title = "Aparência do Texto") {
+            // Font Family
+            Column {
+                Text(Strings.FONT_FAMILY, style = MaterialTheme.typography.labelMedium, color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(12.dp))
+                val fontOptions = listOf("sans-serif" to Strings.SANS_SERIF, "serif" to Strings.SERIF, "monospace" to Strings.MONOSPACE, "cursive" to Strings.CURSIVE)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    fontOptions.forEach { (key, label) ->
+                        val isSelected = currentFontFamily == key
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color.Transparent, 
-                            border = if (isSelected) BorderStroke(3.dp, VerseColors.PrimaryAmber) else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.3f)),
-                            modifier = Modifier.size(120.dp, 80.dp)
+                            onClick = { viewModel.updateFontFamily(key) },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) VerseColors.PrimaryAmber.copy(alpha = 0.15f) else textColor.copy(alpha = 0.03f),
+                            border = BorderStroke(1.dp, if (isSelected) VerseColors.PrimaryAmber else Color.Transparent),
+                            modifier = Modifier.fillMaxWidth().pointerHoverIconHand()
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(template.backgroundBrush),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "Jesus chorou.\nJo 11:35",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = if (template.fontFamilyName == "Serif") FontFamily.Serif else FontFamily.SansSerif,
-                                        fontSize = 10.sp
-                                    ),
-                                    color = template.contentColor,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    modifier = Modifier.padding(4.dp)
-                                )
-
-                                if (isSelected) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(Color.Black.copy(alpha = 0.3f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = null,
-                                            tint = VerseColors.PrimaryAmber,
-                                            modifier = Modifier
-                                                .size(28.dp)
-                                                .background(Color.White, CircleShape)
-                                                .padding(4.dp)
-                                        )
-                                    }
-                                }
+                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = label, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = getFontFamily(key)), color = if (isSelected) VerseColors.PrimaryAmber else textColor)
+                                if (isSelected) Icon(Icons.Default.Check, null, tint = VerseColors.PrimaryAmber, modifier = Modifier.size(16.dp))
                             }
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            template.displayName,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isSelected) VerseColors.PrimaryAmber else textColor,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            maxLines = 1
-                        )
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Sliders (Fonte e Linha)
+            SettingsSlider(label = Strings.FONT_SIZE, value = fontSize.toFloat(), range = 12f..32f, valueLabel = "${fontSize}px") { viewModel.updateFontSize(it.toInt()) }
+            SettingsSlider(label = Strings.LINE_HEIGHT, value = lineHeight, range = 1.0f..2.5f, valueLabel = String.format("%.1fx", lineHeight)) { viewModel.updateLineHeight(it) }
+        }
+
+        // --- SEÇÃO: COMPARTILHAMENTO ---
+        SettingsSection(title = "Compartilhamento (Fotos)") {
+            Text("Modelo de Imagem", style = MaterialTheme.typography.labelMedium, color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(12.dp))
+            TemplateSelector(viewModel, selectedTemplate, textColor)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text("Assinatura", style = MaterialTheme.typography.labelMedium, color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = signatureValue,
+                onValueChange = { 
+                    signatureValue = it
+                    viewModel.updateSignature(it.text) 
+                },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Ex: Agostinho", fontSize = 14.sp, color = textColor.copy(alpha = 0.3f)) },
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = textColor.copy(alpha = 0.03f),
+                    unfocusedContainerColor = textColor.copy(alpha = 0.03f),
+                    focusedIndicatorColor = VerseColors.PrimaryAmber,
+                    cursorColor = VerseColors.PrimaryAmber
+                )
+            )
+        }
+
+        // --- SEÇÃO: PERFORMANCE E SISTEMA ---
+        SettingsSection(title = "Sistema") {
+            SettingsToggle(title = Strings.FIRE_ANIMATION, desc = Strings.FIRE_ANIMATION_DESC, checked = showFireAnimation, textColor = textColor) { viewModel.updateShowFireAnimation(it) }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
+            SettingsToggle(title = Strings.WINDOW_ANIMATION, desc = Strings.WINDOW_ANIMATION_DESC, checked = animatedWindow, textColor = textColor) { viewModel.updateAnimatedWindow(it) }
+        }
+        
+        Spacer(modifier = Modifier.height(40.dp))
+    }
+}
+
+@Composable
+fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(title.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, color = Color.Gray.copy(alpha = 0.6f), letterSpacing = 1.2.sp)
+        Spacer(modifier = Modifier.height(12.dp))
+        Surface(
+            color = Color.Transparent,
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.1f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsSlider(label: String, value: Float, range: ClosedFloatingPointRange<Float>, valueLabel: String, onValueChange: (Float) -> Unit) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+            Text(valueLabel, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+        }
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = range,
+            colors = SliderDefaults.colors(thumbColor = VerseColors.PrimaryAmber, activeTrackColor = VerseColors.PrimaryAmber)
+        )
+    }
+}
+
+@Composable
+fun SettingsToggle(title: String, desc: String, checked: Boolean, textColor: Color, onCheckedChange: (Boolean) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = textColor)
+            Text(desc, style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.6f))
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(checkedThumbColor = VerseColors.PrimaryAmber, checkedTrackColor = VerseColors.PrimaryAmber.copy(alpha = 0.5f))
+        )
+    }
+}
+
+@Composable
+fun TemplateSelector(viewModel: VerseViewModel, selectedTemplate: VerseViewModel.SnapshotTemplate, textColor: Color) {
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    LazyRow(
+        state = listState,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth().height(100.dp).pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    val event = awaitPointerEvent()
+                    if (event.type == PointerEventType.Scroll) {
+                        val delta = event.changes.first().scrollDelta
+                        event.changes.forEach { it.consume() }
+                        coroutineScope.launch { listState.scrollBy(delta.y * 30) }
+                    }
+                }
+            }
+        }
+    ) {
+        items(viewModel.templatesList) { template ->
+            val isSelected = selectedTemplate.id == template.id
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Color.Transparent, 
+                border = if (isSelected) BorderStroke(2.dp, VerseColors.PrimaryAmber) else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f)),
+                modifier = Modifier.size(100.dp, 70.dp).clickable { viewModel.setTemplate(template) }
+            ) {
+                Box(modifier = Modifier.fillMaxSize().background(template.backgroundBrush), contentAlignment = Alignment.Center) {
+                    Text("Aa", style = MaterialTheme.typography.titleLarge.copy(fontFamily = if (template.fontFamilyName == "Serif") FontFamily.Serif else FontFamily.SansSerif), color = template.contentColor)
+                    if (isSelected) Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f))) { Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.align(Alignment.Center).size(20.dp)) }
                 }
             }
         }
     }
+}
+
+fun getFontFamily(key: String) = when (key) {
+    "serif" -> FontFamily.Serif
+    "monospace" -> FontFamily.Monospace
+    "cursive" -> FontFamily.Cursive
+    else -> FontFamily.SansSerif
 }

@@ -41,6 +41,18 @@ open class SettingsRepository {
         save(newSettings)
     }
 
+    open suspend fun updateAnimatedWindow(enabled: Boolean) {
+        val current = _settings.value
+        val newSettings = current.copy(animatedWindow = enabled)
+        save(newSettings)
+    }
+
+    open suspend fun updateSignature(signature: String) {
+        val current = _settings.value
+        val newSettings = current.copy(signature = signature)
+        save(newSettings)
+    }
+
     private suspend fun save(newSettings: UserSettings) {
         SettingsManager.saveSettings(newSettings)
         _settings.value = newSettings

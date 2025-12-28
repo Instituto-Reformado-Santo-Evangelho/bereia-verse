@@ -5,4 +5,11 @@ interface SnapshotHandler {
         verses: List<Pair<VerseRequest, String?>>,
         template: VerseViewModel.SnapshotTemplate
     )
+
+    suspend fun captureNoteAndSave(
+        content: String,
+        reference: String?,
+        signature: String?,
+        template: VerseViewModel.SnapshotTemplate
+    )
 }
