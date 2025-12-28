@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.text.font.FontFamily
@@ -36,6 +37,7 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 import androidx.compose.ui.ImageComposeScene
+import org.jetbrains.compose.resources.painterResource
 import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
 
@@ -48,17 +50,12 @@ class JvmSnapshotHandler : SnapshotHandler {
         withContext(Dispatchers.IO) {
             // 1. Renderizar Imagem
             val width = 1080
-            val height = 1080 // Instagram Square default, mas pode ser ajustável se conteúdo for longo
-            
-            // Carregar logo (hacky way for JVM resource loading if painterResource fails off-screen)
-            // Para simplificar, vamos tentar usar um texto "IRSE | Bereia Verse" se a imagem falhar,
-            // ou assumir que o ImageComposeScene consegue renderizar o painterResource se o contexto estiver certo.
-            // ImageComposeScene suporta composição completa.
+            val height = 1080
             
             val scene = ImageComposeScene(
                 width = width,
                 height = height,
-                density = Density(2f), // Alta densidade para qualidade (2x)
+                density = Density(2f),
                 coroutineContext = Dispatchers.Unconfined
             )
 
@@ -66,17 +63,11 @@ class JvmSnapshotHandler : SnapshotHandler {
                 SnapshotLayout(verses, template)
             }
 
-            val image = scene.render() // Renderiza para org.jetbrains.skia.Image
+            val image = scene.render()
             val data = image.encodeToData(EncodedImageFormat.PNG) ?: return@withContext
 
-            // 2. Salvar Arquivo (Dialog na Thread da UI/Main, mas FileDialog do AWT bloqueia, então cuidado)
-            // AWT deve rodar na thread dispatch, mas FileDialog é nativo.
-            // Vamos lançar o diálogo.
-            
+            // 2. Salvar Arquivo
             val fileName = "verse_snapshot_${System.currentTimeMillis()}.png"
-            
-            // Usando AWT FileDialog (Nativo do SO)
-            // Em Linux/Mac/Windows isso abre a janela nativa
             val dialog = FileDialog(null as Frame?, "Salvar Imagem", FileDialog.SAVE)
             dialog.file = fileName
             dialog.isVisible = true
@@ -104,14 +95,21 @@ class JvmSnapshotHandler : SnapshotHandler {
             modifier = Modifier
                 .fillMaxSize()
                 .background(template.backgroundBrush)
-                .padding(64.dp) // Margem generosa
+                .padding(64.dp)
         ) {
+            // Logo no Topo (Cores originais como no header)
+            Image(
+                painter = painterResource(Res.drawable.logo),
+                contentDescription = null,
+                modifier = Modifier.align(Alignment.TopCenter).size(100.dp)
+            )
+
+            // Conteúdo Centralizado
             Column(
-                modifier = Modifier.align(Alignment.Center),
+                modifier = Modifier.align(Alignment.Center).padding(top = 60.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Conteúdo dos Versículos
                 verses.forEach { (req, content) ->
                     if (content != null) {
                         val cleanText = HtmlTextFormatter.format(content).toString()
@@ -132,7 +130,6 @@ class JvmSnapshotHandler : SnapshotHandler {
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Referência
                 if (verses.isNotEmpty()) {
                     val first = verses.first().first
                     val last = verses.last().first
@@ -154,37 +151,26 @@ class JvmSnapshotHandler : SnapshotHandler {
                         ),
                         color = template.contentColor.copy(alpha = 0.8f)
                     )
-                    
-                    Text(
-                        text = "ACF (Almeida Corrigida Fiel)",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontSize = 14.sp,
-                            fontFamily = fontFamily,
-                            fontWeight = FontWeight.Normal
-                        ),
-                        color = template.contentColor.copy(alpha = 0.5f),
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
                 }
             }
 
-            // Rodapé / Branding
+            // Rodapé (Linha + IRSE | Bereia Verse)
             Column(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                 // Linha decorativa
                  HorizontalDivider(
-                     modifier = Modifier.width(60.dp), 
+                     modifier = Modifier.width(80.dp), 
                      thickness = 2.dp, 
                      color = template.contentColor.copy(alpha = 0.3f)
                  )
                  Spacer(modifier = Modifier.height(16.dp))
                  Text(
-                     text = "Bereia Verse",
+                     text = "IRSE | Bereia Verse",
                      style = MaterialTheme.typography.labelLarge.copy(
                          fontWeight = FontWeight.Bold,
-                         fontSize = 16.sp
+                         fontSize = 18.sp,
+                         letterSpacing = 1.sp
                      ),
                      color = template.contentColor.copy(alpha = 0.6f)
                  )
