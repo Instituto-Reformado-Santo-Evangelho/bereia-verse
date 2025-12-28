@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -260,7 +261,9 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                                 val event = awaitPointerEvent()
                                 if (event.type == PointerEventType.Scroll) {
                                     val delta = event.changes.first().scrollDelta
-                                    // Scroll vertical do mouse (y) vira horizontal na lista
+                                    // Bloquear scroll vertical do pai
+                                    event.changes.forEach { it.consume() }
+                                    
                                     val scrollAmount = delta.y * 30 
                                     coroutineScope.launch {
                                         listState.scrollBy(scrollAmount)
@@ -302,6 +305,25 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                     modifier = Modifier.padding(4.dp)
                                 )
+
+                                if (isSelected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Black.copy(alpha = 0.3f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = PrimaryAmber,
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .background(Color.White, CircleShape)
+                                                .padding(4.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(6.dp))

@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,12 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.ArrowRight
-import compose.icons.feathericons.Camera
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +54,8 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -71,7 +69,6 @@ import br.com.irse.verse.ui.components.FireAnimation
 import br.com.irse.verse.ui.components.HistoryIcon
 import br.com.irse.verse.ui.components.SearchIcon
 import br.com.irse.verse.ui.components.SettingsIcon
-import br.com.irse.verse.ui.copyToClipboard
 import br.com.irse.verse.ui.onHover
 import br.com.irse.verse.ui.pointerHoverIconHand
 import br.com.irse.verse.ui.views.AboutView
@@ -79,6 +76,10 @@ import br.com.irse.verse.ui.views.HistoryView
 import br.com.irse.verse.ui.views.SearchView
 import br.com.irse.verse.ui.views.SettingsView
 import br.com.irse.verse.ui.views.VersesView
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.ArrowLeft
+import compose.icons.feathericons.ArrowRight
+import compose.icons.feathericons.Camera
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -116,7 +117,7 @@ fun App(
     val canGoBack by viewModel.canGoBack.collectAsState()
     val canGoForward by viewModel.canGoForward.collectAsState()
 
-    val clipboard = LocalClipboard.current
+    val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
     
@@ -327,105 +328,146 @@ fun App(
                     }
                 }
 
-                // Footer
-                Row(modifier = Modifier.fillMaxWidth().background(footerColor).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 4.dp)) {
-                        // Search Button
-                        var isSearchHovered by remember { mutableStateOf(false) }
-                        Surface(
-                            color = if (currentTab == AppTab.SEARCH || isSearchHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .pointerHoverIconHand()
-                                .onHover(onEnter = { isSearchHovered = true }, onExit = { isSearchHovered = false })
-                                .clickable { currentTab = AppTab.SEARCH }
-                        ) {
-                            Box(modifier = Modifier.padding(8.dp)) {
-                                SearchIcon(color = if (currentTab == AppTab.SEARCH || isSearchHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
-                            }
-                        }
-
-                        // History Button
-                        var isHistoryHovered by remember { mutableStateOf(false) }
-                        Surface(
-                            color = if (currentTab == AppTab.HISTORY || isHistoryHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .pointerHoverIconHand()
-                                .onHover(onEnter = { isHistoryHovered = true }, onExit = { isHistoryHovered = false })
-                                .clickable { 
-                                    currentTab = AppTab.HISTORY
-                                    viewModel.refreshHistory()
-                                }
-                        ) {
-                            Box(modifier = Modifier.padding(8.dp)) {
-                                HistoryIcon(color = if (currentTab == AppTab.HISTORY || isHistoryHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
-                            }
-                        }
-
-                        // Settings Button
-                        var isSettingsHovered by remember { mutableStateOf(false) }
-                        Surface(
-                            color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .pointerHoverIconHand()
-                                .onHover(onEnter = { isSettingsHovered = true }, onExit = { isSettingsHovered = false })
-                                .clickable { currentTab = AppTab.SETTINGS }
-                        ) {
-                            Box(modifier = Modifier.padding(8.dp)) {
-                                SettingsIcon(color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
-                            }
-                        }
-
-                        // About Button (Bible Icon)
-                        var isAboutHovered by remember { mutableStateOf(false) }
-                        Surface(
-                            color = if (currentTab == AppTab.ABOUT || isAboutHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .pointerHoverIconHand()
-                                .onHover(onEnter = { isAboutHovered = true }, onExit = { isAboutHovered = false })
-                                .clickable { currentTab = AppTab.ABOUT }
-                        ) {
-                            Box(modifier = Modifier.padding(8.dp)) {
-                                BibleIcon(color = if (currentTab == AppTab.ABOUT || isAboutHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
-                            }
-                        }
-                    }
-                    
-
-                    if (currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) {
-                        // Snapshot Button
-                        IconButton(
-                            onClick = { viewModel.captureSnapshot() },
-                            modifier = Modifier.size(32.dp).padding(end = 4.dp).pointerHoverIconHand()
-                        ) {
-                             Icon(
-                                 imageVector = FeatherIcons.Camera,
-                                 contentDescription = "Salvar Imagem",
-                                 tint = textColor.copy(alpha = 0.6f),
-                                 modifier = Modifier.size(20.dp)
-                             )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                val fullText = detectedVerses.joinToString("\n\n") { (req, content) ->
-                                    val cleanContent = content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""
-                                    "$cleanContent (${req.book} ${req.chapter}:${req.verse} - ACF)"
-                                }
-                                scope.launch {
-                                    copyToClipboard(clipboard, fullText)
-                                }
-                                isCopied = true
-                            }, 
-                            modifier = Modifier.size(32.dp).padding(end = 4.dp).pointerHoverIconHand()
-                        ) {
-                             if (isCopied) CheckIcon(color = Color(0xFF2E7D32)) else CopyIcon(color = textColor.copy(alpha = 0.6f))
-                        }
-                    }
-                }
+                
+                // ... (imports)
+                
+                                // Footer
+                                Row(modifier = Modifier.fillMaxWidth().background(footerColor).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 4.dp)) {
+                                        // Search Button
+                                        var isSearchHovered by remember { mutableStateOf(false) }
+                                        Surface(
+                                            color = if (currentTab == AppTab.SEARCH || isSearchHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .pointerHoverIconHand()
+                                                .onHover(onEnter = { isSearchHovered = true }, onExit = { isSearchHovered = false })
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) { currentTab = AppTab.SEARCH }
+                                        ) {
+                                            Box(modifier = Modifier.padding(8.dp)) {
+                                                SearchIcon(color = if (currentTab == AppTab.SEARCH || isSearchHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                                            }
+                                        }
+                
+                                        // History Button
+                                        var isHistoryHovered by remember { mutableStateOf(false) }
+                                        Surface(
+                                            color = if (currentTab == AppTab.HISTORY || isHistoryHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .pointerHoverIconHand()
+                                                .onHover(onEnter = { isHistoryHovered = true }, onExit = { isHistoryHovered = false })
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) { 
+                                                    currentTab = AppTab.HISTORY
+                                                    viewModel.refreshHistory()
+                                                }
+                                        ) {
+                                            Box(modifier = Modifier.padding(8.dp)) {
+                                                HistoryIcon(color = if (currentTab == AppTab.HISTORY || isHistoryHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                                            }
+                                        }
+                
+                                        // Settings Button
+                                        var isSettingsHovered by remember { mutableStateOf(false) }
+                                        Surface(
+                                            color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .pointerHoverIconHand()
+                                                .onHover(onEnter = { isSettingsHovered = true }, onExit = { isSettingsHovered = false })
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) { currentTab = AppTab.SETTINGS }
+                                        ) {
+                                            Box(modifier = Modifier.padding(8.dp)) {
+                                                SettingsIcon(color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                                            }
+                                        }
+                
+                                        // About Button (Bible Icon)
+                                        var isAboutHovered by remember { mutableStateOf(false) }
+                                        Surface(
+                                            color = if (currentTab == AppTab.ABOUT || isAboutHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .pointerHoverIconHand()
+                                                .onHover(onEnter = { isAboutHovered = true }, onExit = { isAboutHovered = false })
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) { currentTab = AppTab.ABOUT }
+                                        ) {
+                                            Box(modifier = Modifier.padding(8.dp)) {
+                                                BibleIcon(color = if (currentTab == AppTab.ABOUT || isAboutHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                                            }
+                                        }
+                                    }
+                                    
+                
+                                    if (currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) {
+                                        // Snapshot Button
+                                        var isCameraHovered by remember { mutableStateOf(false) }
+                                        Surface(
+                                            color = if (isCameraHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .pointerHoverIconHand()
+                                                .onHover(onEnter = { isCameraHovered = true }, onExit = { isCameraHovered = false })
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) { viewModel.captureSnapshot() }
+                                        ) {
+                                             Box(modifier = Modifier.padding(8.dp)) {
+                                                 Icon(
+                                                     imageVector = FeatherIcons.Camera,
+                                                     contentDescription = "Salvar Imagem",
+                                                     tint = if (isCameraHovered) PrimaryAmber else textColor.copy(alpha = 0.6f),
+                                                     modifier = Modifier.size(20.dp)
+                                                 )
+                                             }
+                                        }
+                
+                                        Spacer(modifier = Modifier.width(4.dp))
+                
+                                        // Copy Button
+                                        var isCopyHovered by remember { mutableStateOf(false) }
+                                        Surface(
+                                             color = if (isCopyHovered) PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+                                             shape = RoundedCornerShape(8.dp),
+                                             modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .pointerHoverIconHand()
+                                                .onHover(onEnter = { isCopyHovered = true }, onExit = { isCopyHovered = false })
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) {
+                                                    val fullText = detectedVerses.joinToString("\n\n") { (req, content) ->
+                                                        val cleanContent = content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""
+                                                        "$cleanContent (${req.book} ${req.chapter}:${req.verse} - ACF)"
+                                                    }
+                                                    clipboard.setText(AnnotatedString(fullText))
+                                                    isCopied = true
+                                                }
+                                        ) {
+                                             Box(modifier = Modifier.padding(8.dp)) {
+                                                 if (isCopied) CheckIcon(color = Color(0xFF2E7D32)) else CopyIcon(color = if (isCopyHovered) PrimaryAmber else textColor.copy(alpha = 0.6f))
+                                             }
+                                        }
+                                    }                }
             }
         }
     }

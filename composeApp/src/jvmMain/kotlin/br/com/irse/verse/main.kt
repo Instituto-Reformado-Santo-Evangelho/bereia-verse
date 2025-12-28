@@ -65,7 +65,7 @@ fun main() = application {
     
     val state = rememberWindowState(
         width = fullWidth, 
-        height = 350.dp,
+        height = 400.dp,
         position = WindowPosition(Alignment.TopEnd)
     )
     
@@ -104,7 +104,7 @@ fun main() = application {
         
         state.position = WindowPosition(newX.dp, newY.dp)
         
-        val targetHeight = if (mini) miniSize else (height ?: state.size.height).coerceAtLeast(350.dp)
+        val targetHeight = if (mini) miniSize else (height ?: state.size.height).coerceAtLeast(400.dp)
         state.size = DpSize(if (mini) miniSize else fullWidth, targetHeight)
     }
 
@@ -216,7 +216,7 @@ fun main() = application {
                                 // Apenas atualiza a altura sem recalcular a posição da âncora a cada frame da animação
                                 // Isso evita o efeito de 'piscar' causado pelo reposicionamento forçado da janela
                                 if (abs(state.size.height.value - height.value) > 0.5) {
-                                    state.size = DpSize(fullWidth, height.coerceAtLeast(350.dp))
+                                    state.size = DpSize(fullWidth, height.coerceAtLeast(400.dp))
                                 }
                             }
                         }
