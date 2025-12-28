@@ -10,25 +10,32 @@ Um leitor de versículos bíblicos (Almeida Corrigida Fiel) moderno e flutuante,
 
 ---
 
-## Instalação e Configuração (Linux Desktop)
+## Instalação e Configuração
 
-### Pré-requisitos
-*   Java Runtime Environment (JRE) 17 ou superior.
-*   GTK3 (padrão na maioria das distros).
+### Windows
+*   **Recomendado:** Utilize o instalador `VerseReader_Setup_X.X.X.exe`.
+*   Este instalador configura tudo automaticamente, cria atalhos e **já inclui o Java 21**.
+
+### Linux / Mac
+*   **Requisito:** Java Runtime Environment (JRE) 21 ou superior instalado.
+*   **Universal:** Execute o arquivo `.jar` distribuído:
+    ```bash
+    java -jar VerseReaderIRSE-linux-x64-X.X.X.jar
+    ```
 
 ### Arch Linux (Manualmente via PKGBUILD)
 O projeto inclui um script de empacotamento para Arch Linux que compila e instala o binário corretamente.
 
-1.  Navegue até a pasta de distribuição:
+1.  Navegue até a pasta de instaladores:
     ```bash
-    cd dist
+    cd installers/linux/arch
     ```
 2.  Gere e instale o pacote:
     ```bash
     makepkg -si
     ```
 
-### Configuração para Hyprland (Wayland)
+### Configuração para Hyprland (Linux Wayland)
 Para que o popup funcione corretamente (flutue, siga o foco e não sofra tiling), adicione as seguintes regras ao seu `hyprland.conf`:
 
 ```ini
@@ -67,7 +74,7 @@ Este projeto suporta cross-compilation para Windows usando Launch4j e NSIS.
     ```bash
     ./gradlew :composeApp:packageWindows
     ```
-    O instalador será gerado na raiz do projeto: `VerseReader_Setup_1.0.0.exe`.
+    O instalador será gerado na raiz do projeto.
 
 **Rodar Android:**
 ```bash
