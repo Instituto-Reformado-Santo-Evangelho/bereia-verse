@@ -1,16 +1,28 @@
 package br.com.irse.verse.ui.views
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -23,6 +35,7 @@ import br.com.irse.verse.PrimaryAmber
 import br.com.irse.verse.core.HtmlTextFormatter
 import br.com.irse.verse.core.Strings
 import br.com.irse.verse.core.VerseRequest
+import br.com.irse.verse.ui.pointerHoverIconHand
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.ChevronUp
@@ -44,41 +57,15 @@ fun VersesView(
         verticalArrangement = Arrangement.spacedBy(16.dp), 
         modifier = Modifier.fillMaxSize()
     ) {
-        // Área Superior: Expandir Anterior / Recolher Topo
+        // Zona Superior (Anterior)
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Expandir (Topo)
-                IconButton(
-                    onClick = { onLoadContext(-1) },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = FeatherIcons.ChevronUp,
-                        contentDescription = "Expandir Anterior",
-                        modifier = Modifier.size(32.dp),
-                        tint = PrimaryAmber.copy(alpha = 0.4f)
-                    )
-                }
-                
-                // Recolher (Topo) - Só aparece se houver contexto para recolher (size > 1)
-                if (detectedVerses.size > 1) {
-                    IconButton(
-                        onClick = { onRemoveContext(-1) },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = FeatherIcons.Minus,
-                            contentDescription = "Recolher Topo",
-                            modifier = Modifier.size(24.dp),
-                            tint = textColor.copy(alpha = 0.3f)
-                        )
-                    }
-                }
-            }
+            ContextControlZone(
+                isTop = true,
+                canRemove = detectedVerses.size > 1,
+                onExpand = { onLoadContext(-1) },
+                onRemove = { onRemoveContext(-1) },
+                iconColor = PrimaryAmber
+            )
         }
 
         var lastBook = ""
@@ -104,39 +91,97 @@ fun VersesView(
             item { ContinuousVerseItem(req, content, textColor, fontSize, fontFamily, lineHeight) }
         }
 
-        // Área Inferior: Recolher Fundo / Expandir Próximo
+        // Zona Inferior (Próximo)
         item {
+             ContextControlZone(
+                isTop = false,
+                canRemove = detectedVerses.size > 1,
+                onExpand = { onLoadContext(1) },
+                onRemove = { onRemoveContext(1) },
+                iconColor = PrimaryAmber
+            )
+        }
+    }
+}
+
+@Composable
+fun ContextControlZone(
+    isTop: Boolean,
+    canRemove: Boolean,
+    onExpand: () -> Unit,
+    onRemove: () -> Unit,
+    iconColor: Color
+) {
+    var isHovered by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp) // Altura fixa para ser uma zona clicável fácil
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        when (event.type) {
+                            PointerEventType.Enter -> isHovered = true
+                            PointerEventType.Exit -> isHovered = false
+                        }
+                    }
+                }
+            }
+            .pointerHoverIconHand(),
+        contentAlignment = Alignment.Center
+    ) {
+        // Indicador visual passivo (opcional, ex: linha sutil) quando não está hover
+        AnimatedVisibility(
+            visible = !isHovered,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+             Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(iconColor.copy(alpha = 0.2f)))
+        }
+
+        // Controles Ativos (Hover)
+        AnimatedVisibility(
+            visible = isHovered,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                 // Expandir (Fundo) - Trocando a ordem para ficar alinhado: [Expandir] [Recolher]
-                 // Para manter a simetria visual com o topo (Expandir sempre na ponta esquerda)
-                IconButton(
-                    onClick = { onLoadContext(1) },
-                    modifier = Modifier.size(32.dp)
+                // Botão Expandir
+                Surface(
+                    shape = CircleShape,
+                    color = iconColor.copy(alpha = 0.1f),
+                    modifier = Modifier.size(32.dp).clickable { onExpand() }
                 ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = FeatherIcons.ChevronDown,
-                        contentDescription = "Expandir Próximo",
-                        modifier = Modifier.size(32.dp),
-                        tint = PrimaryAmber.copy(alpha = 0.4f)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        androidx.compose.material3.Icon(
+                            imageVector = if (isTop) FeatherIcons.ChevronUp else FeatherIcons.ChevronDown,
+                            contentDescription = "Expandir",
+                            tint = iconColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
 
-                // Recolher (Fundo)
-                if (detectedVerses.size > 1) {
-                    IconButton(
-                        onClick = { onRemoveContext(1) },
-                        modifier = Modifier.size(32.dp)
+                // Botão Recolher (se aplicável)
+                if (canRemove) {
+                    Surface(
+                        shape = CircleShape,
+                        color = iconColor.copy(alpha = 0.1f),
+                        modifier = Modifier.size(32.dp).clickable { onRemove() }
                     ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = FeatherIcons.Minus,
-                            contentDescription = "Recolher Fundo",
-                            modifier = Modifier.size(24.dp),
-                            tint = textColor.copy(alpha = 0.3f)
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            androidx.compose.material3.Icon(
+                                imageVector = FeatherIcons.Minus,
+                                contentDescription = "Recolher",
+                                tint = iconColor, // Mesma cor, consistência
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
