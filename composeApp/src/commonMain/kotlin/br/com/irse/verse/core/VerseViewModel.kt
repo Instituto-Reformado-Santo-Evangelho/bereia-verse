@@ -40,6 +40,9 @@ class VerseViewModel(
     private val _lineHeight = MutableStateFlow(1.4f)
     val lineHeight = _lineHeight.asStateFlow()
 
+    private val _showFireAnimation = MutableStateFlow(true)
+    val showFireAnimation = _showFireAnimation.asStateFlow()
+
     init {
         // Inicializa histórico e configurações
         viewModelScope.launch {
@@ -48,6 +51,7 @@ class VerseViewModel(
             _fontSize.value = savedSettings.fontSize
             _fontFamily.value = savedSettings.fontFamily
             _lineHeight.value = savedSettings.lineHeight
+            _showFireAnimation.value = savedSettings.showFireAnimation
         }
 
         // Setup Search Debounce
@@ -185,7 +189,14 @@ class VerseViewModel(
     fun updateLineHeight(height: Float) {
         _lineHeight.value = height
         viewModelScope.launch {
-            SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, fontFamily = _fontFamily.value, lineHeight = height))
+            SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, fontFamily = _fontFamily.value, lineHeight = height, showFireAnimation = _showFireAnimation.value))
+        }
+    }
+
+    fun updateShowFireAnimation(enabled: Boolean) {
+        _showFireAnimation.value = enabled
+        viewModelScope.launch {
+            SettingsManager.saveSettings(UserSettings(fontSize = _fontSize.value, fontFamily = _fontFamily.value, lineHeight = _lineHeight.value, showFireAnimation = enabled))
         }
     }
 }

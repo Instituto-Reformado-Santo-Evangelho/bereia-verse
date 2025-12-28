@@ -10,7 +10,8 @@ import java.io.File
 data class UserSettings(
     val fontSize: Int = 16,
     val fontFamily: String = "sans-serif",
-    val lineHeight: Float = 1.4f
+    val lineHeight: Float = 1.4f,
+    val showFireAnimation: Boolean = true
 )
 
 object SettingsManager {

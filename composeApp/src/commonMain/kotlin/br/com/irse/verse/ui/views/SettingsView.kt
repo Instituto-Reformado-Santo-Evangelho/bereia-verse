@@ -99,6 +99,45 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             }
         }
 
+        // Fire Animation Toggle
+        val showFireAnimation by viewModel.showFireAnimation.collectAsState()
+        Surface(
+            modifier = Modifier.fillMaxWidth().pointerHoverIconHand(),
+            color = textColor.copy(alpha = 0.03f),
+            shape = RoundedCornerShape(12.dp),
+            onClick = { viewModel.updateShowFireAnimation(!showFireAnimation) }
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        Strings.FIRE_ANIMATION, 
+                        style = MaterialTheme.typography.bodyMedium, 
+                        fontWeight = FontWeight.Bold, 
+                        color = textColor
+                    )
+                    Text(
+                        Strings.FIRE_ANIMATION_DESC, 
+                        style = MaterialTheme.typography.bodySmall, 
+                        color = textColor.copy(alpha = 0.6f)
+                    )
+                }
+                Switch(
+                    checked = showFireAnimation,
+                    onCheckedChange = { viewModel.updateShowFireAnimation(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = PrimaryAmber,
+                        checkedTrackColor = PrimaryAmber.copy(alpha = 0.5f),
+                        uncheckedThumbColor = textColor.copy(alpha = 0.4f),
+                        uncheckedTrackColor = textColor.copy(alpha = 0.1f)
+                    )
+                )
+            }
+        }
+
         // Font Size
         Column {
             Text(

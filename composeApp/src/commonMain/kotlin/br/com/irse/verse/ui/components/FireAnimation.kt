@@ -4,11 +4,15 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -20,8 +24,11 @@ import kotlin.random.Random
 @Composable
 fun FireAnimation(modifier: Modifier = Modifier) {
     val particles = remember { mutableStateListOf<FireParticle>() }
-    // Aumentamos a contagem para preencher melhor áreas grandes
-    val maxParticles = 150 
+    // Estado para forçar recomposição a cada frame
+    var frameTrigger by remember { mutableStateOf(0L) }
+    
+    // Aumentamos a contagem para uma densidade muito maior
+    val maxParticles = 250 
 
     LaunchedEffect(Unit) {
         var lastTime = 0L
@@ -33,76 +40,94 @@ fun FireAnimation(modifier: Modifier = Modifier) {
                 }
                 val dt = (frameTimeMillis - lastTime) / 1000f
                 lastTime = frameTimeMillis
+                
+                frameTrigger = frameTimeMillis
 
-                val particlesToSpawn = if (particles.size < maxParticles) 4 else 2
-                repeat(particlesToSpawn) {
-                    if (particles.size < maxParticles) {
+                particles.forEach { p -> p.update(dt) }
+
+                val spawnRate = 10 // Fluxo constante de partículas
+                repeat(spawnRate) {
+                    val deadParticle = particles.firstOrNull { it.life <= 0f }
+                    if (deadParticle != null) {
+                        deadParticle.reset()
+                    } else if (particles.size < maxParticles) {
                         particles.add(FireParticle().apply { reset() })
-                    } else {
-                        val deadParticle = particles.firstOrNull { it.life <= 0f }
-                        deadParticle?.reset()
                     }
-                }
-
-                particles.forEach { p ->
-                    p.update(dt)
                 }
             }
         }
     }
 
     Canvas(modifier = modifier.fillMaxSize()) {
+        val currentFrame = frameTrigger 
         val centerX = size.width / 2
-        val baseY = size.height * 0.9f 
-        // Usamos a largura como referência de escala principal para manter proporção
+        // Base deslocada para baixo (fora da tela) para esconder o nascimento das partículas
+        val baseY = size.height * 1.02f 
         val scaleRef = size.width.coerceAtMost(size.height)
+        
+        // Efeito de pulsação da luz (Glow dinâmico)
+        // Usa o tempo para oscilar a intensidade e o tamanho levemente
+        val timeSecs = currentFrame / 1000f
+        val pulse = (sin(timeSecs * 2f) + 1f) / 2f // 0.0 a 1.0
+        val glowAlpha = 0.1f + (pulse * 0.08f) // Oscila entre 0.10 e 0.18
+        val glowRadiusMult = 1.0f + (pulse * 0.05f) // Oscila tamanho levemente
 
-        // 3. Desenhar Glow de fundo (mais sutil)
+        // Glow de fundo (Luz ambiente)
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    PrimaryAmber.copy(alpha = 0.15f),
+                    PrimaryAmber.copy(alpha = glowAlpha),
+                    PrimaryAmber.copy(alpha = glowAlpha * 0.5f),
                     Color.Transparent
                 ),
                 center = Offset(centerX, baseY - (scaleRef * 0.1f)),
-                radius = scaleRef * 0.5f
+                radius = scaleRef * 0.7f * glowRadiusMult
             ),
-            radius = scaleRef * 0.5f,
+            radius = scaleRef * 0.7f * glowRadiusMult,
             center = Offset(centerX, baseY - (scaleRef * 0.1f))
         )
 
-        // 4. Desenhar partículas
         particles.forEach { p ->
             if (p.life > 0) {
-                // Mapeia coordenadas normalizadas para pixels
                 val drawX = centerX + (p.x * scaleRef)
-                val drawY = baseY - (p.y * size.height) // Y escala com altura para subir na tela toda
+                val drawY = baseY - (p.y * size.height)
 
-                val color = getFireColor(p.life)
-                // Tamanho base visual mais nítido
-                val currentRadius = (p.size * scaleRef) * (0.6f + 0.4f * p.life)
+                val color = getFireColor(p.life, p.isEmber)
+                
+                val sizeFactor = if (p.isEmber) p.life else (p.life * p.life * p.life)
+                val baseSize = p.size * scaleRef * sizeFactor
 
-                // Gradiente mais "duro" para definir melhor a forma
-                val brush = Brush.radialGradient(
-                    0.0f to color,
-                    0.6f to color.copy(alpha = 0.6f),
-                    1.0f to Color.Transparent,
-                    center = Offset(drawX, drawY),
-                    radius = currentRadius
-                )
+                if (p.isEmber) {
+                    drawCircle(
+                        color = color.copy(alpha = p.life),
+                        radius = baseSize * 0.8f, // Fagulhas um pouco mais visíveis
+                        center = Offset(drawX, drawY)
+                    )
+                } else {
+                    val width = baseSize * 1.6f
+                    val height = baseSize * 4.0f 
 
-                drawCircle(
-                    brush = brush,
-                    radius = currentRadius,
-                    center = Offset(drawX, drawY)
-                )
+                    val brush = Brush.radialGradient(
+                        0.0f to color,
+                        0.7f to color.copy(alpha = 0.5f), // Núcleo mais sólido
+                        1.0f to Color.Transparent,
+                        center = Offset(drawX, drawY),
+                        radius = height / 2
+                    )
+
+                    drawOval(
+                        brush = brush,
+                        topLeft = Offset(drawX - width / 2, drawY - height / 2),
+                        size = Size(width, height)
+                    )
+                }
             }
         }
     }
 }
+// ... (Particle class remains mostly the same, ensuring imports are kept)
 
 private class FireParticle {
-    // Coordenadas Normalizadas (-0.5 a 0.5 para X, 0.0 a 1.0 para Y)
     var x: Float = 0f
     var y: Float = 0f
     var vx: Float = 0f
@@ -111,44 +136,63 @@ private class FireParticle {
     var decay: Float = 0f
     var size: Float = 0f
     var turbulenceOffset: Float = 0f
+    var isEmber: Boolean = false
 
     fun reset() {
-        // Spread horizontal reduzido para criar uma "coluna" de fogo mais definida na base
-        val spread = 0.12f 
-        x = (Random.nextFloat() - 0.5f) * spread * 1.5f + (Random.nextFloat() - 0.5f) * spread 
-        
-        y = Random.nextFloat() * 0.05f // Começa bem na base
-        
-        // Sobe ~40% a 70% da altura da tela por segundo
-        vy = Random.nextFloat() * 0.3f + 0.4f 
-        
-        vx = (Random.nextFloat() - 0.5f) * 0.1f
+        isEmber = Random.nextFloat() < 0.25f 
+
+        if (isEmber) {
+            val spread = 0.18f
+            x = (Random.nextFloat() - 0.5f) * spread * 2f
+            y = Random.nextFloat() * 0.15f
+            vy = Random.nextFloat() * 0.7f + 0.5f 
+            vx = (Random.nextFloat() - 0.5f) * 0.25f 
+            size = Random.nextFloat() * 0.012f + 0.008f 
+            decay = Random.nextFloat() * 0.7f + 0.4f
+        } else {
+            // Base mais larga
+            val spread = 0.14f 
+            x = (Random.nextFloat() - 0.5f) * spread * 2.0f
+            y = 0f
+            vy = Random.nextFloat() * 0.3f + 0.3f
+            // Velocidade lateral inicial reduzida para estabilidade na base
+            vx = (Random.nextFloat() - 0.5f) * 0.02f 
+            size = Random.nextFloat() * 0.04f + 0.05f 
+            decay = Random.nextFloat() * 0.4f + 0.3f
+        }
         
         life = 1.0f
-        decay = Random.nextFloat() * 0.5f + 0.4f // Vida mais curta para dinamismo
-        
-        // Tamanho relativo à largura (0.05 = 5% da largura)
-        size = Random.nextFloat() * 0.06f + 0.04f 
-        
         turbulenceOffset = Random.nextFloat() * 100f
     }
 
     fun update(dt: Float) {
-        val noise = sin(y * 5f + turbulenceOffset) 
-        // Turbulência aumenta com a altura
-        x += (vx + noise * 0.1f * y) * dt
+        val turbulenceScale = if (isEmber) 12f else 4f
+        val noise = sin(y * turbulenceScale + turbulenceOffset) 
+        
+        // A turbulência aumenta com a altura (y). Base estável, pontas agitadas.
+        val instability = if (isEmber) 1f else (y * 5f).coerceAtMost(1f)
+
+        x += (vx + noise * 0.06f * instability) * dt
         y += vy * dt
         life -= decay * dt
     }
 }
 
-private fun getFireColor(life: Float): Color {
+private fun getFireColor(life: Float, isEmber: Boolean): Color {
+    if (isEmber) {
+        return when {
+            life > 0.4f -> Color(0xFFFFEB3B) 
+            life > 0.15f -> Color(0xFFFF5722) 
+            else -> Color(0xFF424242).copy(alpha = life)
+        }
+    }
+
     return when {
-        // Reduzimos drasticamente a área branca
-        life > 0.92f -> Color(0xFFFFF8E1).copy(alpha = 0.9f) 
-        life > 0.7f -> PrimaryAmber // Amarelo
-        life > 0.5f -> Color(0xFFFF9800) // Laranja vibrante
-        life > 0.3f -> Color(0xFFFF5722) // Laranja avermelhado
-        else -> Color(0xFF3E2723).copy(alpha = life * 0.6f) // Fumaça escura
+        // Branco apenas no pico extremo de calor (spawn inicial)
+        life > 0.98f -> Color(0xFFFFFDE7) 
+        life > 0.82f -> PrimaryAmber 
+        life > 0.50f -> Color(0xFFFF9800) 
+        life > 0.20f -> Color(0xFFFF5722) 
+        else -> Color(0xFF5D4037).copy(alpha = life * 0.6f) 
     }
 }

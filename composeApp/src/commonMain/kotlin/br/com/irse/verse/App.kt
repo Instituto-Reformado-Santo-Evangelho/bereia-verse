@@ -234,25 +234,29 @@ fun App(
                         AppTab.SETTINGS -> SettingsView(viewModel, textColor)
                         AppTab.VERSES -> {
                             if (detectedVerses.isEmpty()) {
+                                val showFireAnimation by viewModel.showFireAnimation.collectAsState()
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    FireAnimation(modifier = Modifier.fillMaxSize().alpha(0.6f))
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = Strings.COPY_HINT_TITLE, 
-                                            style = MaterialTheme.typography.titleLarge.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                shadow = androidx.compose.ui.graphics.Shadow(
-                                                    color = Color.Black.copy(alpha = 0.3f),
-                                                    blurRadius = 8f
-                                                )
-                                            ), 
-                                            color = textColor
-                                        )
-                                        Text(
-                                            text = Strings.COPY_HINT_SUBTITLE, 
-                                            style = MaterialTheme.typography.bodyLarge, 
-                                            color = textColor.copy(alpha = 0.6f)
-                                        )
+                                    if (showFireAnimation) {
+                                        FireAnimation(modifier = Modifier.fillMaxSize().alpha(0.6f))
+                                    } else {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = Strings.COPY_HINT_TITLE, 
+                                                style = MaterialTheme.typography.titleLarge.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    shadow = androidx.compose.ui.graphics.Shadow(
+                                                        color = Color.Black.copy(alpha = 0.3f),
+                                                        blurRadius = 8f
+                                                    )
+                                                ), 
+                                                color = textColor
+                                            )
+                                            Text(
+                                                text = Strings.COPY_HINT_SUBTITLE, 
+                                                style = MaterialTheme.typography.bodyLarge, 
+                                                color = textColor.copy(alpha = 0.6f)
+                                            )
+                                        }
                                     }
                                 }
                             } else {
