@@ -22,6 +22,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.ArrowLeft
+import compose.icons.feathericons.ArrowRight
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -104,6 +108,10 @@ fun App(
     val fontFamily by viewModel.fontFamily.collectAsState()
     val lineHeight by viewModel.lineHeight.collectAsState()
     
+    // Navigation State
+    val canGoBack by viewModel.canGoBack.collectAsState()
+    val canGoForward by viewModel.canGoForward.collectAsState()
+
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
@@ -165,6 +173,8 @@ fun App(
                             Key.V -> if (isCtrl) { currentTab = AppTab.VERSES; true } else false
                             Key.S -> if (isCtrl) { currentTab = AppTab.SETTINGS; true } else false
                             Key.I -> if (isCtrl) { currentTab = AppTab.ABOUT; true } else false
+                            Key.DirectionLeft -> if (isCtrl && canGoBack) { viewModel.navigateBack(); true } else false
+                            Key.DirectionRight -> if (isCtrl && canGoForward) { viewModel.navigateForward(); true } else false
                             else -> false
                         }
                     } else false
@@ -206,6 +216,43 @@ fun App(
                 }
 
                 if (isProcessing) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(2.dp), color = PrimaryAmber.copy(alpha = 0.5f))
+
+                // Navigation Bar (Internal) - Only visible when in Verses Tab
+                if (currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween, // Botões nas extremidades
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = { viewModel.navigateBack() }, 
+                                enabled = canGoBack,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = FeatherIcons.ArrowLeft, 
+                                    contentDescription = "Voltar",
+                                    tint = if (canGoBack) textColor else textColor.copy(alpha = 0.2f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            IconButton(
+                                onClick = { viewModel.navigateForward() }, 
+                                enabled = canGoForward,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = FeatherIcons.ArrowRight, 
+                                    contentDescription = "Avançar",
+                                    tint = if (canGoForward) textColor else textColor.copy(alpha = 0.2f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        HorizontalDivider(thickness = 1.dp, color = borderColor.copy(alpha = 0.3f))
+                    }
+                }
 
                 // Content
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -260,7 +307,16 @@ fun App(
                                     }
                                 }
                             } else {
-                                VersesView(detectedVerses, uniqueBooks, textColor, fontSize, globalFontFamily, lineHeight)
+                                VersesView(
+                                    detectedVerses, 
+                                    uniqueBooks, 
+                                    textColor, 
+                                    fontSize, 
+                                    globalFontFamily, 
+                                    lineHeight,
+                                    onLoadContext = viewModel::loadContext,
+                                    onRemoveContext = viewModel::removeContext
+                                )
                             }
                         }
                     }

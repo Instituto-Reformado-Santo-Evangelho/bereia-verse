@@ -30,6 +30,16 @@ class VerseViewModel(
     private val _isInternalUpdate = MutableStateFlow(false)
     val isInternalUpdate = _isInternalUpdate.asStateFlow()
 
+    // --- Session Navigation State ---
+    private val backStack = java.util.Stack<List<Pair<VerseRequest, String?>>>()
+    private val forwardStack = java.util.Stack<List<Pair<VerseRequest, String?>>>()
+
+    private val _canGoBack = MutableStateFlow(false)
+    val canGoBack = _canGoBack.asStateFlow()
+
+    private val _canGoForward = MutableStateFlow(false)
+    val canGoForward = _canGoForward.asStateFlow()
+
     // Settings State
     private val _fontSize = MutableStateFlow(16)
     val fontSize = _fontSize.asStateFlow()
@@ -63,6 +73,49 @@ class VerseViewModel(
                 .collect { query ->
                     performSearch(query)
                 }
+        }
+    }
+
+    // --- Navigation Methods ---
+
+    private fun updateNavigationState() {
+        _canGoBack.value = !backStack.isEmpty()
+        _canGoForward.value = !forwardStack.isEmpty()
+    }
+
+    private fun pushToBackStack() {
+        if (_detectedVerses.value.isNotEmpty()) {
+            backStack.push(_detectedVerses.value)
+            forwardStack.clear() // Nova navegação limpa o futuro
+            updateNavigationState()
+        }
+    }
+
+    fun navigateBack() {
+        if (backStack.isNotEmpty()) {
+            val current = _detectedVerses.value
+            if (current.isNotEmpty()) {
+                forwardStack.push(current)
+            }
+            
+            val previous = backStack.pop()
+            _detectedVerses.value = previous
+            updateNavigationState()
+            _isInternalUpdate.value = true
+        }
+    }
+
+    fun navigateForward() {
+        if (forwardStack.isNotEmpty()) {
+            val current = _detectedVerses.value
+            if (current.isNotEmpty()) {
+                backStack.push(current)
+            }
+
+            val next = forwardStack.pop()
+            _detectedVerses.value = next
+            updateNavigationState()
+            _isInternalUpdate.value = true
         }
     }
 
@@ -103,20 +156,38 @@ class VerseViewModel(
     }
     
     fun selectVerse(verseId: Int) {
+        // Salva estado anterior antes de mudar
+        pushToBackStack()
+        
         _isInternalUpdate.value = true
         val req = parser.repository.getVerseRequest(verseId)
         if (req != null) {
-            selectVerse(req)
+            // Chamada direta para não duplicar o pushToBackStack
+            viewModelScope.launch {
+                val content = withContext(Dispatchers.IO) { database.getText(req.id) }
+                _detectedVerses.value = listOf(req to content)
+            }
         }
     }
 
     fun processQuery(text: String, addToHistory: Boolean = true, isExternal: Boolean = false) {
-        _isInternalUpdate.value = !isExternal
+        val wasInternal = !isExternal
+        _isInternalUpdate.value = wasInternal
+        
         viewModelScope.launch {
             _isProcessing.value = true
             try {
                 val requests = withContext(Dispatchers.IO) { parser.processSelection(text) }
                 if (requests.isNotEmpty()) {
+                    // Só salva na pilha se não for o mesmo conteúdo (evita duplicação)
+                    val currentFirst = _detectedVerses.value.firstOrNull()?.first
+                    val newFirst = requests.firstOrNull()
+                    
+                    // Lógica simplificada de igualdade para evitar spam na pilha
+                    if (currentFirst?.id != newFirst?.id) {
+                         pushToBackStack()
+                    }
+
                     val results = withContext(Dispatchers.IO) {
                         requests.map { req -> database.getText(req.id) to req }.map { it.second to it.first }
                     }
@@ -159,10 +230,74 @@ class VerseViewModel(
     }
 
     fun selectVerse(request: VerseRequest) {
+        pushToBackStack()
         viewModelScope.launch {
             val content = withContext(Dispatchers.IO) { database.getText(request.id) }
             _detectedVerses.value = listOf(request to content)
         }
+    }
+
+    fun loadContext(direction: Int) {
+        val currentList = _detectedVerses.value
+        if (currentList.isEmpty()) return
+
+        // NÃO fazemos pushToBackStack aqui, pois queremos que Voltar/Avançar
+        // naveguem apenas entre as seleções principais (Clipboard/Busca),
+        // tratando a expansão de contexto como uma visualização temporária.
+
+        viewModelScope.launch {
+            val newVerses = currentList.toMutableList()
+            
+            if (direction < 0) {
+                // Carregar Anterior
+                val firstId = currentList.first().first.id
+                val prevId = firstId - 1
+                if (prevId > 0) {
+                    val content = withContext(Dispatchers.IO) { database.getText(prevId) }
+                    if (content != null) {
+                        val req = parser.repository.getVerseRequest(prevId)
+                        if (req != null) {
+                            newVerses.add(0, req to content)
+                        }
+                    }
+                }
+            } else {
+                // Carregar Próximo
+                val lastId = currentList.last().first.id
+                val nextId = lastId + 1
+                // Assumindo um limite razoável (ex: 31102 versículos na bíblia)
+                if (nextId < 32000) { 
+                    val content = withContext(Dispatchers.IO) { database.getText(nextId) }
+                    if (content != null) {
+                        val req = parser.repository.getVerseRequest(nextId)
+                        if (req != null) {
+                            newVerses.add(req to content)
+                        }
+                    }
+                }
+            }
+            
+            _detectedVerses.value = newVerses
+            _isInternalUpdate.value = true
+        }
+    }
+
+    fun removeContext(direction: Int) {
+        val currentList = _detectedVerses.value
+        if (currentList.size <= 1) return // Mantém pelo menos um versículo
+
+        val newVerses = currentList.toMutableList()
+        
+        if (direction < 0) {
+            // Remover Primeiro (Topo)
+            newVerses.removeAt(0)
+        } else {
+            // Remover Último (Fundo)
+            newVerses.removeAt(newVerses.lastIndex)
+        }
+
+        _detectedVerses.value = newVerses
+        _isInternalUpdate.value = true
     }
     
     fun refreshHistory() {
