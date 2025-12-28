@@ -1,8 +1,14 @@
 package br.com.irse.verse.ui.views
-import br.com.irse.verse.PrimaryAmber
 
+import br.com.irse.verse.PrimaryAmber
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -12,19 +18,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.irse.verse.PrimaryAmber
 import br.com.irse.verse.core.Strings
 import br.com.irse.verse.core.VerseViewModel
 import br.com.irse.verse.ui.pointerHoverIconHand
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -32,12 +39,13 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
     val fontSize by viewModel.fontSize.collectAsState()
     val currentFontFamily by viewModel.fontFamily.collectAsState()
     val lineHeight by viewModel.lineHeight.collectAsState()
+    val selectedTemplate by viewModel.selectedTemplate.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), 
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Font Family (Agora no Topo)
+        // Font Family
         Column {
             Text(
                 Strings.FONT_FAMILY, 
@@ -224,6 +232,88 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                     color = textColor,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
+            }
+        }
+
+        // Snapshot Template Selector
+        Column {
+            Text(
+                "Modelo de Compartilhamento", 
+                style = MaterialTheme.typography.titleSmall,
+                color = textColor,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            val listState = rememberLazyListState()
+            val coroutineScope = rememberCoroutineScope()
+
+            LazyRow(
+                state = listState,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                if (event.type == PointerEventType.Scroll) {
+                                    val delta = event.changes.first().scrollDelta
+                                    // Scroll vertical do mouse (y) vira horizontal na lista
+                                    val scrollAmount = delta.y * 30 
+                                    coroutineScope.launch {
+                                        listState.scrollBy(scrollAmount)
+                                    }
+                                }
+                            }
+                        }
+                    }
+            ) {
+                items(viewModel.templatesList) { template ->
+                    val isSelected = selectedTemplate.id == template.id
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .width(120.dp)
+                            .pointerHoverIconHand()
+                            .clickable { viewModel.setTemplate(template) }
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.Transparent, 
+                            border = if (isSelected) BorderStroke(3.dp, PrimaryAmber) else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.3f)),
+                            modifier = Modifier.size(120.dp, 80.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(template.backgroundBrush),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "Jesus chorou.\nJo 11:35",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = if (template.fontFamilyName == "Serif") FontFamily.Serif else FontFamily.SansSerif,
+                                        fontSize = 10.sp
+                                    ),
+                                    color = template.contentColor,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.padding(4.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            template.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSelected) PrimaryAmber else textColor,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            maxLines = 1
+                        )
+                    }
+                }
             }
         }
     }

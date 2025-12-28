@@ -53,6 +53,86 @@ class VerseViewModel(
     private val _showFireAnimation = MutableStateFlow(true)
     val showFireAnimation = _showFireAnimation.asStateFlow()
 
+    // App Theme Colors (Defaults, can be customized later)
+    private val _textColor = MutableStateFlow(androidx.compose.ui.graphics.Color(0xFF333333))
+    val textColor = _textColor.asStateFlow()
+
+    private val _borderColor = MutableStateFlow(androidx.compose.ui.graphics.Color.LightGray)
+    val borderColor = _borderColor.asStateFlow()
+
+    private val _backgroundColor = MutableStateFlow(androidx.compose.ui.graphics.Color.White)
+    val backgroundColor = _backgroundColor.asStateFlow()
+
+    // Snapshot Templates
+    data class SnapshotTemplate(
+        val id: String, 
+        val displayName: String, 
+        val backgroundBrush: androidx.compose.ui.graphics.Brush, 
+        val contentColor: androidx.compose.ui.graphics.Color,
+        val fontFamilyName: String = "SansSerif", // Permite que o template dite a fonte
+        val borderColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Transparent
+    )
+
+    // Lista de Templates Disponíveis
+    val templatesList = listOf(
+        SnapshotTemplate(
+            id = "classic", 
+            displayName = "Clássico", 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFFFFC107), androidx.compose.ui.graphics.Color(0xFFFFD54F))
+            ), 
+            contentColor = androidx.compose.ui.graphics.Color(0xFF333333)
+        ),
+        SnapshotTemplate(
+            id = "dark_modern", 
+            displayName = "Dark", 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFF1E1E1E), androidx.compose.ui.graphics.Color(0xFF2C2C2C))
+            ), 
+            contentColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0)
+        ),
+        SnapshotTemplate(
+            id = "sunset", 
+            displayName = "Pôr do Sol", 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFFff512f), androidx.compose.ui.graphics.Color(0xFFdd2476))
+            ), 
+            contentColor = androidx.compose.ui.graphics.Color.White
+        ),
+        SnapshotTemplate(
+            id = "ocean", 
+            displayName = "Oceano", 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFF2193b0), androidx.compose.ui.graphics.Color(0xFF6dd5ed))
+            ), 
+            contentColor = androidx.compose.ui.graphics.Color.White
+        ),
+        SnapshotTemplate(
+            id = "elegant", 
+            displayName = "Elegante", 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFFF5F5DC), androidx.compose.ui.graphics.Color(0xFFE8E8C8))
+            ), 
+            contentColor = androidx.compose.ui.graphics.Color(0xFF2C1B18),
+            fontFamilyName = "Serif"
+        ),
+        SnapshotTemplate(
+            id = "night", 
+            displayName = "Noite", 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.radialGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFF1A237E), androidx.compose.ui.graphics.Color(0xFF000000))
+            ), 
+            contentColor = androidx.compose.ui.graphics.Color.White
+        )
+    )
+
+    private val _selectedTemplate = MutableStateFlow(templatesList.first())
+    val selectedTemplate = _selectedTemplate.asStateFlow()
+
+    fun setTemplate(template: SnapshotTemplate) {
+        _selectedTemplate.value = template
+    }
+
     init {
         // Inicializa histórico e configurações
         viewModelScope.launch {
