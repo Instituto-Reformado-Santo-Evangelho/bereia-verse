@@ -1,6 +1,6 @@
 package br.com.irse.verse.core
 
-class BibleParser(val repository: BibleRepository) {
+open class BibleParser(val repository: BibleRepository) {
 
     // Regex parts
     private val suffixPattern = """(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?(?:\s*[\u2013\u002d\u2014]\s*(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?)?"""
@@ -29,7 +29,7 @@ class BibleParser(val repository: BibleRepository) {
         )
     }
 
-    fun processSelection(text: String): List<VerseRequest> {
+    open fun processSelection(text: String): List<VerseRequest> {
         if (text.length < 3) return emptyList()
 
         // Remove footnote markers like [1], [12]

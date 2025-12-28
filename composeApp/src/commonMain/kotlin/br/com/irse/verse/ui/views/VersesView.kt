@@ -1,5 +1,4 @@
 package br.com.irse.verse.ui.views
-import br.com.irse.verse.PrimaryAmber
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -32,7 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.irse.verse.PrimaryAmber
+import br.com.irse.verse.ui.theme.VerseColors
 import br.com.irse.verse.core.HtmlTextFormatter
 import br.com.irse.verse.core.Strings
 import br.com.irse.verse.core.VerseRequest
@@ -65,7 +64,7 @@ fun VersesView(
                 canRemove = detectedVerses.size > 1,
                 onExpand = { onLoadContext(-1) },
                 onRemove = { onRemoveContext(-1) },
-                iconColor = PrimaryAmber
+                iconColor = VerseColors.PrimaryAmber
             )
         }
 
@@ -78,12 +77,12 @@ fun VersesView(
                             text = req.book.uppercase(), 
                             style = MaterialTheme.typography.labelLarge, 
                             fontWeight = FontWeight.ExtraBold, 
-                            color = PrimaryAmber
+                            color = VerseColors.PrimaryAmber
                         )
                         HorizontalDivider(
                             modifier = Modifier.padding(top = 4.dp), 
                             thickness = 1.dp, 
-                            color = PrimaryAmber.copy(alpha = 0.3f)
+                            color = VerseColors.PrimaryAmber.copy(alpha = 0.3f)
                         )
                     }
                 }
@@ -99,7 +98,7 @@ fun VersesView(
                 canRemove = detectedVerses.size > 1,
                 onExpand = { onLoadContext(1) },
                 onRemove = { onRemoveContext(1) },
-                iconColor = PrimaryAmber
+                iconColor = VerseColors.PrimaryAmber
             )
         }
     }
@@ -201,7 +200,7 @@ fun ContinuousVerseItem(
     val annotatedString = buildAnnotatedString {
         withStyle(
             style = SpanStyle(
-                color = PrimaryAmber, 
+                color = VerseColors.PrimaryAmber, 
                 fontWeight = FontWeight.Bold, 
                 fontSize = (fontSize - 2).sp
             )

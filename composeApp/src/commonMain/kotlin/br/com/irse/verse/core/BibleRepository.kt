@@ -1,8 +1,8 @@
 package br.com.irse.verse.core
 
-class BibleRepository(private val mapping: Map<String, BookMetaData>) {
+open class BibleRepository(private val mapping: Map<String, BookMetaData>) {
     
-    fun findBook(name: String): Book? {
+    open fun findBook(name: String): Book? {
         val searchName = name.lowercase().trim()
         
         // 1. Check mapping keys directly (case-insensitive)
@@ -25,9 +25,9 @@ class BibleRepository(private val mapping: Map<String, BookMetaData>) {
     }
 
     // Retorna todos os livros para busca global
-    fun getAllBooks(): Map<String, BookMetaData> = mapping
+    open fun getAllBooks(): Map<String, BookMetaData> = mapping
 
-    fun getVerseRequest(verseId: Int): VerseRequest? {
+    open fun getVerseRequest(verseId: Int): VerseRequest? {
         // Find the book that contains this verseId
         // We iterate through all books to find the one where the verseId falls within its range.
         

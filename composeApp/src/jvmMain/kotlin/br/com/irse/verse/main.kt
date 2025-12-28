@@ -17,6 +17,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -56,6 +57,12 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.abs
 
+import br.com.irse.verse.di.appModule
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.java.KoinJavaComponent.get
+import org.koin.dsl.module
+import br.com.irse.verse.core.SnapshotHandler
 import br.com.irse.verse.platform.JvmSnapshotHandler
 
 fun main() = application {
@@ -73,9 +80,7 @@ fun main() = application {
     var isMiniMode by remember { mutableStateOf(false) }
     var isReady by remember { mutableStateOf(false) }
     
-    // Dependencies
-    val parser = remember { mutableStateOf<BibleParser?>(null) }
-    val database = remember { mutableStateOf<BibleDatabase?>(null) }
+    // Dependencies via Koin
     val viewModel = remember { mutableStateOf<VerseViewModel?>(null) }
     
     var currentWindow by remember { mutableStateOf<java.awt.Window?>(null) }
@@ -112,23 +117,39 @@ fun main() = application {
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
+                // Load Resources
                 val mappingBytes = Res.readBytes("files/bible_mapping.json")
                 val mapping = Json.decodeFromString<Map<String, BookMetaData>>(mappingBytes.decodeToString())
-                val repo = BibleRepository(mapping)
-                parser.value = BibleParser(repo)
+                
+                // Prepara DB File
                 val dbBytes = Res.readBytes("files/bible.sqlite")
                 val tempDbFile = File.createTempFile("bible_verse_db", ".sqlite").apply { deleteOnExit() }
                 FileOutputStream(tempDbFile).use { it.write(dbBytes) }
-                database.value = BibleDatabase(tempDbFile.absolutePath)
                 
                 withContext(Dispatchers.Main) {
-                    // Inicializa Handler de Snapshot
-                    val snapshotHandler = JvmSnapshotHandler()
-                    viewModel.value = VerseViewModel(parser.value!!, database.value!!, snapshotHandler)
+                    // Start Koin with Platform Module
+                    startKoin {
+                        modules(
+                            appModule,
+                            module {
+                                single { mapping }
+                                single { BibleDatabase(tempDbFile.absolutePath) }
+                                single<SnapshotHandler> { JvmSnapshotHandler() }
+                            }
+                        )
+                    }
+                    
+                    // Inject ViewModel
+                    viewModel.value = get(VerseViewModel::class.java)
                     isReady = true
                 }
             } catch (e: Exception) { e.printStackTrace() }
         }
+    }
+    
+    // Cleanup Koin
+    DisposableEffect(Unit) {
+        onDispose { stopKoin() }
     }
 
     // Clipboard Monitor

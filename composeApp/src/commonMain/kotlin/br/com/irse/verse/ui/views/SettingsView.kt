@@ -1,6 +1,6 @@
 package br.com.irse.verse.ui.views
 
-import br.com.irse.verse.PrimaryAmber
+import br.com.irse.verse.ui.theme.VerseColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -73,8 +73,8 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                         onClick = { viewModel.updateFontFamily(key) },
                         selected = isSelected,
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) PrimaryAmber.copy(alpha = 0.15f) else textColor.copy(alpha = 0.03f),
-                        border = BorderStroke(1.dp, if (isSelected) PrimaryAmber else Color.Transparent),
+                        color = if (isSelected) VerseColors.PrimaryAmber.copy(alpha = 0.15f) else textColor.copy(alpha = 0.03f),
+                        border = BorderStroke(1.dp, if (isSelected) VerseColors.PrimaryAmber else Color.Transparent),
                         modifier = Modifier.fillMaxWidth().pointerHoverIconHand()
                     ) {
                         Row(
@@ -93,13 +93,13 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                                         else -> FontFamily.SansSerif
                                     }
                                 ),
-                                color = if (isSelected) PrimaryAmber else textColor
+                                color = if (isSelected) VerseColors.PrimaryAmber else textColor
                             )
                             if (isSelected) {
                                 Icon(
                                     imageVector = androidx.compose.material.icons.Icons.Default.Check,
                                     contentDescription = null,
-                                    tint = PrimaryAmber,
+                                    tint = VerseColors.PrimaryAmber,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -139,8 +139,8 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                     checked = showFireAnimation,
                     onCheckedChange = { viewModel.updateShowFireAnimation(it) },
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = PrimaryAmber,
-                        checkedTrackColor = PrimaryAmber.copy(alpha = 0.5f),
+                        checkedThumbColor = VerseColors.PrimaryAmber,
+                        checkedTrackColor = VerseColors.PrimaryAmber.copy(alpha = 0.5f),
                         uncheckedThumbColor = textColor.copy(alpha = 0.4f),
                         uncheckedTrackColor = textColor.copy(alpha = 0.1f)
                     )
@@ -166,8 +166,8 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                     valueRange = 12f..32f,
                     modifier = Modifier.weight(1f).pointerHoverIconHand(),
                     colors = SliderDefaults.colors(
-                        thumbColor = PrimaryAmber, 
-                        activeTrackColor = PrimaryAmber
+                        thumbColor = VerseColors.PrimaryAmber, 
+                        activeTrackColor = VerseColors.PrimaryAmber
                     )
                 )
                 Text(
@@ -197,8 +197,8 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                     valueRange = 1.0f..2.5f,
                     modifier = Modifier.weight(1f).pointerHoverIconHand(),
                     colors = SliderDefaults.colors(
-                        thumbColor = PrimaryAmber, 
-                        activeTrackColor = PrimaryAmber
+                        thumbColor = VerseColors.PrimaryAmber, 
+                        activeTrackColor = VerseColors.PrimaryAmber
                     )
                 )
                 Text(
@@ -285,7 +285,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = Color.Transparent, 
-                            border = if (isSelected) BorderStroke(3.dp, PrimaryAmber) else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.3f)),
+                            border = if (isSelected) BorderStroke(3.dp, VerseColors.PrimaryAmber) else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.3f)),
                             modifier = Modifier.size(120.dp, 80.dp)
                         ) {
                             Box(
@@ -316,7 +316,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = null,
-                                            tint = PrimaryAmber,
+                                            tint = VerseColors.PrimaryAmber,
                                             modifier = Modifier
                                                 .size(28.dp)
                                                 .background(Color.White, CircleShape)
@@ -330,7 +330,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                         Text(
                             template.displayName,
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (isSelected) PrimaryAmber else textColor,
+                            color = if (isSelected) VerseColors.PrimaryAmber else textColor,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             maxLines = 1
                         )

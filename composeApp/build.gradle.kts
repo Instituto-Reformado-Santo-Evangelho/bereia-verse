@@ -45,6 +45,8 @@ kotlin {
             implementation(projects.shared)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.feather.icons)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -82,6 +84,10 @@ android {
     }
     compileSdk {
         version = release(36)
+    }
+
+    defaultConfig {
+        minSdk = 24
     }
 
     buildToolsVersion = "36.1.0"

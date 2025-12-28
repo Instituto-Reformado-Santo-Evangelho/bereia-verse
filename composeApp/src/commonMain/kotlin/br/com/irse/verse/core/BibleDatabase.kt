@@ -11,7 +11,7 @@ data class SearchResult(
     val verse: Int = 0
 )
 
-class BibleDatabase(private val dbPath: String) {
+open class BibleDatabase(private val dbPath: String) {
     
     private var connection: Connection? = null
 
@@ -26,7 +26,7 @@ class BibleDatabase(private val dbPath: String) {
         }
     }
 
-    fun getText(verseId: Int): String? {
+    open fun getText(verseId: Int): String? {
         if (connection == null) return null
         val query = "SELECT content FROM verses WHERE id = ?"
         return try {
@@ -41,7 +41,7 @@ class BibleDatabase(private val dbPath: String) {
     }
 
     // Busca versículos por texto em tempo real
-    fun searchVerses(text: String, limit: Int = 20): List<SearchResult> {
+    open fun searchVerses(text: String, limit: Int = 20): List<SearchResult> {
         if (connection == null || text.isBlank()) return emptyList()
         
         // Busca ignorando case e acentos (dependendo do suporte do SQLite local)

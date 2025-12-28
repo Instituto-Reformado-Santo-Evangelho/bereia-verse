@@ -1,5 +1,5 @@
 package br.com.irse.verse.ui.components
-import br.com.irse.verse.PrimaryAmber
+import br.com.irse.verse.ui.theme.VerseColors
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +17,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import br.com.irse.verse.PrimaryAmber
+
 import kotlinx.coroutines.isActive
 import kotlin.math.sin
 import kotlin.random.Random
@@ -77,8 +77,8 @@ fun FireAnimation(modifier: Modifier = Modifier) {
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    PrimaryAmber.copy(alpha = glowAlpha),
-                    PrimaryAmber.copy(alpha = glowAlpha * 0.5f),
+                    VerseColors.PrimaryAmber.copy(alpha = glowAlpha),
+                    VerseColors.PrimaryAmber.copy(alpha = glowAlpha * 0.5f),
                     Color.Transparent
                 ),
                 center = Offset(centerX, baseY - (scaleRef * 0.1f)),
@@ -191,7 +191,7 @@ private fun getFireColor(life: Float, isEmber: Boolean): Color {
     return when {
         // Branco apenas no pico extremo de calor (spawn inicial)
         life > 0.98f -> Color(0xFFFFFDE7) 
-        life > 0.82f -> PrimaryAmber 
+        life > 0.82f -> VerseColors.PrimaryAmber 
         life > 0.50f -> Color(0xFFFF9800) 
         life > 0.20f -> Color(0xFFFF5722) 
         else -> Color(0xFF5D4037).copy(alpha = life * 0.6f) 

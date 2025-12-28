@@ -1,5 +1,4 @@
 package br.com.irse.verse.ui.views
-import br.com.irse.verse.PrimaryAmber
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -13,7 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.irse.verse.PrimaryAmber
+import br.com.irse.verse.ui.theme.VerseColors
 import br.com.irse.verse.core.Strings
 import br.com.irse.verse.ui.components.ExternalLinkIcon
 import br.com.irse.verse.ui.pointerHoverIconHand
@@ -52,7 +51,7 @@ fun AboutView(textColor: Color) {
         Text(
             Strings.APP_VERSION,
             style = MaterialTheme.typography.titleMedium,
-            color = PrimaryAmber,
+            color = VerseColors.PrimaryAmber,
             fontWeight = FontWeight.Bold
         )
 
@@ -60,7 +59,7 @@ fun AboutView(textColor: Color) {
 
         // Card de Funcionamento (Destaque)
         Surface(
-            color = PrimaryAmber.copy(alpha = 0.08f),
+            color = VerseColors.PrimaryAmber.copy(alpha = 0.08f),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -86,7 +85,7 @@ fun AboutView(textColor: Color) {
         SectionHeader(
             title = Strings.ABOUT_ACF_TITLE, 
             textColor = textColor,
-            trailing = { IconButton(onClick = { openUrl(Strings.ABOUT_ACF_URL) }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = PrimaryAmber) } }
+            trailing = { IconButton(onClick = { openUrl(Strings.ABOUT_ACF_URL) }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = VerseColors.PrimaryAmber) } }
         )
         Text(
             text = Strings.ABOUT_ACF_DESC,
@@ -101,7 +100,7 @@ fun AboutView(textColor: Color) {
         SectionHeader(
             title = Strings.ABOUT_IRSE_TITLE, 
             textColor = textColor,
-            trailing = { IconButton(onClick = { openUrl(Strings.ABOUT_IRSE_URL) }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = PrimaryAmber) } }
+            trailing = { IconButton(onClick = { openUrl(Strings.ABOUT_IRSE_URL) }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = VerseColors.PrimaryAmber) } }
         )
         Text(
             text = Strings.ABOUT_IRSE_DESC,
@@ -163,7 +162,7 @@ fun SectionHeader(
                 text = title,
                 style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.2.sp),
                 fontWeight = FontWeight.ExtraBold,
-                color = PrimaryAmber,
+                color = VerseColors.PrimaryAmber,
                 modifier = Modifier.weight(1f)
             )
             if (trailing != null) {
