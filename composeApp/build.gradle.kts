@@ -111,6 +111,9 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "bereia-verse"
             packageVersion = "1.0.0"
+            description = "IRSE | Bereia Verse - Leitor Bíblico Automático"
+            vendor = "IRSE"
+            copyright = "© 2025 IRSE"
             
             // Força a inclusão do módulo SQL para o SQLite funcionar
             modules("java.sql")
@@ -120,6 +123,9 @@ compose.desktop {
                 appCategory = "Education"
                 menuGroup = "Utility"
                 iconFile.set(project.file("src/jvmMain/resources/icon.png"))
+                
+                // Instala o .desktop customizado e o ícone nos caminhos padrão do sistema
+                debMaintainer = "IRSE"
             }
             
             macOS {
@@ -130,6 +136,7 @@ compose.desktop {
             windows {
                 shortcut = true
                 menu = true
+                menuGroup = "IRSE"
                 upgradeUuid = "550e8400-e29b-41d4-a716-446655440000" 
                 iconFile.set(project.file("src/jvmMain/resources/icon.ico"))
             }
@@ -230,7 +237,7 @@ tasks.register<JavaExec>("createExe") {
               <headerType>gui</headerType>
               <jar>${jarFile.name}</jar>
               <outfile>${outputExe.absolutePath}</outfile>
-              <errTitle>IRSE | Bereia Verse Error</errTitle>
+              <errTitle>IRSE | Bereia Verse</errTitle>
               <chdir>.</chdir>
               <priority>normal</priority>
               <downloadUrl>https://java.com/download</downloadUrl>
