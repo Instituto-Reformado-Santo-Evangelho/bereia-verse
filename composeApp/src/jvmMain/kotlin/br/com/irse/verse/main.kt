@@ -68,8 +68,39 @@ fun getActiveMonitorBounds(): Rectangle? {
 }
 
 fun main() {
-    // Configuração de compatibilidade ANTES de iniciar a aplicação Compose
-    val isWindows = System.getProperty("os.name").lowercase().contains("win")
+    // Configuração de Log de Erro (Essencial para diagnósticos em Linux/Mac/Win)
+    try {
+        runApplication()
+    } catch (e: Throwable) {
+        val os = System.getProperty("os.name").lowercase()
+        val logDir = if (os.contains("win")) {
+            File(System.getenv("APPDATA"), "BereiaVerse")
+        } else {
+            File(System.getProperty("user.home"), ".local/share/bereia-verse")
+        }
+        if (!logDir.exists()) logDir.mkdirs()
+        
+        val crashFile = File(logDir, "crash_log.txt")
+        FileOutputStream(crashFile).use { out ->
+            val message = "Crash at ${java.time.LocalDateTime.now()}\nOS: ${System.getProperty("os.name")} ${System.getProperty("os.version")}\n\n${e.stackTraceToString()}"
+            out.write(message.toByteArray())
+        }
+        e.printStackTrace() // Ainda imprime no console se disponível
+    }
+}
+
+fun runApplication() {
+    val osName = System.getProperty("os.name").lowercase()
+    val isWindows = osName.contains("win")
+    val isLinux = osName.contains("linux")
+    val isMac = osName.contains("mac")
+
+    // Configurações Específicas por SO
+    if (isLinux) {
+        System.setProperty("skiko.linux.autodetect.gpu", "true")
+        // Alguns ambientes Linux/Wayland falham com aceleração de hardware em janelas transparentes
+        // Se houver problemas, o usuário pode tentar lançar com -Dskiko.renderApi=SOFTWARE
+    }
     
     // Detecção robusta do Wine (Env Vars + Registry)
     var isWineDetected = isWindows && (System.getenv("WINEPREFIX") != null || System.getenv("WINELOADERNOEXEC") != null)
