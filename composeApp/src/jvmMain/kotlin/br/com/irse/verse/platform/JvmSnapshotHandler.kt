@@ -15,7 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -117,9 +119,9 @@ class JvmSnapshotHandler : SnapshotHandler {
 
     private fun calculateFontSize(textLength: Int): androidx.compose.ui.unit.TextUnit {
         return when {
-            textLength < 100 -> 48.sp
-            textLength < 300 -> 36.sp
-            textLength < 600 -> 28.sp
+            textLength < 150 -> 34.sp  // Reduzido de 48sp
+            textLength < 400 -> 28.sp  // Reduzido de 36sp
+            textLength < 800 -> 24.sp  // Reduzido de 28sp
             else -> 20.sp
         }
     }
@@ -143,19 +145,39 @@ class JvmSnapshotHandler : SnapshotHandler {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(template.backgroundBrush)
-                .padding(80.dp)
+                .background(if (template.useLogoBackground) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.Transparent)
         ) {
+            // Imagem de Fundo (Se ativado)
+            if (template.useLogoBackground) {
+                Image(
+                    painter = painterResource(Res.drawable.logo),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().alpha(0.6f),
+                    contentScale = ContentScale.Crop
+                )
+                // Scrim/Gradiente sobre a imagem
+                Box(modifier = Modifier.fillMaxSize().background(template.backgroundBrush))
+            } else {
+                // Fundo Padrão
+                Box(modifier = Modifier.fillMaxSize().background(template.backgroundBrush))
+            }
+
+            // Conteúdo (Padding aplicado aqui para não afetar o fundo)
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().padding(40.dp),
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Center
             ) {
+                if (template.showLogo) {
+                    // Se tiver logo background, não mostra logo pequena no topo (regra visual implícita do Exclusivo, mas respeitando a flag)
+                    // ... implementação futura se necessário, por enquanto Notes não tem logo no topo por padrão
+                }
+
                 if (!reference.isNullOrBlank()) {
                     Text(
                         text = reference.uppercase(),
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 24.sp,
+                            fontSize = 22.sp, // Levemente menor
                             fontFamily = fontFamily,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 2.sp
@@ -163,7 +185,7 @@ class JvmSnapshotHandler : SnapshotHandler {
                         color = template.contentColor.copy(alpha = 0.6f),
                         textAlign = TextAlign.Start
                     )
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
                 Text(
@@ -179,11 +201,11 @@ class JvmSnapshotHandler : SnapshotHandler {
                 )
 
                 if (!signature.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(48.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
                     Text(
                         text = signature,
                         style = MaterialTheme.typography.bodyLarge.copy(
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
                             fontFamily = fontFamily,
                             fontStyle = FontStyle.Italic,
                             fontWeight = FontWeight.Light
@@ -215,28 +237,47 @@ class JvmSnapshotHandler : SnapshotHandler {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(template.backgroundBrush)
-                .padding(64.dp)
+                .background(if (template.useLogoBackground) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.Transparent)
         ) {
-            // Logo no Topo
-            Image(
-                painter = painterResource(Res.drawable.logo),
-                contentDescription = null,
-                modifier = Modifier.align(Alignment.TopCenter).size(100.dp)
-            )
+            // Imagem de Fundo (Exclusivo)
+            if (template.useLogoBackground) {
+                Image(
+                    painter = painterResource(Res.drawable.logo),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().alpha(0.5f), // Reduzido para 0.5f para não competir
+                    contentScale = ContentScale.Crop
+                )
+                // Scrim (Gradiente Revelador)
+                Box(modifier = Modifier.fillMaxSize().background(template.backgroundBrush))
+            } else {
+                Box(modifier = Modifier.fillMaxSize().background(template.backgroundBrush))
+            }
 
-            // Conteúdo Centralizado
-            Column(
-                modifier = Modifier.align(Alignment.Center).padding(top = 60.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                // Versículos Agrupados
-                verses.forEach { (_, content) ->
-                    if (content != null) {
-                        val cleanText = HtmlTextFormatter.format(content).toString()
+            Box(modifier = Modifier.fillMaxSize().padding(40.dp)) {
+                // Logo no Topo
+                if (template.showLogo) {
+                    Image(
+                        painter = painterResource(Res.drawable.logo),
+                        contentDescription = null,
+                        modifier = Modifier.align(Alignment.TopCenter).size(80.dp),
+                        alpha = template.logoAlpha
+                    )
+                }
+
+                // Conteúdo
+                Column(
+                    modifier = Modifier.align(Alignment.Center).padding(vertical = 40.dp),
+                    horizontalAlignment = if (template.textAlignment == TextAlign.Start) Alignment.Start else Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Texto dos Versículos
+                    val fullText = verses.joinToString(" ") { (_, content) ->
+                        HtmlTextFormatter.format(content ?: "").toString().trim()
+                    }
+                    
+                    if (fullText.isNotBlank()) {
                         Text(
-                            text = cleanText,
+                            text = fullText,
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontSize = fontSize,
                                 lineHeight = fontSize * 1.4f,
@@ -244,59 +285,53 @@ class JvmSnapshotHandler : SnapshotHandler {
                                 fontWeight = FontWeight.Medium
                             ),
                             color = template.contentColor,
-                            textAlign = TextAlign.Center
+                            textAlign = template.textAlignment,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
-                }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                // Referências Consolidadas no Rodapé
-                if (verses.isNotEmpty()) {
-                    val groupedRefs = verses.map { it.first }.groupBy { it.book }
-                    val refText = groupedRefs.entries.joinToString("; ") { (book, reqs) ->
-                        val chapters = reqs.groupBy { it.chapter }
-                        "$book " + chapters.entries.joinToString(", ") { (chap, vReqs) ->
-                            if (vReqs.size == 1) "$chap:${vReqs.first().verse}"
-                            else "$chap:${vReqs.first().verse}-${vReqs.last().verse}"
+                    // Referências
+                    if (verses.isNotEmpty()) {
+                        val groupedRefs = verses.map { it.first }.groupBy { it.book }
+                        val refText = groupedRefs.entries.joinToString("; ") { (book, reqs) ->
+                            val chapters = reqs.groupBy { it.chapter }
+                            "$book " + chapters.entries.joinToString(", ") { (chap, vReqs) ->
+                                if (vReqs.size == 1) "$chap:${vReqs.first().verse}"
+                                else "$chap:${vReqs.first().verse}-${vReqs.last().verse}"
+                            }
                         }
+
+                        Text(
+                            text = refText.uppercase(),
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = 14.sp, // Reduzido de 18.sp para 14.sp
+                                fontFamily = fontFamily,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.5.sp
+                            ),
+                            color = template.contentColor.copy(alpha = 0.7f),
+                            textAlign = template.textAlignment
+                        )
                     }
-
-                    Text(
-                        text = refText.uppercase(),
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 24.sp,
-                            fontFamily = fontFamily,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp
-                        ),
-                        color = template.contentColor.copy(alpha = 0.8f),
-                        textAlign = TextAlign.Center
-                    )
                 }
-            }
 
-            // Rodapé (Linha + IRSE | Bereia Verse)
-            Column(
-                modifier = Modifier.align(Alignment.BottomCenter),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                 HorizontalDivider(
-                     modifier = Modifier.width(80.dp), 
-                     thickness = 2.dp, 
-                     color = template.contentColor.copy(alpha = 0.3f)
-                 )
-                 Spacer(modifier = Modifier.height(16.dp))
-                 Text(
-                     text = "IRSE | Bereia Verse",
-                     style = MaterialTheme.typography.labelLarge.copy(
-                         fontWeight = FontWeight.Bold,
-                         fontSize = 18.sp,
-                         letterSpacing = 1.sp
-                     ),
-                     color = template.contentColor.copy(alpha = 0.6f)
-                 )
+                // Rodapé
+                if (template.showFooter) {
+                    Column(
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                         HorizontalDivider(modifier = Modifier.width(60.dp), thickness = 1.dp, color = template.contentColor.copy(alpha = 0.2f))
+                         Spacer(modifier = Modifier.height(12.dp))
+                         Text(
+                             text = "IRSE | Bereia Verse",
+                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
+                             color = template.contentColor.copy(alpha = 0.5f)
+                         )
+                    }
+                }
             }
         }
     }

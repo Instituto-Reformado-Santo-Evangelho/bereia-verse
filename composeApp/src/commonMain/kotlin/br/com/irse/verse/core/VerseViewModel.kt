@@ -79,7 +79,12 @@ class VerseViewModel(
         val backgroundBrush: androidx.compose.ui.graphics.Brush, 
         val contentColor: androidx.compose.ui.graphics.Color,
         val fontFamilyName: String = "SansSerif",
-        val borderColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Transparent
+        val borderColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Transparent,
+        val showLogo: Boolean = true,
+        val logoAlpha: Float = 1.0f,
+        val showFooter: Boolean = true,
+        val useLogoBackground: Boolean = false,
+        val textAlignment: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Justify
     )
 
     val templatesList = listOf(
@@ -87,6 +92,36 @@ class VerseViewModel(
             id = "classic", displayName = "Clássico", 
             backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFFFC107), androidx.compose.ui.graphics.Color(0xFFFFD54F))), 
             contentColor = androidx.compose.ui.graphics.Color(0xFF333333)
+        ),
+        SnapshotTemplate(
+            id = "exclusive", displayName = "Exclusivo", 
+            // Gradiente Preto Transparente (Overlay)
+            // Topo: Mais escuro (85%) para garantir leitura
+            // Base: Mais claro (40%) para revelar a imagem com brilho
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                colors = listOf(
+                    androidx.compose.ui.graphics.Color(0xD9000000), // Preto 85%
+                    androidx.compose.ui.graphics.Color(0x99000000), // Preto 60%
+                    androidx.compose.ui.graphics.Color(0x66000000)  // Preto 40%
+                )
+            ), 
+            contentColor = androidx.compose.ui.graphics.Color(0xFFFFFFFF), // Branco Puro
+            showLogo = false,
+            showFooter = false,
+            useLogoBackground = true,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "clean", displayName = "Limpo", // Novo: Sem logo
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFFFFFFF), androidx.compose.ui.graphics.Color(0xFFF0F0F0))), 
+            contentColor = androidx.compose.ui.graphics.Color(0xFF333333),
+            showLogo = false
+        ),
+        SnapshotTemplate(
+            id = "minimal", displayName = "Minimalista", // Novo: Logo opaca
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFE0E0E0), androidx.compose.ui.graphics.Color(0xFFD0D0D0))), 
+            contentColor = androidx.compose.ui.graphics.Color(0xFF202020),
+            logoAlpha = 0.3f
         ),
         SnapshotTemplate(
             id = "dark_modern", displayName = "Dark", 
@@ -128,7 +163,8 @@ class VerseViewModel(
     private val _editingNote = MutableStateFlow<Note?>(null)
     val editingNote = _editingNote.asStateFlow()
 
-    private val MAX_SNAPSHOT_CHARS = 1000
+    private val MAX_SNAPSHOT_CHARS = 600
+    private val MAX_SNAPSHOT_VERSES = 5
 
     // Sync States exposed from Manager/Provider
     val syncState = syncManager.syncState
@@ -424,22 +460,25 @@ class VerseViewModel(
         val currentVerses = _detectedVerses.value
         if (currentVerses.isEmpty()) return
         
-        // Verifica limite de caracteres
+        // Verifica limites (Caracteres e Quantidade de Versículos)
         val totalLength = currentVerses.sumOf { it.second?.length ?: 0 }
-        if (totalLength > MAX_SNAPSHOT_CHARS) {
-            // Texto muito longo: Redireciona para edição manual
+        val verseCount = currentVerses.size
+
+        if (totalLength > MAX_SNAPSHOT_CHARS || verseCount > MAX_SNAPSHOT_VERSES) {
+            // Texto muito longo ou muitos versículos: Redireciona para edição manual
             val fullText = currentVerses.joinToString("\n\n") { it.second?.replace(Regex("<[^>]*>"), "") ?: "" }
-            // Cria uma "Nota Temporária" para edição
             val tempNote = Note(
                 id = generateUuid(), 
-                verseId = currentVerses.first().first.id, // Associa ao primeiro
+                verseId = currentVerses.first().first.id,
                 content = fullText,
                 createdAt = currentTimeMillis(),
                 updatedAt = currentTimeMillis(),
                 syncStatus = SyncStatus.PENDING
             )
             openNoteEditor(note = tempNote)
-            _errorState.value = "Texto muito longo para imagem. Reduza o conteúdo manualmente."
+            
+            val reason = if (verseCount > MAX_SNAPSHOT_VERSES) "Muitos versículos ($verseCount)" else "Texto muito longo"
+            _errorState.value = "$reason para imagem. Edite para caber melhor."
             return
         }
 
