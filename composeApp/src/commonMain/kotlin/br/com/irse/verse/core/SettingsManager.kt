@@ -13,7 +13,8 @@ data class UserSettings(
     val lineHeight: Float = 1.4f,
     val showFireAnimation: Boolean = true,
     val animatedWindow: Boolean = true,
-    val signature: String = ""
+    val signature: String = "",
+    val showSnapshotAction: Boolean = false
 )
 
 object SettingsManager {

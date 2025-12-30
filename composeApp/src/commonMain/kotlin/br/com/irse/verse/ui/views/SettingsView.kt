@@ -115,6 +115,8 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                     cursorColor = VerseColors.PrimaryAmber
                 )
             )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = "Exibida no rodapé dos snapshots de notas.", style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
         }
 
         // --- SEÇÃO: PERFORMANCE E SISTEMA ---
@@ -122,6 +124,15 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             SettingsToggle(title = Strings.FIRE_ANIMATION, desc = Strings.FIRE_ANIMATION_DESC, checked = showFireAnimation, textColor = textColor) { viewModel.updateShowFireAnimation(it) }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
             SettingsToggle(title = Strings.WINDOW_ANIMATION, desc = Strings.WINDOW_ANIMATION_DESC, checked = animatedWindow, textColor = textColor) { viewModel.updateAnimatedWindow(it) }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
+            
+            val showSnapshotAction by viewModel.showSnapshotAction.collectAsState()
+            SettingsToggle(
+                title = "Captura de Imagem (Snapshot)", 
+                desc = "Exibir botão de captura na lista de notas e versículos.", 
+                checked = showSnapshotAction, 
+                textColor = textColor
+            ) { viewModel.updateShowSnapshotAction(it) }
         }
         
         // --- SEÇÃO: SINCRONIZAÇÃO ---

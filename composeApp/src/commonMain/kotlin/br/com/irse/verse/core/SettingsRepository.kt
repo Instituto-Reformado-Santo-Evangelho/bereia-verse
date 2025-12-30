@@ -53,6 +53,12 @@ open class SettingsRepository {
         save(newSettings)
     }
 
+    open suspend fun updateShowSnapshotAction(enabled: Boolean) {
+        val current = _settings.value
+        val newSettings = current.copy(showSnapshotAction = enabled)
+        save(newSettings)
+    }
+
     private suspend fun save(newSettings: UserSettings) {
         SettingsManager.saveSettings(newSettings)
         _settings.value = newSettings

@@ -1,6 +1,6 @@
 package br.com.irse.verse
 
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
@@ -71,6 +71,7 @@ fun App(
     val canGoForward by viewModel.canGoForward.collectAsState()
     val errorState by viewModel.errorState.collectAsState()
     val isNoteEditorOpen by viewModel.isNoteEditorOpen.collectAsState()
+    val showSnapshotAction by viewModel.showSnapshotAction.collectAsState()
 
     val clipboard = LocalClipboardManager.current
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
@@ -140,6 +141,14 @@ fun App(
     ) {
         var isCopied by remember { mutableStateOf(false) }
         
+        // Auto-hide copy feedback
+        LaunchedEffect(isCopied) {
+            if (isCopied) {
+                kotlinx.coroutines.delay(3000)
+                isCopied = false
+            }
+        }
+
         LaunchedEffect(detectedVerses, currentTab) {
             isCopied = false
         }
@@ -300,9 +309,11 @@ fun App(
                             }
                         }
                         
-                        val showCamera = (currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) || isNoteEditorOpen
-                        if (showCamera) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                        val showCamera = ((currentTab == AppTab.VERSES && detectedVerses.isNotEmpty()) || isNoteEditorOpen) && showSnapshotAction
+                        val showCopy = currentTab == AppTab.VERSES && detectedVerses.isNotEmpty() && !isNoteEditorOpen
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (showCamera) {
                                 var isCameraHovered by remember { mutableStateOf(false) }
                                 Surface(
                                     color = if (isCameraHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, 
@@ -314,16 +325,52 @@ fun App(
                                 ) {
                                     Box(modifier = Modifier.padding(8.dp)) { Icon(imageVector = FeatherIcons.Camera, contentDescription = "Salvar Imagem", tint = if (isCameraHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) }
                                 }
+                            }
+                            
+                            if (showCopy) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                var isCopyHovered by remember { mutableStateOf(false) }
                                 
-                                if (currentTab == AppTab.VERSES && !isNoteEditorOpen) {
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    var isCopyHovered by remember { mutableStateOf(false) }
-                                    Surface(color = if (isCopyHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isCopyHovered = true }, onExit = { isCopyHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { val fullText = detectedVerses.joinToString("\n\n") { (req, content) -> val cleanContent = content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""; "$cleanContent (${req.book} ${req.chapter}:${req.verse} - ACF)" }; clipboard.setText(AnnotatedString(fullText)); isCopied = true }) {
-                                        Box(modifier = Modifier.padding(8.dp)) { if (isCopied) CheckIcon(color = VerseColors.SuccessGreen) else CopyIcon(color = if (isCopyHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
+                                Surface(
+                                    color = if (isCopyHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, 
+                                    shape = RoundedCornerShape(8.dp), 
+                                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isCopyHovered = true }, onExit = { isCopyHovered = false })
+                                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { 
+                                            val text = viewModel.formatVersesForClipboard(detectedVerses)
+                                            clipboard.setText(AnnotatedString(text))
+                                            isCopied = true 
+                                        }
+                                ) {
+                                    Box(modifier = Modifier.padding(8.dp)) { 
+                                        if (isCopied) CheckIcon(color = VerseColors.SuccessGreen) 
+                                        else CopyIcon(color = if (isCopyHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) 
                                     }
                                 }
                             }
                         }
+                    }
+                }
+
+                // Copy Feedback Floating Overlay
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = isCopied,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp) // Posicionado acima do rodapé
+                ) {
+                    Surface(
+                        color = VerseColors.SuccessGreen.copy(alpha = 0.9f),
+                        contentColor = Color.White,
+                        shape = RoundedCornerShape(24.dp),
+                        tonalElevation = 4.dp,
+                        shadowElevation = 4.dp
+                    ) {
+                        Text(
+                            text = "Copiado: ${viewModel.getConsolidatedReference(detectedVerses)}",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
 

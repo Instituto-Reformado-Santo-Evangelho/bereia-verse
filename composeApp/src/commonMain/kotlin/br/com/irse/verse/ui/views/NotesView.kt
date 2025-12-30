@@ -56,7 +56,8 @@ fun NotesView(
     val isNoteEditorOpen by viewModel.isNoteEditorOpen.collectAsState()
     val editingNote by viewModel.editingNote.collectAsState()
     val viewingNote by viewModel.viewingNote.collectAsState()
-    val noteToDelete by viewModel.noteToDelete.collectAsState() // Dialog State
+    val noteToDelete by viewModel.noteToDelete.collectAsState()
+    val showSnapshotAction by viewModel.showSnapshotAction.collectAsState()
     val fontFamilyName by viewModel.fontFamily.collectAsState()
     
     val clipboard = LocalClipboardManager.current
@@ -103,6 +104,7 @@ fun NotesView(
                 parser = viewModel.parser,
                 onClose = { viewModel.closeNoteViewer() },
                 onEdit = { viewModel.openNoteEditor(note = viewingNote) },
+                onDelete = { viewModel.confirmDeleteNote(viewingNote!!) }, // Passando callback de delete
                 onLinkClick = { linkText -> viewModel.processQuery(linkText) }
             )
         } else {
@@ -159,9 +161,9 @@ fun NotesView(
                                 textColor = textColor,
                                 fontFamily = fontFamily,
                                 parser = viewModel.parser,
+                                showSnapshotAction = showSnapshotAction,
                                 onEdit = { viewModel.openNoteEditor(note = note) },
                                 onView = { viewModel.openNoteViewer(note) },
-                                onDelete = { viewModel.confirmDeleteNote(note) },
                                 onCopy = { clipboard.setText(AnnotatedString(note.content)) },
                                 onSnapshot = { viewModel.captureNoteSnapshot(note = note) },
                                 onLinkClick = { } // Links disabled in list
@@ -214,19 +216,18 @@ fun NoteViewer(
     parser: BibleParser,
     onClose: () -> Unit,
     onEdit: () -> Unit,
+    onDelete: () -> Unit, // Adicionado callback para exclusão
     onLinkClick: (String) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Header
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Header Estilo Editor
+        HorizontalDivider(thickness = 1.dp, color = VerseColors.PrimaryAmber.copy(alpha = 0.2f))
+        
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onClose) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor)
-            }
-            
             Text(
                 text = reference.uppercase(),
                 style = MaterialTheme.typography.labelMedium,
@@ -234,24 +235,31 @@ fun NoteViewer(
                 color = VerseColors.PrimaryAmber,
                 letterSpacing = 1.5.sp
             )
-
-            IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = textColor.copy(alpha = 0.6f))
+            Row {
+                IconButton(onClick = onEdit) { 
+                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = textColor.copy(alpha = 0.6f)) 
+                }
+                IconButton(onClick = onDelete) { 
+                    Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = VerseColors.ErrorRed.copy(alpha = 0.6f)) 
+                }
+                IconButton(onClick = onClose) { 
+                    Icon(Icons.Default.Close, contentDescription = "Fechar", tint = textColor.copy(alpha = 0.4f)) 
+                }
             }
         }
         
-        HorizontalDivider(thickness = 1.dp, color = textColor.copy(alpha = 0.1f))
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Conteúdo com Scroll
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        // Conteúdo
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).verticalScroll(rememberScrollState())) {
             NoteSmartText(
                 text = note.content,
                 textColor = textColor,
                 fontFamily = fontFamily,
                 parser = parser,
                 onLinkClick = onLinkClick,
-                isViewerMode = true
+                isViewerMode = true,
+                linksEnabled = true
             )
         }
     }
@@ -264,9 +272,9 @@ fun NoteItem(
     textColor: Color, 
     fontFamily: FontFamily,
     parser: BibleParser,
+    showSnapshotAction: Boolean,
     onEdit: () -> Unit,
     onView: () -> Unit,
-    onDelete: () -> Unit,
     onCopy: () -> Unit,
     onSnapshot: () -> Unit,
     onLinkClick: (String) -> Unit
@@ -288,17 +296,15 @@ fun NoteItem(
                     IconButton(onClick = onView, modifier = Modifier.size(32.dp)) { 
                         Icon(imageVector = FeatherIcons.Eye, contentDescription = "Ler", modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
                     }
-                    IconButton(onClick = onSnapshot, modifier = Modifier.size(32.dp)) { 
-                        Icon(imageVector = FeatherIcons.Camera, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
+                    
+                    if (showSnapshotAction) {
+                        IconButton(onClick = onSnapshot, modifier = Modifier.size(32.dp)) { 
+                            Icon(imageVector = FeatherIcons.Camera, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
+                        }
                     }
+
                     IconButton(onClick = onCopy, modifier = Modifier.size(32.dp)) { 
                         Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
-                    }
-                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) { 
-                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
-                    }
-                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { 
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp), tint = VerseColors.ErrorRed.copy(alpha = 0.4f)) 
                     }
                 }
             }

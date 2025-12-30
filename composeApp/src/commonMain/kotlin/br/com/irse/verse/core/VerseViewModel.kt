@@ -75,6 +75,7 @@ class VerseViewModel(
     val showFireAnimation = settingsRepository.settings.map { it.showFireAnimation }.stateIn(viewModelScope, SharingStarted.Lazily, true)
     val animatedWindow = settingsRepository.settings.map { it.animatedWindow }.stateIn(viewModelScope, SharingStarted.Lazily, true)
     val signature = settingsRepository.settings.map { it.signature }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val showSnapshotAction = settingsRepository.settings.map { it.showSnapshotAction }.stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     private val _textColor = MutableStateFlow(androidx.compose.ui.graphics.Color(0xFF333333))
     val textColor = _textColor.asStateFlow()
@@ -497,6 +498,39 @@ class VerseViewModel(
         return "${req.book} ${req.chapter}:${req.verse}"
     }
 
+    fun formatVersesForClipboard(verses: List<Pair<VerseRequest, String?>>): String {
+        if (verses.isEmpty()) return ""
+        
+        // Texto contínuo sem tags HTML
+        val fullText = verses.joinToString(" ") { (_, content) ->
+            content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""
+        }
+
+        // Referência consolidada (Ex: João 3:16; Mateus 1:1-2)
+        val groupedRefs = verses.map { it.first }.groupBy { it.book }
+        val refText = groupedRefs.entries.joinToString("; ") { (book, reqs) ->
+            val chapters = reqs.groupBy { it.chapter }
+            "$book " + chapters.entries.joinToString(", ") { (chap, vReqs) ->
+                if (vReqs.size == 1) "$chap:${vReqs.first().verse}"
+                else "$chap:${vReqs.first().verse}-${vReqs.last().verse}"
+            }
+        }
+
+        return "$fullText ($refText - ACF)"
+    }
+
+    fun getConsolidatedReference(verses: List<Pair<VerseRequest, String?>>): String {
+        if (verses.isEmpty()) return ""
+        val groupedRefs = verses.map { it.first }.groupBy { it.book }
+        return groupedRefs.entries.joinToString("; ") { (book, reqs) ->
+            val chapters = reqs.groupBy { it.chapter }
+            "$book " + chapters.entries.joinToString(", ") { (chap, vReqs) ->
+                if (vReqs.size == 1) "$chap:${vReqs.first().verse}"
+                else "$chap:${vReqs.first().verse}-${vReqs.last().verse}"
+            }
+        }
+    }
+
     fun triggerSync() {
         viewModelScope.launch {
             try {
@@ -513,6 +547,7 @@ class VerseViewModel(
     fun updateShowFireAnimation(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateShowFireAnimation(enabled) } }
     fun updateAnimatedWindow(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateAnimatedWindow(enabled) } }
     fun updateSignature(text: String) { viewModelScope.launch { settingsRepository.updateSignature(text) } }
+    fun updateShowSnapshotAction(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateShowSnapshotAction(enabled) } }
 
     fun captureSnapshot() {
         val currentVerses = _detectedVerses.value
