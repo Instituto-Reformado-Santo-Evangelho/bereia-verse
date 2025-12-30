@@ -115,6 +115,15 @@ class JvmSnapshotHandler : SnapshotHandler {
         }
     }
 
+    private fun calculateFontSize(textLength: Int): androidx.compose.ui.unit.TextUnit {
+        return when {
+            textLength < 100 -> 48.sp
+            textLength < 300 -> 36.sp
+            textLength < 600 -> 28.sp
+            else -> 20.sp
+        }
+    }
+
     @Composable
     fun NoteSnapshotLayout(
         content: String,
@@ -128,6 +137,8 @@ class JvmSnapshotHandler : SnapshotHandler {
             "Cursive" -> FontFamily.Cursive
             else -> FontFamily.SansSerif
         }
+
+        val fontSize = calculateFontSize(content.length)
 
         Box(
             modifier = Modifier
@@ -158,8 +169,8 @@ class JvmSnapshotHandler : SnapshotHandler {
                 Text(
                     text = content,
                     style = MaterialTheme.typography.headlineSmall.copy(
-                        fontSize = 36.sp,
-                        lineHeight = 52.sp,
+                        fontSize = fontSize,
+                        lineHeight = fontSize * 1.4f,
                         fontFamily = fontFamily,
                         fontWeight = FontWeight.Medium
                     ),
@@ -197,13 +208,17 @@ class JvmSnapshotHandler : SnapshotHandler {
             else -> FontFamily.SansSerif
         }
 
+        // Calcula texto total para definir fonte
+        val totalTextLength = verses.sumOf { it.second?.length ?: 0 }
+        val fontSize = calculateFontSize(totalTextLength)
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(template.backgroundBrush)
                 .padding(64.dp)
         ) {
-            // Logo no Topo (Cores originais como no header)
+            // Logo no Topo
             Image(
                 painter = painterResource(Res.drawable.logo),
                 contentDescription = null,
@@ -216,35 +231,36 @@ class JvmSnapshotHandler : SnapshotHandler {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                verses.forEach { (req, content) ->
+                // Versículos Agrupados
+                verses.forEach { (_, content) ->
                     if (content != null) {
                         val cleanText = HtmlTextFormatter.format(content).toString()
                         Text(
                             text = cleanText,
                             style = MaterialTheme.typography.headlineSmall.copy(
-                                fontSize = 32.sp,
-                                lineHeight = 44.sp,
+                                fontSize = fontSize,
+                                lineHeight = fontSize * 1.4f,
                                 fontFamily = fontFamily,
                                 fontWeight = FontWeight.Medium
                             ),
                             color = template.contentColor,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
+                // Referências Consolidadas no Rodapé
                 if (verses.isNotEmpty()) {
-                    val first = verses.first().first
-                    val last = verses.last().first
-                    val refText = if (verses.size == 1) {
-                        "${first.book} ${first.chapter}:${first.verse}"
-                    } else if (first.book == last.book) {
-                        "${first.book} ${first.chapter}:${first.verse}-${last.verse}"
-                    } else {
-                        "${first.book} ${first.chapter}:${first.verse}..."
+                    val groupedRefs = verses.map { it.first }.groupBy { it.book }
+                    val refText = groupedRefs.entries.joinToString("; ") { (book, reqs) ->
+                        val chapters = reqs.groupBy { it.chapter }
+                        "$book " + chapters.entries.joinToString(", ") { (chap, vReqs) ->
+                            if (vReqs.size == 1) "$chap:${vReqs.first().verse}"
+                            else "$chap:${vReqs.first().verse}-${vReqs.last().verse}"
+                        }
                     }
 
                     Text(
@@ -255,7 +271,8 @@ class JvmSnapshotHandler : SnapshotHandler {
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         ),
-                        color = template.contentColor.copy(alpha = 0.8f)
+                        color = template.contentColor.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center
                     )
                 }
             }

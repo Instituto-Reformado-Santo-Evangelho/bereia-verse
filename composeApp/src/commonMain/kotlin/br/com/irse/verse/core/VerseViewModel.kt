@@ -128,6 +128,8 @@ class VerseViewModel(
     private val _editingNote = MutableStateFlow<Note?>(null)
     val editingNote = _editingNote.asStateFlow()
 
+    private val MAX_SNAPSHOT_CHARS = 1000
+
     // Sync States exposed from Manager/Provider
     val syncState = syncManager.syncState
     val isSyncAuthorized = syncManager.isAuthorized
@@ -421,6 +423,26 @@ class VerseViewModel(
     fun captureSnapshot() {
         val currentVerses = _detectedVerses.value
         if (currentVerses.isEmpty()) return
+        
+        // Verifica limite de caracteres
+        val totalLength = currentVerses.sumOf { it.second?.length ?: 0 }
+        if (totalLength > MAX_SNAPSHOT_CHARS) {
+            // Texto muito longo: Redireciona para edição manual
+            val fullText = currentVerses.joinToString("\n\n") { it.second?.replace(Regex("<[^>]*>"), "") ?: "" }
+            // Cria uma "Nota Temporária" para edição
+            val tempNote = Note(
+                id = generateUuid(), 
+                verseId = currentVerses.first().first.id, // Associa ao primeiro
+                content = fullText,
+                createdAt = currentTimeMillis(),
+                updatedAt = currentTimeMillis(),
+                syncStatus = SyncStatus.PENDING
+            )
+            openNoteEditor(note = tempNote)
+            _errorState.value = "Texto muito longo para imagem. Reduza o conteúdo manualmente."
+            return
+        }
+
         val template = _selectedTemplate.value
         viewModelScope.launch {
             _isProcessing.value = true
@@ -431,6 +453,17 @@ class VerseViewModel(
     fun captureNoteSnapshot(note: Note? = null, editorContent: String? = null) {
         val targetNote = note ?: _editingNote.value
         val content = editorContent ?: targetNote?.content ?: return
+        
+        if (content.length > MAX_SNAPSHOT_CHARS) {
+            if (_isNoteEditorOpen.value) {
+                _errorState.value = "Ainda muito longo (${content.length}/$MAX_SNAPSHOT_CHARS). Resuma mais."
+            } else {
+                openNoteEditor(note = targetNote)
+                _errorState.value = "Nota muito longa para imagem. Reduza o conteúdo."
+            }
+            return
+        }
+
         val ref = targetNote?.verseId?.let { getVerseReference(it) } ?: _editingVerseRequest.value?.let { "${it.book} ${it.chapter}:${it.verse}" }
         val template = _selectedTemplate.value
         val sign = signature.value
