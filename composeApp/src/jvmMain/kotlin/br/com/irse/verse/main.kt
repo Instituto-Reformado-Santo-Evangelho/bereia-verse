@@ -309,20 +309,20 @@ fun main() {
                         },
                         isWine = isWine,
                         headerModifier = Modifier.pointerInput(Unit) {
-                            detectDragGestures(
-                                onDragEnd = {
-                                    // Sincroniza o estado final para o Compose estar ciente da nova posição
-                                    val loc = window.location
-                                    state.position = WindowPosition(loc.x.dp, loc.y.dp)
-                                }
-                            ) { change, dragAmount ->
+                            detectDragGestures { change, dragAmount ->
                                 change.consume()
                                 val awtWindow = window
                                 val windowPos = awtWindow.location
                                 
+                                // Converte o dragAmount (pixels) para a posição da janela
                                 val newX = (windowPos.x + dragAmount.x).toInt()
                                 val newY = (windowPos.y + dragAmount.y).toInt()
+                                
                                 awtWindow.setLocation(newX, newY)
+                                
+                                // Sincroniza o estado do Compose usando density para converter pixels de volta para DP corretamente
+                                val density = this.density
+                                state.position = WindowPosition((newX / density).dp, (newY / density).dp)
                             }
                         }
                     )
