@@ -74,6 +74,13 @@ fun App(
 
     val clipboard = LocalClipboardManager.current
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
+
+    // Reset para a aba de versículos quando novos versículos são detectados externamente
+    LaunchedEffect(detectedVerses) {
+        if (detectedVerses.isNotEmpty()) {
+            currentTab = AppTab.VERSES
+        }
+    }
     
     val uniqueBooks = remember(detectedVerses) { detectedVerses.map { it.first.book }.distinct() }
     val titleDisplay = when (currentTab) {
