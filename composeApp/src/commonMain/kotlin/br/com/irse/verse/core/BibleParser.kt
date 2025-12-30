@@ -8,7 +8,7 @@ open class BibleParser(val repository: BibleRepository) {
     // Construída dinamicamente para garantir que apenas livros válidos sejam detectados
     // Usa Alternância para tratar separadamente "Com Livro" e "Sem Livro"
     // "Sem Livro" usa Lookahead Negativo para não engolir prefixos de livros (ex: "1" de "1 João")
-    private val refRegex by lazy {
+    val refRegex by lazy {
         val allKeys = repository.getAllBooks().keys + BibleConstants.BOOK_ABBREVIATIONS.keys
         val triggers = allKeys
             .sortedByDescending { it.length }.joinToString("|") { key ->

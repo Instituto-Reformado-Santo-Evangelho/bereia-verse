@@ -40,12 +40,17 @@ import compose.icons.feathericons.Camera
 
 import androidx.compose.foundation.BorderStroke
 
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import br.com.irse.verse.core.BibleParser
+
 @Composable
 fun NotesView(
     viewModel: VerseViewModel,
     textColor: Color
 ) {
-    val notes by viewModel.filteredNotes.collectAsState() // Use filtered notes
+    val notes by viewModel.filteredNotes.collectAsState()
     val noteFilter by viewModel.noteFilter.collectAsState()
     val isNoteEditorOpen by viewModel.isNoteEditorOpen.collectAsState()
     val editingNote by viewModel.editingNote.collectAsState()
@@ -111,10 +116,12 @@ fun NotesView(
                             reference = reference,
                             textColor = textColor,
                             fontFamily = fontFamily,
+                            parser = viewModel.parser, // Pass parser
                             onEdit = { viewModel.openNoteEditor(note = note) },
                             onDelete = { viewModel.deleteNote(note.id) },
                             onCopy = { clipboard.setText(AnnotatedString(note.content)) },
-                            onSnapshot = { viewModel.captureNoteSnapshot(note = note) }
+                            onSnapshot = { viewModel.captureNoteSnapshot(note = note) },
+                            onLinkClick = { linkText -> viewModel.processQuery(linkText) } // Handle link click
                         )
                     }
                 }
@@ -160,10 +167,12 @@ fun NoteItem(
     reference: String, 
     textColor: Color, 
     fontFamily: FontFamily,
+    parser: BibleParser,
     onEdit: () -> Unit, 
     onDelete: () -> Unit,
     onCopy: () -> Unit,
-    onSnapshot: () -> Unit
+    onSnapshot: () -> Unit,
+    onLinkClick: (String) -> Unit
 ) {
     Surface(
         color = textColor.copy(alpha = 0.05f),
@@ -185,9 +194,70 @@ fun NoteItem(
                     IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp), tint = VerseColors.ErrorRed.copy(alpha = 0.4f)) }
                 }
             }
-            Text(text = note.content, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily), color = textColor, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            
+            // Smart Text with Links
+            NoteSmartText(
+                text = note.content,
+                textColor = textColor,
+                fontFamily = fontFamily,
+                parser = parser,
+                onLinkClick = onLinkClick
+            )
         }
     }
+}
+
+@Composable
+fun NoteSmartText(
+    text: String,
+    textColor: Color,
+    fontFamily: FontFamily,
+    parser: BibleParser,
+    onLinkClick: (String) -> Unit
+) {
+    val annotatedString = remember(text) {
+        buildAnnotatedString {
+            append(text)
+            
+            val matches = parser.refRegex.findAll(text)
+            for (match in matches) {
+                val start = match.range.first
+                val end = match.range.last + 1
+                
+                // Style as Link
+                addStyle(
+                    style = SpanStyle(
+                        color = VerseColors.PrimaryAmber,
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
+                    ),
+                    start = start,
+                    end = end
+                )
+                
+                // Add annotation tag
+                addStringAnnotation(
+                    tag = "VERSE_LINK",
+                    annotation = match.value,
+                    start = start,
+                    end = end
+                )
+            }
+        }
+    }
+
+    ClickableText(
+        text = annotatedString,
+        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily, color = textColor),
+        maxLines = 3,
+        overflow = TextOverflow.Ellipsis,
+        onClick = { offset ->
+            annotatedString.getStringAnnotations(tag = "VERSE_LINK", start = offset, end = offset)
+                .firstOrNull()?.let { annotation ->
+                    onLinkClick(annotation.item)
+                }
+        }
+    )
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

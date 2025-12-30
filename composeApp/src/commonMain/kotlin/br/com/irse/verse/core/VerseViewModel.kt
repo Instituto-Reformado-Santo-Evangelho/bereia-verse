@@ -4,7 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 class VerseViewModel(
-    private val parser: BibleParser,
+    val parser: BibleParser,
     private val database: BibleDatabase,
     private val snapshotHandler: SnapshotHandler,
     private val settingsRepository: SettingsRepository,
