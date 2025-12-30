@@ -1,49 +1,50 @@
 package br.com.irse.verse.ui.views
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.*
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.irse.verse.core.BibleParser
 import br.com.irse.verse.core.Note
 import br.com.irse.verse.core.VerseViewModel
 import br.com.irse.verse.ui.pointerHoverIconHand
 import br.com.irse.verse.ui.theme.VerseColors
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Camera
-
-import androidx.compose.foundation.BorderStroke
-
-import androidx.compose.foundation.text.ClickableText
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import br.com.irse.verse.core.BibleParser
+import compose.icons.feathericons.Eye
 
 @Composable
 fun NotesView(
@@ -54,6 +55,8 @@ fun NotesView(
     val noteFilter by viewModel.noteFilter.collectAsState()
     val isNoteEditorOpen by viewModel.isNoteEditorOpen.collectAsState()
     val editingNote by viewModel.editingNote.collectAsState()
+    val viewingNote by viewModel.viewingNote.collectAsState()
+    val noteToDelete by viewModel.noteToDelete.collectAsState() // Dialog State
     val fontFamilyName by viewModel.fontFamily.collectAsState()
     
     val clipboard = LocalClipboardManager.current
@@ -64,77 +67,118 @@ fun NotesView(
         "cursive" -> FontFamily.Cursive
         else -> FontFamily.SansSerif
     }
+    
+    // Delete Confirmation Dialog
+    if (noteToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelDeleteNote() },
+            title = { Text("Excluir Nota?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
+            text = { Text("Tem certeza que deseja excluir esta anotação? Esta ação não pode ser desfeita.", color = textColor.copy(alpha = 0.8f)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.performDeleteNote() }) {
+                    Text("Excluir", color = VerseColors.ErrorRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelDeleteNote() }) {
+                    Text("Cancelar", color = textColor.copy(alpha = 0.7f))
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Filtros
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                NoteFilterChip(
-                    text = "Todas",
-                    selected = noteFilter == VerseViewModel.NoteFilter.ALL,
-                    onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.ALL) }
-                )
-                NoteFilterChip(
-                    text = "Livres",
-                    selected = noteFilter == VerseViewModel.NoteFilter.FREE,
-                    onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.FREE) }
-                )
-                NoteFilterChip(
-                    text = "Versículos",
-                    selected = noteFilter == VerseViewModel.NoteFilter.VERSE,
-                    onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.VERSE) }
-                )
+        if (viewingNote != null) {
+            // MODO VISUALIZAÇÃO (LEITURA)
+            val reference = remember(viewingNote) {
+                viewingNote?.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
             }
-
-            if (notes.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+            NoteViewer(
+                note = viewingNote!!,
+                reference = reference,
+                textColor = textColor,
+                fontFamily = fontFamily,
+                parser = viewModel.parser,
+                onClose = { viewModel.closeNoteViewer() },
+                onEdit = { viewModel.openNoteEditor(note = viewingNote) },
+                onLinkClick = { linkText -> viewModel.processQuery(linkText) }
+            )
+        } else {
+            // MODO LISTA
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Filtros
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(Icons.Default.NoteAdd, contentDescription = null, modifier = Modifier.size(48.dp), tint = textColor.copy(alpha = 0.1f))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Nenhuma anotação encontrada", color = textColor.copy(alpha = 0.3f))
+                    NoteFilterChip(
+                        text = "Todas",
+                        selected = noteFilter == VerseViewModel.NoteFilter.ALL,
+                        onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.ALL) }
+                    )
+                    NoteFilterChip(
+                        text = "Livres",
+                        selected = noteFilter == VerseViewModel.NoteFilter.FREE,
+                        onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.FREE) }
+                    )
+                    NoteFilterChip(
+                        text = "Versículos",
+                        selected = noteFilter == VerseViewModel.NoteFilter.VERSE,
+                        onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.VERSE) }
+                    )
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp), // Bottom padding for FAB
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(notes, key = { it.id }) { note ->
-                        val reference = remember(note.verseId) {
-                            note.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
+
+                if (notes.isEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Using AutoMirrored if available, otherwise fallback to Default
+                        Icon(Icons.Default.NoteAdd, contentDescription = null, modifier = Modifier.size(48.dp), tint = textColor.copy(alpha = 0.1f))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Nenhuma anotação encontrada", color = textColor.copy(alpha = 0.3f))
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(notes, key = { it.id }) { note ->
+                            val reference = remember(note.verseId) {
+                                note.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
+                            }
+                            NoteItem(
+                                note = note,
+                                reference = reference,
+                                textColor = textColor,
+                                fontFamily = fontFamily,
+                                parser = viewModel.parser,
+                                onEdit = { viewModel.openNoteEditor(note = note) },
+                                onView = { viewModel.openNoteViewer(note) },
+                                onDelete = { viewModel.confirmDeleteNote(note) },
+                                onCopy = { clipboard.setText(AnnotatedString(note.content)) },
+                                onSnapshot = { viewModel.captureNoteSnapshot(note = note) },
+                                onLinkClick = { } // Links disabled in list
+                            )
                         }
-                        NoteItem(
-                            note = note,
-                            reference = reference,
-                            textColor = textColor,
-                            fontFamily = fontFamily,
-                            parser = viewModel.parser, // Pass parser
-                            onEdit = { viewModel.openNoteEditor(note = note) },
-                            onDelete = { viewModel.deleteNote(note.id) },
-                            onCopy = { clipboard.setText(AnnotatedString(note.content)) },
-                            onSnapshot = { viewModel.captureNoteSnapshot(note = note) },
-                            onLinkClick = { linkText -> viewModel.processQuery(linkText) } // Handle link click
-                        )
                     }
                 }
             }
-        }
 
-        SmallFloatingActionButton(
-            onClick = { viewModel.openNoteEditor() },
-            containerColor = VerseColors.PrimaryAmber,
-            contentColor = VerseColors.HeaderContentColor,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).pointerHoverIconHand()
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null)
+            SmallFloatingActionButton(
+                onClick = { viewModel.openNoteEditor() },
+                containerColor = VerseColors.PrimaryAmber,
+                contentColor = VerseColors.HeaderContentColor,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).pointerHoverIconHand()
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+            }
         }
 
         AnimatedVisibility(
@@ -162,13 +206,66 @@ fun NotesView(
 }
 
 @Composable
+fun NoteViewer(
+    note: Note,
+    reference: String,
+    textColor: Color,
+    fontFamily: FontFamily,
+    parser: BibleParser,
+    onClose: () -> Unit,
+    onEdit: () -> Unit,
+    onLinkClick: (String) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onClose) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor)
+            }
+            
+            Text(
+                text = reference.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Black,
+                color = VerseColors.PrimaryAmber,
+                letterSpacing = 1.5.sp
+            )
+
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = textColor.copy(alpha = 0.6f))
+            }
+        }
+        
+        HorizontalDivider(thickness = 1.dp, color = textColor.copy(alpha = 0.1f))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Conteúdo com Scroll
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            NoteSmartText(
+                text = note.content,
+                textColor = textColor,
+                fontFamily = fontFamily,
+                parser = parser,
+                onLinkClick = onLinkClick,
+                isViewerMode = true
+            )
+        }
+    }
+}
+
+@Composable
 fun NoteItem(
     note: Note, 
     reference: String, 
     textColor: Color, 
     fontFamily: FontFamily,
     parser: BibleParser,
-    onEdit: () -> Unit, 
+    onEdit: () -> Unit,
+    onView: () -> Unit,
     onDelete: () -> Unit,
     onCopy: () -> Unit,
     onSnapshot: () -> Unit,
@@ -177,7 +274,7 @@ fun NoteItem(
     Surface(
         color = textColor.copy(alpha = 0.05f),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth().clickable { onEdit() }
+        modifier = Modifier.fillMaxWidth().clickable { onView() } // Clique no card abre visualização
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -188,20 +285,33 @@ fun NoteItem(
                     fontWeight = FontWeight.Bold
                 )
                 Row {
-                    IconButton(onClick = onSnapshot, modifier = Modifier.size(32.dp)) { Icon(imageVector = compose.icons.FeatherIcons.Camera, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) }
-                    IconButton(onClick = onCopy, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) }
-                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) }
-                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp), tint = VerseColors.ErrorRed.copy(alpha = 0.4f)) }
+                    IconButton(onClick = onView, modifier = Modifier.size(32.dp)) { 
+                        Icon(imageVector = FeatherIcons.Eye, contentDescription = "Ler", modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
+                    }
+                    IconButton(onClick = onSnapshot, modifier = Modifier.size(32.dp)) { 
+                        Icon(imageVector = FeatherIcons.Camera, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
+                    }
+                    IconButton(onClick = onCopy, modifier = Modifier.size(32.dp)) { 
+                        Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
+                    }
+                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) { 
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
+                    }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { 
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp), tint = VerseColors.ErrorRed.copy(alpha = 0.4f)) 
+                    }
                 }
             }
             
-            // Smart Text with Links
+            // Smart Text (Preview na lista)
             NoteSmartText(
                 text = note.content,
                 textColor = textColor,
                 fontFamily = fontFamily,
                 parser = parser,
-                onLinkClick = onLinkClick
+                onLinkClick = onLinkClick,
+                isViewerMode = false,
+                linksEnabled = false
             )
         }
     }
@@ -213,49 +323,59 @@ fun NoteSmartText(
     textColor: Color,
     fontFamily: FontFamily,
     parser: BibleParser,
-    onLinkClick: (String) -> Unit
+    onLinkClick: (String) -> Unit,
+    isViewerMode: Boolean,
+    linksEnabled: Boolean = true
 ) {
-    val annotatedString = remember(text) {
+    val annotatedString = remember(text, isViewerMode, linksEnabled) {
         buildAnnotatedString {
             append(text)
             
-            val matches = parser.refRegex.findAll(text)
-            for (match in matches) {
-                val start = match.range.first
-                val end = match.range.last + 1
-                
-                // Style as Link
-                addStyle(
-                    style = SpanStyle(
-                        color = VerseColors.PrimaryAmber,
-                        fontWeight = FontWeight.Bold,
-                        textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
-                    ),
-                    start = start,
-                    end = end
-                )
-                
-                // Add annotation tag
-                addStringAnnotation(
-                    tag = "VERSE_LINK",
-                    annotation = match.value,
-                    start = start,
-                    end = end
-                )
+            if (linksEnabled) {
+                val matches = parser.refRegex.findAll(text)
+                for (match in matches) {
+                    val start = match.range.first
+                    val end = match.range.last + 1
+                    
+                    // Style as Link (No decoration if viewer mode)
+                    addStyle(
+                        style = SpanStyle(
+                            color = VerseColors.PrimaryAmber,
+                            fontWeight = FontWeight.Bold,
+                            textDecoration = if (isViewerMode) TextDecoration.None else TextDecoration.Underline
+                        ),
+                        start = start,
+                        end = end
+                    )
+                    
+                    addStringAnnotation(
+                        tag = "VERSE_LINK",
+                        annotation = match.value,
+                        start = start,
+                        end = end
+                    )
+                }
             }
         }
     }
 
     ClickableText(
         text = annotatedString,
-        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily, color = textColor),
-        maxLines = 3,
+        style = MaterialTheme.typography.bodyLarge.copy(
+            fontSize = if (isViewerMode) 18.sp else 14.sp,
+            lineHeight = if (isViewerMode) 28.sp else 20.sp,
+            fontFamily = fontFamily, 
+            color = textColor
+        ),
+        maxLines = if (isViewerMode) Int.MAX_VALUE else 3,
         overflow = TextOverflow.Ellipsis,
         onClick = { offset ->
-            annotatedString.getStringAnnotations(tag = "VERSE_LINK", start = offset, end = offset)
-                .firstOrNull()?.let { annotation ->
-                    onLinkClick(annotation.item)
-                }
+            if (linksEnabled) {
+                annotatedString.getStringAnnotations(tag = "VERSE_LINK", start = offset, end = offset)
+                    .firstOrNull()?.let { annotation ->
+                        onLinkClick(annotation.item)
+                    }
+            }
         }
     )
 }

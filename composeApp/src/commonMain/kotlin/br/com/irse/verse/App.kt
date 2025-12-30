@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.irse.verse.core.AppTab
 import br.com.irse.verse.core.Strings
 import br.com.irse.verse.core.VerseViewModel
 import br.com.irse.verse.ui.components.*
@@ -47,8 +48,7 @@ import org.jetbrains.compose.resources.painterResource
 import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
 
-// App tabs
-enum class AppTab { VERSES, HISTORY, SEARCH, NOTES, ABOUT, SETTINGS }
+// App tabs imported from core
 
 @OptIn(ExperimentalResourceApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -74,6 +74,13 @@ fun App(
 
     val clipboard = LocalClipboardManager.current
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
+
+    // Navigation Request Listener (e.g. from Smart Links)
+    LaunchedEffect(Unit) {
+        viewModel.tabRequest.collect { tab ->
+            currentTab = tab
+        }
+    }
 
     // Reset para a aba de versículos quando novos versículos são detectados externamente
     LaunchedEffect(detectedVerses) {

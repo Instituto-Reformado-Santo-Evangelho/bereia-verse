@@ -169,6 +169,17 @@ class VerseViewModel(
     private val _isNoteEditorOpen = MutableStateFlow(false)
     val isNoteEditorOpen = _isNoteEditorOpen.asStateFlow()
 
+    // Estado do Visualizador de Notas (Modo Leitura)
+    private val _viewingNote = MutableStateFlow<Note?>(null)
+    val viewingNote = _viewingNote.asStateFlow()
+
+    // Estado para diálogo de confirmação de exclusão
+    private val _noteToDelete = MutableStateFlow<Note?>(null)
+    val noteToDelete = _noteToDelete.asStateFlow()
+
+    private val _tabRequest = MutableSharedFlow<AppTab>()
+    val tabRequest = _tabRequest.asSharedFlow()
+
     private val _editingVerseRequest = MutableStateFlow<VerseRequest?>(null)
     val editingVerseRequest = _editingVerseRequest.asStateFlow()
 
@@ -206,12 +217,23 @@ class VerseViewModel(
         _editingVerseRequest.value = request
         _editingNote.value = note
         _isNoteEditorOpen.value = true
+        // Se abrir editor, fecha viewer
+        _viewingNote.value = null
     }
 
     fun closeNoteEditor() {
         _isNoteEditorOpen.value = false
         _editingVerseRequest.value = null
         _editingNote.value = null
+    }
+
+    fun openNoteViewer(note: Note) {
+        _viewingNote.value = note
+        _isNoteEditorOpen.value = false
+    }
+
+    fun closeNoteViewer() {
+        _viewingNote.value = null
     }
 
     fun setTemplate(template: SnapshotTemplate) { _selectedTemplate.value = template }
@@ -343,6 +365,8 @@ class VerseViewModel(
                         val historyLabel = formatHistoryLabel(requests)
                         historyRepository.saveEntry(historyLabel)
                     }
+                    // Solicita navegação para aba de versículos
+                    _tabRequest.emit(AppTab.VERSES)
                 }
             } catch (e: Exception) {
                 _errorState.value = "Erro ao processar texto: ${e.message}"
@@ -444,9 +468,27 @@ class VerseViewModel(
         }
     }
 
-    fun deleteNote(noteId: String) {
+    fun confirmDeleteNote(note: Note) {
+        _noteToDelete.value = note
+    }
+
+    fun cancelDeleteNote() {
+        _noteToDelete.value = null
+    }
+
+    fun performDeleteNote() {
+        val note = _noteToDelete.value ?: return
         viewModelScope.launch {
-            try { notesRepository.deleteNote(noteId) } catch (e: Exception) { _errorState.value = "Erro ao excluir nota: ${e.message}" }
+            try { 
+                notesRepository.deleteNote(note.id) 
+                _noteToDelete.value = null
+                // Se estiver visualizando a nota excluída, fecha o viewer
+                if (_viewingNote.value?.id == note.id) {
+                    closeNoteViewer()
+                }
+            } catch (e: Exception) { 
+                _errorState.value = "Erro ao excluir nota: ${e.message}" 
+            }
         }
     }
 
