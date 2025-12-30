@@ -121,12 +121,19 @@ compose.desktop {
                 shortcut = true
                 appCategory = "Education"
                 menuGroup = "Utility"
+                iconFile.set(project.file("src/jvmMain/resources/icon.png"))
             }
             
+            macOS {
+                bundleID = "br.com.irse.verse"
+                iconFile.set(project.file("src/jvmMain/resources/icon.icns"))
+            }
+
             windows {
                 shortcut = true
                 menu = true
                 upgradeUuid = "550e8400-e29b-41d4-a716-446655440000" 
+                iconFile.set(project.file("src/jvmMain/resources/icon.ico"))
             }
         }
     }
