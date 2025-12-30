@@ -65,7 +65,32 @@ fun getActiveMonitorBounds(): Rectangle? {
     } catch (e: Exception) { e.printStackTrace(); null }
 }
 
-fun main() = application {
+fun main() {
+    // Configuração de compatibilidade ANTES de iniciar a aplicação Compose
+    val isWindows = System.getProperty("os.name").lowercase().contains("win")
+    
+    // Detecção robusta do Wine (Env Vars + Registry)
+    var isWineDetected = isWindows && (System.getenv("WINEPREFIX") != null || System.getenv("WINELOADERNOEXEC") != null)
+    
+    if (isWindows && !isWineDetected) {
+        try {
+            // Tenta detectar chave do Wine no registro se as env vars falharem
+            val process = ProcessBuilder("reg", "query", "HKLM\\Software\\Wine").start()
+            isWineDetected = process.waitFor() == 0
+        } catch (e: Exception) {
+            // Ignora erro se 'reg' não existir ou falhar
+        }
+    }
+
+    if (isWineDetected) {
+        System.setProperty("verse.isWine", "true")
+        // Força renderização via software para evitar crashes (X_CopyArea)
+        System.setProperty("sun.java2d.xrender", "false")
+        System.setProperty("sun.java2d.d3d", "false")
+        System.setProperty("skiko.renderApi", "SOFTWARE")
+    }
+
+    application {
     val fullWidth = 400.dp
     val miniSize = 64.dp
     val screenPadding = 20
@@ -124,7 +149,10 @@ fun main() = application {
     val icon = painterResource(Res.drawable.logo)
     val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
     val isWindows = remember { System.getProperty("os.name").lowercase().contains("win") }
-    val isWine = remember { isWindows && (System.getenv("WINEPREFIX") != null || System.getenv("WINELOADERNOEXEC") != null) }
+    // Usa a propriedade definida no início do main()
+    val isWine = remember { System.getProperty("verse.isWine") == "true" }
+    
+    val shouldBeTransparent = !isWine
 
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
         val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return
@@ -238,7 +266,7 @@ fun main() = application {
 
     val actualIsTraySupported = isTraySupported && !isLinux && !isWine
     if (actualIsTraySupported) {
-        Tray(icon = icon, tooltip = "Bereia Verse", onAction = { isVisible = !isVisible }, menu = {
+        Tray(icon = icon, tooltip = "IRSE | Bereia Verse", onAction = { isVisible = !isVisible }, menu = {
             Item("Exibir/Ocultar", onClick = { isVisible = !isVisible })
             Separator()
             Item("Sair", onClick = { exitApplication() })
@@ -247,21 +275,26 @@ fun main() = application {
 
     Window(
         onCloseRequest = { exitApplication() },
-        title = "Bereia Verse",
+        title = "IRSE | Bereia Verse",
         state = state,
         icon = icon,
         visible = isVisible,
-        undecorated = true, transparent = true, alwaysOnTop = true, resizable = false
+        undecorated = true, 
+        transparent = shouldBeTransparent, 
+        alwaysOnTop = true, 
+        resizable = false
     ) {
         SideEffect { currentWindow = window }
-        LaunchedEffect(Unit) { window.setBackground(java.awt.Color(0, 0, 0, 0)) }
+        if (shouldBeTransparent) {
+            LaunchedEffect(Unit) { window.setBackground(java.awt.Color(0, 0, 0, 0)) }
+        }
         
         AnimatedContent(
             targetState = isMiniMode,
             transitionSpec = { fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300)) }
         ) { mini ->
             if (mini) {
-                MiniWidget(onClick = { isMiniMode = false })
+                MiniWidget(onClick = { isMiniMode = false }, isWine = isWine)
             } else {
                 if (viewModel.value != null) {
                     App(
@@ -271,7 +304,8 @@ fun main() = application {
                             if (!isMiniMode) {
                                 targetHeight = height
                             }
-                        }
+                        },
+                        isWine = isWine
                     )
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -281,12 +315,16 @@ fun main() = application {
             }
         }
     }
+    }
 }
 
 @Composable
-fun MiniWidget(onClick: () -> Unit) {
+fun MiniWidget(onClick: () -> Unit, isWine: Boolean = false) {
     MaterialTheme {
-        Surface(color = Color.Transparent, modifier = Modifier.fillMaxSize()) {
+        // Se Wine (sem transparência), usa fundo sólido ou ajusta layout
+        val surfaceColor = if (isWine) Color(0xFF202020) else Color.Transparent
+        
+        Surface(color = surfaceColor, modifier = Modifier.fillMaxSize()) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(4.dp)) {
                 Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFFFC107).copy(alpha = 0.8f)).clickable { onClick() }) {
                     Image(painter = painterResource(Res.drawable.logo), contentDescription = null, modifier = Modifier.size(32.dp).align(Alignment.Center))

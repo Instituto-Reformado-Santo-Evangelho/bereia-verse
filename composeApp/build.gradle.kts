@@ -240,7 +240,7 @@ tasks.register<JavaExec>("createExe") {
               <headerType>gui</headerType>
               <jar>${jarFile.name}</jar>
               <outfile>${outputExe.absolutePath}</outfile>
-              <errTitle>Bereia Verse Error</errTitle>
+              <errTitle>IRSE | Bereia Verse Error</errTitle>
               <cmdLine></cmdLine>
               <chdir>.</chdir>
               <priority>normal</priority>
@@ -258,10 +258,7 @@ tasks.register<JavaExec>("createExe") {
                 <maxVersion></maxVersion>
                 <jdkPreference>preferJre</jdkPreference>
                 <runtimeBits>64</runtimeBits>
-                <!-- Fixes gráficos para compatibilidade máxima (Wine/Windows Antigo) -->
-                <opt>-Dsun.java2d.xrender=false</opt>
-                <opt>-Dsun.java2d.d3d=false</opt>
-                <opt>-Dskiko.renderApi=SOFTWARE</opt>
+                <!-- Opções gráficas removidas para permitir aceleração de hardware no Windows -->
               </jre>
             </launch4jConfig>
         """.trimIndent()

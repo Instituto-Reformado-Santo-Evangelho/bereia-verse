@@ -69,11 +69,10 @@ class VerseOverlayService : LifecycleService(), SavedStateRegistryOwner {
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
 
-        val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Bereia Verse Ativo")
-            .setContentText("Toque no ícone flutuante para ler versículos")
-            .setSmallIcon(android.R.drawable.ic_menu_agenda)
-            .build()
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("IRSE | Bereia Verse Ativo")
+            .setContentText("Monitorando área de transferência...")
+            .setSmallIcon(R.mipmap.ic_launcher)
 
         startForeground(1, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
     }

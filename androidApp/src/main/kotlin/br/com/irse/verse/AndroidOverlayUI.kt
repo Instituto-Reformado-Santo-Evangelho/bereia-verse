@@ -61,7 +61,15 @@ fun AndroidOverlayExpanded(
                 modifier = Modifier.fillMaxWidth().background(Color(0xFFFFC107)).padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Bereia Verse", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("IRSE | Bereia Verse", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                if (uniqueBooks.size == 1) uniqueBooks.first() else "${uniqueBooks.size} Livros Detectados", 
+                                color = Color.White.copy(alpha = 0.7f), 
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = onClose) {
                     Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White)

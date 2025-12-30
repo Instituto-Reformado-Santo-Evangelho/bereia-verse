@@ -1,6 +1,6 @@
-!define APPNAME "Bereia Verse"
+!define APPNAME "IRSE | Bereia Verse"
 !define COMPANYNAME "IRSE"
-!define DESCRIPTION "Leitor de versiculos biblicos automatico"
+!define DESCRIPTION "Um leitor de versículos bíblicos simples e elegante"
 !define VERSIONMAJOR 1
 !define VERSIONMINOR 0
 !define VERSIONBUILD 0

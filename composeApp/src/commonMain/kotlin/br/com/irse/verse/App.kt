@@ -55,7 +55,8 @@ enum class AppTab { VERSES, HISTORY, SEARCH, NOTES, ABOUT, SETTINGS }
 fun App(
     viewModel: VerseViewModel,
     onClose: () -> Unit = {},
-    onHeightRequest: (Dp) -> Unit = {}
+    onHeightRequest: (Dp) -> Unit = {},
+    isWine: Boolean = false
 )
 {
     val detectedVerses by viewModel.detectedVerses.collectAsState()
@@ -88,6 +89,9 @@ fun App(
     val textColor = if (isDark) VerseColors.DarkText else VerseColors.LightText
     val footerColor = if (isDark) VerseColors.DarkFooter else VerseColors.LightFooter
     val borderColor = if (isDark) VerseColors.DarkBorder else VerseColors.LightBorder
+    
+    // Se estiver no Wine (sem transparência), usa cantos retos para evitar fundo preto
+    val windowShape = if (isWine) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(16.dp)
 
     val globalFontFamily = when (fontFamily) {
         "serif" -> androidx.compose.ui.text.font.FontFamily.Serif
@@ -140,7 +144,7 @@ fun App(
                         }
                     } else false
                 }, 
-            shape = RoundedCornerShape(16.dp), 
+            shape = windowShape, 
             color = surfaceColor, 
             shadowElevation = 8.dp, 
             border = BorderStroke(1.dp, borderColor.copy(alpha = 0.5f))
