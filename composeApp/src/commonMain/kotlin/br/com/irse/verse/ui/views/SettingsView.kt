@@ -30,6 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.irse.verse.core.Strings
 import br.com.irse.verse.core.VerseViewModel
+import br.com.irse.verse.core.CloudSyncState
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.Cloud
+import compose.icons.feathericons.CloudOff
 import br.com.irse.verse.ui.pointerHoverIconHand
 import kotlinx.coroutines.launch
 
@@ -118,6 +122,74 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             SettingsToggle(title = Strings.FIRE_ANIMATION, desc = Strings.FIRE_ANIMATION_DESC, checked = showFireAnimation, textColor = textColor) { viewModel.updateShowFireAnimation(it) }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
             SettingsToggle(title = Strings.WINDOW_ANIMATION, desc = Strings.WINDOW_ANIMATION_DESC, checked = animatedWindow, textColor = textColor) { viewModel.updateAnimatedWindow(it) }
+        }
+        
+        // --- SEÇÃO: SINCRONIZAÇÃO ---
+        val isSyncAuthorized by viewModel.isSyncAuthorized.collectAsState()
+        val syncState by viewModel.syncState.collectAsState()
+        
+        SettingsSection(title = "Sincronização") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isSyncAuthorized) VerseColors.SuccessGreen.copy(alpha = 0.1f) else Color.Gray.copy(alpha = 0.1f),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (isSyncAuthorized) FeatherIcons.Cloud else FeatherIcons.CloudOff,
+                                contentDescription = null,
+                                tint = if (isSyncAuthorized) VerseColors.SuccessGreen else Color.Gray,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = if (isSyncAuthorized) "Google Drive Conectado" else "Google Drive Desconectado",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = textColor
+                        )
+                        if (isSyncAuthorized) {
+                            Text(
+                                text = when(syncState) {
+                                    CloudSyncState.SYNCING -> "Sincronizando..."
+                                    CloudSyncState.SUCCESS -> "Sincronizado"
+                                    CloudSyncState.ERROR -> "Erro na sincronização"
+                                    else -> "Pronto"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = textColor.copy(alpha = 0.6f)
+                            )
+                        } else {
+                            Text(
+                                text = "Faça login para salvar suas notas na nuvem",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = textColor.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                }
+                
+                Button(
+                    onClick = { if (isSyncAuthorized) viewModel.logoutDrive() else viewModel.loginToDrive() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isSyncAuthorized) Color.Gray.copy(alpha = 0.1f) else VerseColors.PrimaryAmber,
+                        contentColor = if (isSyncAuthorized) textColor else VerseColors.HeaderContentColor
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(text = if (isSyncAuthorized) "Desconectar" else "Conectar")
+                }
+            }
         }
         
         Spacer(modifier = Modifier.height(40.dp))

@@ -121,6 +121,30 @@ class VerseViewModel(
     private val _editingNote = MutableStateFlow<Note?>(null)
     val editingNote = _editingNote.asStateFlow()
 
+    // Sync States exposed from Manager/Provider
+    val syncState = syncManager.syncState
+    val isSyncAuthorized = syncManager.isAuthorized
+
+    fun loginToDrive() {
+        viewModelScope.launch {
+            try {
+                syncManager.authorize()
+            } catch (e: Exception) {
+                _errorState.value = "Erro ao conectar Google Drive: ${e.message}"
+            }
+        }
+    }
+
+    fun logoutDrive() {
+        viewModelScope.launch {
+            try {
+                syncManager.signOut()
+            } catch (e: Exception) {
+                _errorState.value = "Erro ao desconectar: ${e.message}"
+            }
+        }
+    }
+
     fun openNoteEditor(request: VerseRequest? = null, note: Note? = null) {
         _editingVerseRequest.value = request
         _editingNote.value = note

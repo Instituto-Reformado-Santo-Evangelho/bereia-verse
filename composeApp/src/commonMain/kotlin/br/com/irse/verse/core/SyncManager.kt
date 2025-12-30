@@ -10,6 +10,12 @@ class SyncManager(
 ) {
     private val scope = CoroutineScope(dispatchers.io + SupervisorJob())
     
+    val syncState: StateFlow<CloudSyncState> = cloudProvider?.syncState ?: MutableStateFlow(CloudSyncState.IDLE).asStateFlow()
+    val isAuthorized: StateFlow<Boolean> = cloudProvider?.isAuthorized ?: MutableStateFlow(false).asStateFlow()
+
+    suspend fun authorize() = cloudProvider?.authorize()
+    suspend fun signOut() = cloudProvider?.signOut()
+    
     fun startAutoSync() {
         if (cloudProvider == null) return
         
