@@ -82,6 +82,13 @@ fun App(
         }
     }
     
+    // Abre a aba de notas quando o editor é ativado (ex: via pesquisa)
+    LaunchedEffect(isNoteEditorOpen) {
+        if (isNoteEditorOpen) {
+            currentTab = AppTab.NOTES
+        }
+    }
+    
     val uniqueBooks = remember(detectedVerses) { detectedVerses.map { it.first.book }.distinct() }
     val titleDisplay = when (currentTab) {
         AppTab.HISTORY -> Strings.HISTORY_TAB
