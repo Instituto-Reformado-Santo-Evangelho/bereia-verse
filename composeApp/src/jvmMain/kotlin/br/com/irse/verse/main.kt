@@ -108,8 +108,14 @@ fun runApplication() {
     if (isWindows && !isWineDetected) {
         try {
             // Tenta detectar chave do Wine no registro se as env vars falharem
+            // Usa timeout para evitar hang
             val process = ProcessBuilder("reg", "query", "HKLM\\Software\\Wine").start()
-            isWineDetected = process.waitFor() == 0
+            val finished = process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)
+            if (finished) {
+                isWineDetected = process.exitValue() == 0
+            } else {
+                process.destroy()
+            }
         } catch (e: Exception) {
             // Ignora erro se 'reg' não existir ou falhar
         }

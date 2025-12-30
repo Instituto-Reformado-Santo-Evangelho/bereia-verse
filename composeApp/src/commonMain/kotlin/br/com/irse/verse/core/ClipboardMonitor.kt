@@ -31,7 +31,7 @@ object ClipboardMonitor {
                     return clipboard.getData(DataFlavor.stringFlavor) as? String ?: ""
                 }
                 break // Success but no text
-            } catch (_: Exception) {
+            } catch (_: Throwable) {
                 // Ignore and retry
                 attempts++
                 try { Thread.sleep(50) } catch (_: Exception) {}
