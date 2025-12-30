@@ -254,29 +254,35 @@ fun App(
                     // Footer
                     Row(modifier = Modifier.fillMaxWidth().background(footerColor).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 4.dp)) {
-                            var isSearchHovered by remember { mutableStateOf(false) }
-                            Surface(color = if (currentTab == AppTab.SEARCH || isSearchHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isSearchHovered = true }, onExit = { isSearchHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.SEARCH }) {
-                                Box(modifier = Modifier.padding(8.dp)) { SearchIcon(color = if (currentTab == AppTab.SEARCH || isSearchHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
-                            }
-
-                            var isHistoryHovered by remember { mutableStateOf(false) }
-                            Surface(color = if (currentTab == AppTab.HISTORY || isHistoryHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isHistoryHovered = true }, onExit = { isHistoryHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.HISTORY; viewModel.refreshHistory() }) {
-                                Box(modifier = Modifier.padding(8.dp)) { HistoryIcon(color = if (currentTab == AppTab.HISTORY || isHistoryHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
-                            }
-
-                            var isNotesHovered by remember { mutableStateOf(false) }
-                            Surface(color = if (currentTab == AppTab.NOTES || isNotesHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isNotesHovered = true }, onExit = { isNotesHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.NOTES }) {
-                                Box(modifier = Modifier.padding(8.dp)) { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = if (currentTab == AppTab.NOTES || isNotesHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) }
-                            }
-
+                            
+                            // 1. Configurações
                             var isSettingsHovered by remember { mutableStateOf(false) }
                             Surface(color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isSettingsHovered = true }, onExit = { isSettingsHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.SETTINGS }) {
                                 Box(modifier = Modifier.padding(8.dp)) { SettingsIcon(color = if (currentTab == AppTab.SETTINGS || isSettingsHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
                             }
 
+                            // 2. Sobre
                             var isAboutHovered by remember { mutableStateOf(false) }
                             Surface(color = if (currentTab == AppTab.ABOUT || isAboutHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isAboutHovered = true }, onExit = { isAboutHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.ABOUT }) {
                                 Box(modifier = Modifier.padding(8.dp)) { BibleIcon(color = if (currentTab == AppTab.ABOUT || isAboutHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
+                            }
+
+                            // 3. Histórico
+                            var isHistoryHovered by remember { mutableStateOf(false) }
+                            Surface(color = if (currentTab == AppTab.HISTORY || isHistoryHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isHistoryHovered = true }, onExit = { isHistoryHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.HISTORY; viewModel.refreshHistory() }) {
+                                Box(modifier = Modifier.padding(8.dp)) { HistoryIcon(color = if (currentTab == AppTab.HISTORY || isHistoryHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
+                            }
+
+                            // 4. Notas
+                            var isNotesHovered by remember { mutableStateOf(false) }
+                            Surface(color = if (currentTab == AppTab.NOTES || isNotesHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isNotesHovered = true }, onExit = { isNotesHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.NOTES }) {
+                                Box(modifier = Modifier.padding(8.dp)) { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = if (currentTab == AppTab.NOTES || isNotesHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) }
+                            }
+
+                            // 5. Pesquisa
+                            var isSearchHovered by remember { mutableStateOf(false) }
+                            Surface(color = if (currentTab == AppTab.SEARCH || isSearchHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isSearchHovered = true }, onExit = { isSearchHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.SEARCH }) {
+                                Box(modifier = Modifier.padding(8.dp)) { SearchIcon(color = if (currentTab == AppTab.SEARCH || isSearchHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) }
                             }
                         }
                         

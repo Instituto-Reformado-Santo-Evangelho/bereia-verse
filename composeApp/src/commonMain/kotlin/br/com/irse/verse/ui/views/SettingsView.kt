@@ -129,65 +129,60 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
         val syncState by viewModel.syncState.collectAsState()
         
         SettingsSection(title = "Sincronização") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    Surface(
-                        shape = CircleShape,
-                        color = if (isSyncAuthorized) VerseColors.SuccessGreen.copy(alpha = 0.1f) else Color.Gray.copy(alpha = 0.1f),
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = if (isSyncAuthorized) FeatherIcons.Cloud else FeatherIcons.CloudOff,
-                                contentDescription = null,
-                                tint = if (isSyncAuthorized) VerseColors.SuccessGreen else Color.Gray,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = if (isSyncAuthorized) "Google Drive Conectado" else "Google Drive Desconectado",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = textColor
-                        )
-                        if (isSyncAuthorized) {
-                            Text(
-                                text = when(syncState) {
-                                    CloudSyncState.SYNCING -> "Sincronizando..."
-                                    CloudSyncState.SUCCESS -> "Sincronizado"
-                                    CloudSyncState.ERROR -> "Erro na sincronização"
-                                    else -> "Pronto"
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = textColor.copy(alpha = 0.6f)
-                            )
-                        } else {
-                            Text(
-                                text = "Faça login para salvar suas notas na nuvem",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = textColor.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
-                }
-                
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Título e Descrição
+                Text(
+                    text = if (isSyncAuthorized) "Google Drive Conectado" else "Backup na Nuvem",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
+                Text(
+                    text = if (isSyncAuthorized) 
+                        "Suas notas estão sendo sincronizadas automaticamente com sua conta Google." 
+                    else 
+                        "Faça login para salvar suas anotações e acessá-las em qualquer dispositivo.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textColor.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                )
+
+                // Botão de Ação (Ícone + Texto)
                 Button(
                     onClick = { if (isSyncAuthorized) viewModel.logoutDrive() else viewModel.loginToDrive() },
+                    modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSyncAuthorized) Color.Gray.copy(alpha = 0.1f) else VerseColors.PrimaryAmber,
-                        contentColor = if (isSyncAuthorized) textColor else VerseColors.HeaderContentColor
+                        containerColor = if (isSyncAuthorized) VerseColors.ErrorRed.copy(alpha = 0.1f) else VerseColors.PrimaryAmber,
+                        contentColor = if (isSyncAuthorized) VerseColors.ErrorRed else VerseColors.HeaderContentColor
                     ),
                     shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
-                    Text(text = if (isSyncAuthorized) "Desconectar" else "Conectar")
+                    Icon(
+                        imageVector = if (isSyncAuthorized) FeatherIcons.CloudOff else FeatherIcons.Cloud,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (isSyncAuthorized) "Desconectar Conta" else "Conectar Google Drive",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                // Status discreto abaixo do botão (apenas quando conectado)
+                if (isSyncAuthorized) {
+                    Text(
+                        text = when(syncState) {
+                            CloudSyncState.SYNCING -> "Status: Sincronizando..."
+                            CloudSyncState.SUCCESS -> "Status: Tudo atualizado"
+                            CloudSyncState.ERROR -> "Status: Erro na sincronização"
+                            else -> ""
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = textColor.copy(alpha = 0.5f),
+                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
+                    )
                 }
             }
         }

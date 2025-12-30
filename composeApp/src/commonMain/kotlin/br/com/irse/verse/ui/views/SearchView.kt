@@ -1,5 +1,6 @@
 package br.com.irse.verse.ui.views
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,24 +46,28 @@ fun SearchView(
 ) {
     val query by viewModel.searchQuery.collectAsState()
     val results by viewModel.searchResults.collectAsState()
+    val noteResults by viewModel.noteSearchResults.collectAsState()
+    val searchScope by viewModel.searchScope.collectAsState()
     val lineHeight by viewModel.lineHeight.collectAsState()
     
     var selectedIndex by remember { mutableStateOf(-1) }
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
     
+    val hasResults = if (searchScope == VerseViewModel.SearchScope.VERSES) results.isNotEmpty() else noteResults.isNotEmpty()
+    
     LaunchedEffect(selectedIndex) {
-        if (selectedIndex >= 0 && results.isNotEmpty()) {
+        if (selectedIndex >= 0 && hasResults) {
             listState.animateScrollToItem(selectedIndex)
         }
     }
 
-    LaunchedEffect(results) {
-        selectedIndex = if (results.isNotEmpty()) 0 else -1
+    LaunchedEffect(results, noteResults) {
+        selectedIndex = if (hasResults) 0 else -1
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { viewModel.onSearchQueryChanged(it) },
@@ -70,22 +76,28 @@ fun SearchView(
                 modifier = Modifier.fillMaxWidth()
                     .onKeyEvent { keyEvent ->
                         if (keyEvent.type == KeyEventType.KeyDown) {
+                            val maxIndex = if (searchScope == VerseViewModel.SearchScope.VERSES) results.size - 1 else noteResults.size - 1
                             when (keyEvent.key) {
                                 Key.DirectionDown -> {
-                                    if (results.isNotEmpty()) {
-                                        selectedIndex = (selectedIndex + 1).coerceAtMost(results.size - 1)
+                                    if (hasResults) {
+                                        selectedIndex = (selectedIndex + 1).coerceAtMost(maxIndex)
                                         true
                                     } else false
                                 }
                                 Key.DirectionUp -> {
-                                    if (results.isNotEmpty()) {
+                                    if (hasResults) {
                                         selectedIndex = (selectedIndex - 1).coerceAtLeast(0)
                                         true
                                     } else false
                                 }
                                 Key.Enter -> {
-                                    if (selectedIndex >= 0 && selectedIndex < results.size) {
-                                        onVerseSelect(results[selectedIndex].id)
+                                    if (selectedIndex >= 0 && selectedIndex <= maxIndex) {
+                                        if (searchScope == VerseViewModel.SearchScope.VERSES) {
+                                            onVerseSelect(results[selectedIndex].id)
+                                        } else {
+                                            val note = noteResults[selectedIndex]
+                                            viewModel.openNoteEditor(note = note)
+                                        }
                                         focusManager.clearFocus()
                                     } else if (query.isNotBlank()) {
                                         viewModel.processQuery(query)
@@ -115,78 +127,45 @@ fun SearchView(
                     }
                 }
             )
+            
+            // Filtro de Escopo (Toast/Chips)
+            Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ScopeChip(
+                    text = "Versículos",
+                    selected = searchScope == VerseViewModel.SearchScope.VERSES,
+                    onClick = { viewModel.setSearchScope(VerseViewModel.SearchScope.VERSES) }
+                )
+                ScopeChip(
+                    text = "Notas",
+                    selected = searchScope == VerseViewModel.SearchScope.NOTES,
+                    onClick = { viewModel.setSearchScope(VerseViewModel.SearchScope.NOTES) }
+                )
+            }
         }
 
-        if (results.isNotEmpty()) {
+        if (hasResults) {
             LazyColumn(
                 modifier = Modifier.weight(1f).padding(horizontal = 16.dp), 
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 contentPadding = PaddingValues(bottom = 12.dp)
             ) {
-                itemsIndexed(results) { index, res ->
-                    val isSelected = index == selectedIndex
-                    Surface(
-                        modifier = Modifier.fillMaxWidth()
-                            .pointerHoverIconHand()
-                            .clickable {
-                                onVerseSelect(res.id)
-                                focusManager.clearFocus()
-                            },
-                        color = if (isSelected) VerseColors.PrimaryAmber.copy(alpha = 0.15f) else Color.Transparent,
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            if (res.book.isNotEmpty()) {
-                                Text(
-                                    text = "${res.book} ${res.chapter}:${res.verse}", 
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontSize = (fontSize - 2).sp, 
-                                        fontFamily = fontFamily
-                                    ), 
-                                    fontWeight = FontWeight.Bold, 
-                                    color = VerseColors.PrimaryAmber
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
-                            
-                            val highlightedText = buildAnnotatedString {
-                                val cleanContent = res.content.replace(Regex("<[^>]*>"), "")
-                                val lowerContent = cleanContent.lowercase()
-                                val lowerQuery = query.lowercase()
-                                var start = 0
-                                
-                                if (lowerQuery.isNotBlank() && lowerContent.contains(lowerQuery)) {
-                                    while (true) {
-                                        val idx = lowerContent.indexOf(lowerQuery, start)
-                                        if (idx == -1) {
-                                            append(cleanContent.substring(start))
-                                            break
-                                        }
-                                        append(cleanContent.substring(start, idx))
-                                        withStyle(SpanStyle(fontWeight = FontWeight.Black, color = VerseColors.PrimaryAmber)) {
-                                            append(cleanContent.substring(idx, idx + query.length))
-                                        }
-                                        start = idx + query.length
-                                    }
-                                } else {
-                                    append(cleanContent)
-                                }
-                            }
-                            Text(
-                                text = highlightedText, 
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = (fontSize - 1).sp, 
-                                    fontFamily = fontFamily,
-                                    lineHeight = ((fontSize - 1) * lineHeight).sp
-                                ), 
-                                maxLines = 3, 
-                                overflow = TextOverflow.Ellipsis, 
-                                color = textColor
-                            )
+                if (searchScope == VerseViewModel.SearchScope.VERSES) {
+                    itemsIndexed(results) { index, res ->
+                        val isSelected = index == selectedIndex
+                        VerseResultItem(res, isSelected, query, fontSize, fontFamily, lineHeight, textColor) {
+                            onVerseSelect(res.id)
+                            focusManager.clearFocus()
                         }
                     }
-                    HorizontalDivider(color = textColor.copy(alpha = 0.05f), modifier = Modifier.padding(horizontal = 8.dp))
+                } else {
+                    itemsIndexed(noteResults) { index, note ->
+                        val isSelected = index == selectedIndex
+                        NoteResultItem(note, isSelected, query, fontSize, fontFamily, textColor, viewModel) {
+                            viewModel.openNoteEditor(note = note)
+                            focusManager.clearFocus()
+                        }
+                    }
                 }
             }
         } else {
@@ -227,4 +206,133 @@ fun SearchView(
              }
         }
     }
+}
+
+@Composable
+fun ScopeChip(text: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+        border = BorderStroke(1.dp, if (selected) VerseColors.PrimaryAmber else Color.Gray.copy(alpha = 0.3f)),
+        modifier = Modifier.pointerHoverIconHand()
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) VerseColors.PrimaryAmber else Color.Gray,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+fun VerseResultItem(
+    res: br.com.irse.verse.core.SearchResult,
+    isSelected: Boolean,
+    query: String,
+    fontSize: Int,
+    fontFamily: FontFamily,
+    lineHeight: Float,
+    textColor: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().pointerHoverIconHand().clickable(onClick = onClick),
+        color = if (isSelected) VerseColors.PrimaryAmber.copy(alpha = 0.15f) else Color.Transparent,
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            if (res.book.isNotEmpty()) {
+                Text(
+                    text = "${res.book} ${res.chapter}:${res.verse}", 
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = (fontSize - 2).sp, fontFamily = fontFamily), 
+                    fontWeight = FontWeight.Bold, 
+                    color = VerseColors.PrimaryAmber
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+            
+            val highlightedText = buildAnnotatedString {
+                val cleanContent = res.content.replace(Regex("<[^>]*>"), "")
+                val lowerContent = cleanContent.lowercase()
+                val lowerQuery = query.lowercase()
+                var start = 0
+                
+                if (lowerQuery.isNotBlank() && lowerContent.contains(lowerQuery)) {
+                    while (true) {
+                        val idx = lowerContent.indexOf(lowerQuery, start)
+                        if (idx == -1) { append(cleanContent.substring(start)); break }
+                        append(cleanContent.substring(start, idx))
+                        withStyle(SpanStyle(fontWeight = FontWeight.Black, color = VerseColors.PrimaryAmber)) { append(cleanContent.substring(idx, idx + query.length)) }
+                        start = idx + query.length
+                    }
+                } else { append(cleanContent) }
+            }
+            Text(
+                text = highlightedText, 
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = (fontSize - 1).sp, fontFamily = fontFamily, lineHeight = ((fontSize - 1) * lineHeight).sp), 
+                maxLines = 3, overflow = TextOverflow.Ellipsis, color = textColor
+            )
+        }
+    }
+    HorizontalDivider(color = textColor.copy(alpha = 0.05f), modifier = Modifier.padding(horizontal = 8.dp))
+}
+
+@Composable
+fun NoteResultItem(
+    note: br.com.irse.verse.core.Note,
+    isSelected: Boolean,
+    query: String,
+    fontSize: Int,
+    fontFamily: FontFamily,
+    textColor: Color,
+    viewModel: VerseViewModel,
+    onClick: () -> Unit
+) {
+    val ref = note.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Geral"
+    
+    Surface(
+        modifier = Modifier.fillMaxWidth().pointerHoverIconHand().clickable(onClick = onClick),
+        color = if (isSelected) VerseColors.PrimaryAmber.copy(alpha = 0.15f) else Color.Transparent,
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Edit, null, tint = VerseColors.PrimaryAmber.copy(alpha = 0.7f), modifier = Modifier.size(12.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = ref, 
+                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = fontFamily), 
+                    fontWeight = FontWeight.Bold, 
+                    color = VerseColors.PrimaryAmber.copy(alpha = 0.7f)
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            val highlightedText = buildAnnotatedString {
+                val content = note.content
+                val lowerContent = content.lowercase()
+                val lowerQuery = query.lowercase()
+                var start = 0
+                if (lowerQuery.isNotBlank() && lowerContent.contains(lowerQuery)) {
+                    while (true) {
+                        val idx = lowerContent.indexOf(lowerQuery, start)
+                        if (idx == -1) { append(content.substring(start)); break }
+                        append(content.substring(start, idx))
+                        withStyle(SpanStyle(fontWeight = FontWeight.Black, color = VerseColors.PrimaryAmber)) { append(content.substring(idx, idx + query.length)) }
+                        start = idx + query.length
+                    }
+                } else { append(content) }
+            }
+            
+            Text(
+                text = highlightedText, 
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = (fontSize - 1).sp, fontFamily = fontFamily), 
+                maxLines = 3, overflow = TextOverflow.Ellipsis, color = textColor
+            )
+        }
+    }
+    HorizontalDivider(color = textColor.copy(alpha = 0.05f), modifier = Modifier.padding(horizontal = 8.dp))
 }

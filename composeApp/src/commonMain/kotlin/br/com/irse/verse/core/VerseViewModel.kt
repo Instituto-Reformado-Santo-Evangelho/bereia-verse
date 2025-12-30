@@ -32,6 +32,13 @@ class VerseViewModel(
     private val _searchResults = MutableStateFlow<List<SearchResult>>(emptyList())
     val searchResults = _searchResults.asStateFlow()
 
+    private val _noteSearchResults = MutableStateFlow<List<Note>>(emptyList())
+    val noteSearchResults = _noteSearchResults.asStateFlow()
+
+    enum class SearchScope { VERSES, NOTES }
+    private val _searchScope = MutableStateFlow(SearchScope.VERSES)
+    val searchScope = _searchScope.asStateFlow()
+
     val history = historyRepository.history
     val notes = notesRepository.notes
 
@@ -214,12 +221,33 @@ class VerseViewModel(
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
-        if (query.length < 2) _searchResults.value = emptyList()
+        if (query.length < 2) {
+            _searchResults.value = emptyList()
+            _noteSearchResults.value = emptyList()
+        }
+    }
+
+    fun setSearchScope(scope: SearchScope) {
+        _searchScope.value = scope
+        // Re-executa a busca com a query atual no novo escopo
+        val currentQuery = _searchQuery.value
+        if (currentQuery.length >= 2) {
+             viewModelScope.launch { performSearch(currentQuery) }
+        } else {
+             _searchResults.value = emptyList()
+             _noteSearchResults.value = emptyList()
+        }
     }
 
     private suspend fun performSearch(query: String) {
         try {
-            _searchResults.value = searchUseCase.execute(query)
+            if (_searchScope.value == SearchScope.NOTES) {
+                _noteSearchResults.value = notesRepository.searchNotes(query)
+                _searchResults.value = emptyList()
+            } else {
+                _searchResults.value = searchUseCase.execute(query)
+                _noteSearchResults.value = emptyList()
+            }
         } catch (e: Exception) {
             _errorState.value = "Erro na busca: ${e.message}"
         }

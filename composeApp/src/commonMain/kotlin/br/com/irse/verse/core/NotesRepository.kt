@@ -8,4 +8,5 @@ interface NotesRepository {
     suspend fun saveNote(note: Note)
     suspend fun deleteNote(noteId: String)
     fun getNoteForVerse(verseId: Int): Note?
+    fun searchNotes(query: String): List<Note>
 }

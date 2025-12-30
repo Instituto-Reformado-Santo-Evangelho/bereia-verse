@@ -72,4 +72,12 @@ class LocalNotesRepository : NotesRepository {
     override fun getNoteForVerse(verseId: Int): Note? {
         return _notes.value.find { it.verseId == verseId }
     }
+
+    override fun searchNotes(query: String): List<Note> {
+        if (query.isBlank()) return emptyList()
+        val lowerQuery = query.lowercase()
+        return _notes.value.filter { note ->
+            note.content.lowercase().contains(lowerQuery)
+        }
+    }
 }
