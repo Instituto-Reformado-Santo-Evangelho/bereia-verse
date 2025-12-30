@@ -56,7 +56,8 @@ fun App(
     viewModel: VerseViewModel,
     onClose: () -> Unit = {},
     onHeightRequest: (Dp) -> Unit = {},
-    isWine: Boolean = false
+    isWine: Boolean = false,
+    headerModifier: Modifier = Modifier
 )
 {
     val detectedVerses by viewModel.detectedVerses.collectAsState()
@@ -153,7 +154,10 @@ fun App(
                 Column(modifier = Modifier.fillMaxSize()) {
                     // Header
                     Row(
-                        modifier = Modifier.fillMaxWidth().background(VerseColors.PrimaryAmber).padding(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                            .background(VerseColors.PrimaryAmber)
+                            .then(headerModifier) // Aplica o modificador de arrasto aqui
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {

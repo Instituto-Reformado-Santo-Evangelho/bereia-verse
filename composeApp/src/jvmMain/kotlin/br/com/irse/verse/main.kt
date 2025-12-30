@@ -11,6 +11,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -305,7 +307,24 @@ fun main() {
                                 targetHeight = height
                             }
                         },
-                        isWine = isWine
+                        isWine = isWine,
+                        headerModifier = Modifier.pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragEnd = {
+                                    // Sincroniza o estado final para o Compose estar ciente da nova posição
+                                    val loc = window.location
+                                    state.position = WindowPosition(loc.x.dp, loc.y.dp)
+                                }
+                            ) { change, dragAmount ->
+                                change.consume()
+                                val awtWindow = window
+                                val windowPos = awtWindow.location
+                                
+                                val newX = (windowPos.x + dragAmount.x).toInt()
+                                val newY = (windowPos.y + dragAmount.y).toInt()
+                                awtWindow.setLocation(newX, newY)
+                            }
+                        }
                     )
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
