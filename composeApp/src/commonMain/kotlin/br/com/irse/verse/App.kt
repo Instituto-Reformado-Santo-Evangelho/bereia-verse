@@ -139,18 +139,10 @@ fun App(
         colorScheme = if (isDark) darkColorScheme(primary = VerseColors.PrimaryAmber, surface = surfaceColor, onSurface = textColor)
         else lightColorScheme(primary = VerseColors.PrimaryAmber, surface = surfaceColor, onSurface = textColor)
     ) {
-        var isCopied by remember { mutableStateOf(false) }
+        val copyMessage by viewModel.copyMessage.collectAsState()
         
-        // Auto-hide copy feedback
-        LaunchedEffect(isCopied) {
-            if (isCopied) {
-                kotlinx.coroutines.delay(3000)
-                isCopied = false
-            }
-        }
-
         LaunchedEffect(detectedVerses, currentTab) {
-            isCopied = false
+            // Pode resetar estados se necessário
         }
 
         Surface(
@@ -338,11 +330,11 @@ fun App(
                                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { 
                                             val text = viewModel.formatVersesForClipboard(detectedVerses)
                                             clipboard.setText(AnnotatedString(text))
-                                            isCopied = true 
+                                            viewModel.showCopyFeedback("Copiado: ${viewModel.getConsolidatedReference(detectedVerses)}")
                                         }
                                 ) {
                                     Box(modifier = Modifier.padding(8.dp)) { 
-                                        if (isCopied) CheckIcon(color = VerseColors.SuccessGreen) 
+                                        if (copyMessage != null && copyMessage!!.startsWith("Copiado:")) CheckIcon(color = VerseColors.SuccessGreen) 
                                         else CopyIcon(color = if (isCopyHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) 
                                     }
                                 }
@@ -353,10 +345,10 @@ fun App(
 
                 // Copy Feedback Floating Overlay
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = isCopied,
+                    visible = copyMessage != null,
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp) // Posicionado acima do rodapé
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp)
                 ) {
                     Surface(
                         color = VerseColors.SuccessGreen.copy(alpha = 0.9f),
@@ -366,7 +358,7 @@ fun App(
                         shadowElevation = 4.dp
                     ) {
                         Text(
-                            text = "Copiado: ${viewModel.getConsolidatedReference(detectedVerses)}",
+                            text = copyMessage ?: "",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold

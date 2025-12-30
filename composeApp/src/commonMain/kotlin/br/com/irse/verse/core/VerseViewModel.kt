@@ -181,6 +181,9 @@ class VerseViewModel(
     private val _tabRequest = MutableSharedFlow<AppTab>()
     val tabRequest = _tabRequest.asSharedFlow()
 
+    private val _copyMessage = MutableStateFlow<String?>(null)
+    val copyMessage = _copyMessage.asStateFlow()
+
     private val _editingVerseRequest = MutableStateFlow<VerseRequest?>(null)
     val editingVerseRequest = _editingVerseRequest.asStateFlow()
 
@@ -490,6 +493,14 @@ class VerseViewModel(
             } catch (e: Exception) { 
                 _errorState.value = "Erro ao excluir nota: ${e.message}" 
             }
+        }
+    }
+
+    fun showCopyFeedback(message: String) {
+        viewModelScope.launch {
+            _copyMessage.value = message
+            delay(3000)
+            _copyMessage.value = null
         }
     }
 

@@ -164,7 +164,10 @@ fun NotesView(
                                 showSnapshotAction = showSnapshotAction,
                                 onEdit = { viewModel.openNoteEditor(note = note) },
                                 onView = { viewModel.openNoteViewer(note) },
-                                onCopy = { clipboard.setText(AnnotatedString(note.content)) },
+                                onCopy = { 
+                                    clipboard.setText(AnnotatedString(note.content))
+                                    viewModel.showCopyFeedback("Nota copiada!") 
+                                },
                                 onSnapshot = { viewModel.captureNoteSnapshot(note = note) },
                                 onLinkClick = { } // Links disabled in list
                             )
@@ -237,13 +240,13 @@ fun NoteViewer(
             )
             Row {
                 IconButton(onClick = onEdit) { 
-                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = textColor.copy(alpha = 0.6f)) 
+                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) 
                 }
                 IconButton(onClick = onDelete) { 
-                    Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = VerseColors.ErrorRed.copy(alpha = 0.6f)) 
+                    Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = VerseColors.ErrorRed.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) 
                 }
                 IconButton(onClick = onClose) { 
-                    Icon(Icons.Default.Close, contentDescription = "Fechar", tint = textColor.copy(alpha = 0.4f)) 
+                    Icon(Icons.Default.Close, contentDescription = "Fechar", tint = textColor.copy(alpha = 0.4f), modifier = Modifier.size(20.dp)) 
                 }
             }
         }
