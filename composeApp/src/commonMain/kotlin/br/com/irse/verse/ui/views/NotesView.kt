@@ -38,12 +38,15 @@ import br.com.irse.verse.ui.theme.VerseColors
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Camera
 
+import androidx.compose.foundation.BorderStroke
+
 @Composable
 fun NotesView(
     viewModel: VerseViewModel,
     textColor: Color
 ) {
-    val notes by viewModel.notes.collectAsState()
+    val notes by viewModel.filteredNotes.collectAsState() // Use filtered notes
+    val noteFilter by viewModel.noteFilter.collectAsState()
     val isNoteEditorOpen by viewModel.isNoteEditorOpen.collectAsState()
     val editingNote by viewModel.editingNote.collectAsState()
     val fontFamilyName by viewModel.fontFamily.collectAsState()
@@ -58,37 +61,62 @@ fun NotesView(
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-        if (notes.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Filtros
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(Icons.Default.NoteAdd, contentDescription = null, modifier = Modifier.size(48.dp), tint = textColor.copy(alpha = 0.1f))
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Nenhuma anotação", color = textColor.copy(alpha = 0.3f))
+                NoteFilterChip(
+                    text = "Todas",
+                    selected = noteFilter == VerseViewModel.NoteFilter.ALL,
+                    onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.ALL) }
+                )
+                NoteFilterChip(
+                    text = "Livres",
+                    selected = noteFilter == VerseViewModel.NoteFilter.FREE,
+                    onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.FREE) }
+                )
+                NoteFilterChip(
+                    text = "Versículos",
+                    selected = noteFilter == VerseViewModel.NoteFilter.VERSE,
+                    onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.VERSE) }
+                )
             }
-        }
-        else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(notes, key = { it.id }) { note ->
-                    val reference = remember(note.verseId) {
-                        note.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
+
+            if (notes.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(Icons.Default.NoteAdd, contentDescription = null, modifier = Modifier.size(48.dp), tint = textColor.copy(alpha = 0.1f))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Nenhuma anotação encontrada", color = textColor.copy(alpha = 0.3f))
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp), // Bottom padding for FAB
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(notes, key = { it.id }) { note ->
+                        val reference = remember(note.verseId) {
+                            note.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
+                        }
+                        NoteItem(
+                            note = note,
+                            reference = reference,
+                            textColor = textColor,
+                            fontFamily = fontFamily,
+                            onEdit = { viewModel.openNoteEditor(note = note) },
+                            onDelete = { viewModel.deleteNote(note.id) },
+                            onCopy = { clipboard.setText(AnnotatedString(note.content)) },
+                            onSnapshot = { viewModel.captureNoteSnapshot(note = note) }
+                        )
                     }
-                    NoteItem(
-                        note = note,
-                        reference = reference,
-                        textColor = textColor,
-                        fontFamily = fontFamily,
-                        onEdit = { viewModel.openNoteEditor(note = note) },
-                        onDelete = { viewModel.deleteNote(note.id) },
-                        onCopy = { clipboard.setText(AnnotatedString(note.content)) },
-                        onSnapshot = { viewModel.captureNoteSnapshot(note = note) }
-                    )
                 }
             }
         }
@@ -258,5 +286,24 @@ fun InlineNoteEditor(
                 focusRequester.requestFocus()
             }
         }
+    }
+}
+
+@Composable
+fun NoteFilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent,
+        border = BorderStroke(1.dp, if (selected) VerseColors.PrimaryAmber else Color.Gray.copy(alpha = 0.3f)),
+        modifier = Modifier.pointerHoverIconHand()
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) VerseColors.PrimaryAmber else Color.Gray,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        )
     }
 }

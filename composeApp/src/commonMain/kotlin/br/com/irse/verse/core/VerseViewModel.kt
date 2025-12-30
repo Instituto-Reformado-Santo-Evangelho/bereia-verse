@@ -39,8 +39,20 @@ class VerseViewModel(
     private val _searchScope = MutableStateFlow(SearchScope.VERSES)
     val searchScope = _searchScope.asStateFlow()
 
+    enum class NoteFilter { ALL, FREE, VERSE }
+    private val _noteFilter = MutableStateFlow(NoteFilter.ALL)
+    val noteFilter = _noteFilter.asStateFlow()
+
     val history = historyRepository.history
     val notes = notesRepository.notes
+
+    val filteredNotes = combine(notes, _noteFilter) { noteList, filter ->
+        when (filter) {
+            NoteFilter.ALL -> noteList
+            NoteFilter.FREE -> noteList.filter { it.verseId == null }
+            NoteFilter.VERSE -> noteList.filter { it.verseId != null }
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
@@ -263,6 +275,10 @@ class VerseViewModel(
             _searchResults.value = emptyList()
             _noteSearchResults.value = emptyList()
         }
+    }
+
+    fun setNoteFilter(filter: NoteFilter) {
+        _noteFilter.value = filter
     }
 
     fun setSearchScope(scope: SearchScope) {
