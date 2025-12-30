@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=IRSE | Bereia Verse
+Comment=Leitor e Ferramenta de Estudo Bíblico
+Exec=/opt/bereia-verse/bin/bereia-verse
+Icon=bereia-verse
+Terminal=false
+Type=Application
+Categories=Education;Utility;
+StartupWMClass=br-com-irse-verse-MainKt
+Keywords=Bible;Study;Verse;

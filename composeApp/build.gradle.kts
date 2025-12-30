@@ -113,7 +113,7 @@ compose.desktop {
             packageVersion = "1.0.0"
             description = "IRSE | Bereia Verse - Leitor Bíblico Automático"
             vendor = "IRSE"
-            copyright = "© 2025 IRSE"
+            copyright = "© 2026 Instituto Reformado Santo Evangelho - IRSE"
             
             // Força a inclusão do módulo SQL para o SQLite funcionar
             modules("java.sql")
