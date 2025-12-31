@@ -1,5 +1,6 @@
 package br.com.irse.verse
 
+import br.com.irse.verse.ui.theme.VerseColors
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -451,7 +452,7 @@ fun runApplication() {
                     )
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        MaterialTheme { CircularProgressIndicator(color = Color(0xFFFFC107)) }
+                        MaterialTheme { CircularProgressIndicator(color = VerseColors.PrimaryAmber) }
                     }
                 }
             }
@@ -468,7 +469,7 @@ fun MiniWidget(onClick: () -> Unit, isTransparent: Boolean = true) {
         
         Surface(color = surfaceColor, modifier = Modifier.fillMaxSize()) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(4.dp)) {
-                Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFFFC107).copy(alpha = 0.8f)).clickable { onClick() }) {
+                Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(VerseColors.PrimaryAmber.copy(alpha = 0.8f)).clickable { onClick() }) {
                     Image(painter = painterResource(Res.drawable.logo), contentDescription = null, modifier = Modifier.size(32.dp).align(Alignment.Center))
                 }
             }

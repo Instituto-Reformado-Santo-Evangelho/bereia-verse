@@ -4,6 +4,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.io.File
 
+import br.com.irse.verse.ui.theme.VerseColors
+
 @OptIn(kotlinx.coroutines.FlowPreview::class)
 class VerseViewModel(
     val parser: BibleParser,
@@ -106,7 +108,7 @@ class VerseViewModel(
     val templatesList = listOf(
         SnapshotTemplate(
             id = "classic", displayName = "Clássico", 
-            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFFFC107), androidx.compose.ui.graphics.Color(0xFFFFD54F))), 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(VerseColors.PrimaryAmber, androidx.compose.ui.graphics.Color(0xFFFFD54F))), 
             contentColor = androidx.compose.ui.graphics.Color(0xFF333333)
         ),
         SnapshotTemplate(
@@ -530,22 +532,72 @@ class VerseViewModel(
     fun formatVersesForClipboard(verses: List<Pair<VerseRequest, String?>>): String {
         if (verses.isEmpty()) return ""
         
-        // Texto contínuo sem tags HTML
-        val fullText = verses.joinToString(" ") { (_, content) ->
-            content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""
-        }
-
-        // Referência consolidada (Ex: João 3:16; Mateus 1:1-2)
-        val groupedRefs = verses.map { it.first }.groupBy { it.book }
-        val refText = groupedRefs.entries.joinToString("; ") { (book, reqs) ->
-            val chapters = reqs.groupBy { it.chapter }
-            "$book " + chapters.entries.joinToString(", ") { (chap, vReqs) ->
-                if (vReqs.size == 1) "$chap:${vReqs.first().verse}"
-                else "$chap:${vReqs.first().verse}-${vReqs.last().verse}"
+        val result = StringBuilder()
+        var currentBook = ""
+        var currentChapter = -1
+        var currentVerse = -1
+        var segmentStart: VerseRequest? = null
+        var segmentVerses = mutableListOf<Pair<VerseRequest, String?>>()
+        
+        fun flushSegment() {
+            if (segmentVerses.isEmpty()) return
+            
+            // Texto do segmento (contínuo)
+            val segmentText = segmentVerses.joinToString(" ") { (_, content) ->
+                content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""
             }
+            
+            // Referência do segmento no formato padrão
+            val start = segmentStart!!
+            val end = segmentVerses.last().first
+            val reference = if (start.chapter == end.chapter && start.verse == end.verse) {
+                // Versículo único
+                "(${start.book} ${start.chapter}:${start.verse} - ACF)"
+            } else if (start.chapter == end.chapter) {
+                // Mesmo capítulo, múltiplos versículos
+                "(${start.book} ${start.chapter}:${start.verse}-${end.verse} - ACF)"
+            } else {
+                // Capítulos diferentes
+                "(${start.book} ${start.chapter}:${start.verse}-${end.chapter}:${end.verse} - ACF)"
+            }
+            
+            result.append(segmentText)
+            result.append(" ")
+            result.append(reference)
         }
-
-        return "$fullText ($refText - ACF)"
+        
+        verses.forEach { (req, text) ->
+            val isNewBook = req.book != currentBook
+            val isNewChapter = currentChapter != -1 && req.chapter != currentChapter
+            val isGapInVerse = currentVerse != -1 && req.verse != currentVerse + 1
+            
+            val needsBreak = isNewBook || isNewChapter || isGapInVerse
+            
+            if (needsBreak && segmentVerses.isNotEmpty()) {
+                // Finaliza segmento anterior
+                flushSegment()
+                
+                // Separador simples entre segmentos (dupla quebra de linha)
+                result.append("\n\n")
+                
+                // Inicia novo segmento
+                segmentVerses.clear()
+                segmentStart = req
+            } else if (segmentStart == null) {
+                segmentStart = req
+            }
+            
+            segmentVerses.add(req to text)
+            
+            currentBook = req.book
+            currentChapter = req.chapter
+            currentVerse = req.verse
+        }
+        
+        // Finaliza último segmento
+        flushSegment()
+        
+        return result.toString().trim()
     }
 
     fun getConsolidatedReference(verses: List<Pair<VerseRequest, String?>>): String {

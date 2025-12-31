@@ -3,7 +3,7 @@ package br.com.irse.verse.ui.theme
 import androidx.compose.ui.graphics.Color
 
 object VerseColors {
-    val PrimaryAmber = Color(0xFFFFC107)
+    val PrimaryAmber = Color(0xFFFFAE00)
     val HeaderContentColor = Color(0xFF333333)
     
     val LightSurface = Color.White

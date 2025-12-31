@@ -1,5 +1,6 @@
 package br.com.irse.verse
 
+import br.com.irse.verse.ui.theme.VerseColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,7 +59,7 @@ fun AndroidOverlayExpanded(
         Column {
             // Header
             Row(
-                modifier = Modifier.fillMaxWidth().background(Color(0xFFFFC107)).padding(12.dp),
+                modifier = Modifier.fillMaxWidth().background(VerseColors.PrimaryAmber).padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                         Spacer(modifier = Modifier.width(12.dp))
