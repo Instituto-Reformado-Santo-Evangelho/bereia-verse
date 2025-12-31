@@ -2,6 +2,7 @@ package br.com.irse.verse.core
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.io.File
 
 class VerseViewModel(
     val parser: BibleParser,
@@ -76,6 +77,7 @@ class VerseViewModel(
     val animatedWindow = settingsRepository.settings.map { it.animatedWindow }.stateIn(viewModelScope, SharingStarted.Lazily, true)
     val signature = settingsRepository.settings.map { it.signature }.stateIn(viewModelScope, SharingStarted.Lazily, "")
     val showSnapshotAction = settingsRepository.settings.map { it.showSnapshotAction }.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    val isTransparent = settingsRepository.settings.map { it.isTransparent }.stateIn(viewModelScope, SharingStarted.Lazily, true)
 
     private val _textColor = MutableStateFlow(androidx.compose.ui.graphics.Color(0xFF333333))
     val textColor = _textColor.asStateFlow()
@@ -559,6 +561,34 @@ class VerseViewModel(
     fun updateAnimatedWindow(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateAnimatedWindow(enabled) } }
     fun updateSignature(text: String) { viewModelScope.launch { settingsRepository.updateSignature(text) } }
     fun updateShowSnapshotAction(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateShowSnapshotAction(enabled) } }
+    
+    fun updateIsTransparent(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateIsTransparent(enabled)
+            // Aguarda salvar e reinicia
+            delay(500)
+            restartApp()
+        }
+    }
+
+    private fun restartApp() {
+        try {
+            val javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
+            val jarFile = File(VerseViewModel::class.java.protectionDomain.codeSource.location.toURI())
+            
+            if (jarFile.extension == "jar") {
+                ProcessBuilder(javaBin, "-jar", jarFile.absolutePath).start()
+            } else {
+                // Se rodando via IDE/Gradle
+                val cp = System.getProperty("java.class.path")
+                val mainClass = "br.com.irse.verse.MainKt"
+                ProcessBuilder(javaBin, "-cp", cp, mainClass).start()
+            }
+            System.exit(0)
+        } catch (e: Exception) {
+            _errorState.value = "Não foi possível reiniciar automaticamente. Por favor, abra o app manualmente."
+        }
+    }
 
     fun captureSnapshot() {
         val currentVerses = _detectedVerses.value

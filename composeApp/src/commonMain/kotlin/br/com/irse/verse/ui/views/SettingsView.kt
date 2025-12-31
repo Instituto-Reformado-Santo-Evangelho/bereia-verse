@@ -133,6 +133,16 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                 checked = showSnapshotAction, 
                 textColor = textColor
             ) { viewModel.updateShowSnapshotAction(it) }
+            
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
+            
+            val isTransparent by viewModel.isTransparent.collectAsState()
+            SettingsToggle(
+                title = "Bordas Arredondadas (Transparência)", 
+                desc = "Desative se o app piscar ou fechar ao abrir. O app será reiniciado.", 
+                checked = isTransparent, 
+                textColor = textColor
+            ) { viewModel.updateIsTransparent(it) }
         }
         
         // --- SEÇÃO: SINCRONIZAÇÃO ---

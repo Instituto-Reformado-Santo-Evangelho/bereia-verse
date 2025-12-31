@@ -59,6 +59,12 @@ open class SettingsRepository {
         save(newSettings)
     }
 
+    open suspend fun updateIsTransparent(enabled: Boolean) {
+        val current = _settings.value
+        val newSettings = current.copy(isTransparent = enabled)
+        save(newSettings)
+    }
+
     private suspend fun save(newSettings: UserSettings) {
         SettingsManager.saveSettings(newSettings)
         _settings.value = newSettings

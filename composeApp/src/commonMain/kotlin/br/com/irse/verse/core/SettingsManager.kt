@@ -14,12 +14,14 @@ data class UserSettings(
     val showFireAnimation: Boolean = true,
     val animatedWindow: Boolean = true,
     val signature: String = "",
-    val showSnapshotAction: Boolean = false
+    val showSnapshotAction: Boolean = false,
+    val isTransparent: Boolean = true
 )
 
 object SettingsManager {
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
-    private val settingsFile: File by lazy {
+    
+    private val dataDir: File by lazy {
         val os = System.getProperty("os.name")?.lowercase() ?: ""
         val dir = if (os.contains("win")) {
             File(System.getenv("APPDATA"), "BereiaVerse")
@@ -27,10 +29,22 @@ object SettingsManager {
             File(System.getProperty("user.home") ?: "", ".local/share/bereia-verse")
         }
         if (!dir.exists()) dir.mkdirs()
-        File(dir, "settings.json")
+        dir
     }
 
-    suspend fun saveSettings(settings: UserSettings) = withContext(Dispatchers.IO) {
+    private val settingsFile: File by lazy { File(dataDir, "settings.json") }
+    val lockFile: File by lazy { File(dataDir, "launching.lock") }
+
+    fun getSettingsSync(): UserSettings {
+        return try {
+            if (!settingsFile.exists()) UserSettings()
+            else json.decodeFromString<UserSettings>(settingsFile.readText())
+        } catch (e: Exception) {
+            UserSettings()
+        }
+    }
+
+    fun saveSettingsSync(settings: UserSettings) {
         try {
             settingsFile.writeText(json.encodeToString(settings))
         } catch (e: Exception) {
@@ -38,12 +52,11 @@ object SettingsManager {
         }
     }
 
+    suspend fun saveSettings(settings: UserSettings) = withContext(Dispatchers.IO) {
+        saveSettingsSync(settings)
+    }
+
     suspend fun getSettings(): UserSettings = withContext(Dispatchers.IO) {
-        try {
-            if (!settingsFile.exists()) return@withContext UserSettings()
-            json.decodeFromString<UserSettings>(settingsFile.readText())
-        } catch (e: Exception) {
-            UserSettings()
-        }
+        getSettingsSync()
     }
 }

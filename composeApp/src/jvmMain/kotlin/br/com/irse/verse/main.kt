@@ -67,11 +67,32 @@ fun getActiveMonitorBounds(): Rectangle? {
     } catch (e: Exception) { e.printStackTrace(); null }
 }
 
-fun main() {
+fun main(args: Array<String>) {
+    // 1. Detecção de Crash Anterior (Safe Mode)
+    val settings = SettingsManager.getSettingsSync()
+    val crashDetected = SettingsManager.lockFile.exists()
+    
+    if (crashDetected && settings.isTransparent) {
+        // Se crasheou e estava com transparência, desativa para a próxima tentativa
+        SettingsManager.saveSettingsSync(settings.copy(isTransparent = false))
+        System.setProperty("verse.transparencyWarning", "true")
+    }
+    
+    // Cria o lock para esta sessão
+    try { SettingsManager.lockFile.createNewFile() } catch (e: Exception) {}
+
+    // Detecta argumento manual de desativação de transparência
+    if (args.contains("--no-transparent")) {
+        System.setProperty("verse.noTransparent", "true")
+    }
+
     // Configuração de Log de Erro (Essencial para diagnósticos em Linux/Mac/Win)
     try {
         runApplication()
     } catch (e: Throwable) {
+        // Se houve erro no Kotlin, remove o lock para não disparar safe mode falso (opcional)
+        try { SettingsManager.lockFile.delete() } catch (_: Exception) {}
+        
         val os = System.getProperty("os.name").lowercase()
         val logDir = if (os.contains("win")) {
             File(System.getenv("APPDATA"), "BereiaVerse")
@@ -190,8 +211,13 @@ fun runApplication() {
     val isWindows = remember { System.getProperty("os.name").lowercase().contains("win") }
     // Usa a propriedade definida no início do main()
     val isWine = remember { System.getProperty("verse.isWine") == "true" }
+    val forceNoTransparent = remember { System.getProperty("verse.noTransparent") == "true" }
     
-    val shouldBeTransparent = !isWine
+    // Carrega configuração salva
+    val savedSettings = remember { SettingsManager.getSettingsSync() }
+    
+    // Transparência ativa se: NÃO for Wine, NÃO houver flag manual E estiver ativa no JSON
+    val shouldBeTransparent = !isWine && !forceNoTransparent && savedSettings.isTransparent
 
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
         val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return
@@ -258,6 +284,19 @@ fun runApplication() {
                     }
                 }
             }
+        }
+    }
+
+    // Limpeza do arquivo Lock após 5 segundos de estabilidade
+    LaunchedEffect(isReady) {
+        if (isReady) {
+            // Se o aviso estiver ativo, mostra via feedback do ViewModel
+            if (System.getProperty("verse.transparencyWarning") == "true") {
+                viewModel.value?.showCopyFeedback("Aviso: Bordas arredondadas desativadas por segurança.")
+            }
+            
+            delay(5000)
+            try { SettingsManager.lockFile.delete() } catch (_: Exception) {}
         }
     }
 
@@ -330,18 +369,18 @@ fun runApplication() {
             transitionSpec = { fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300)) }
         ) { mini ->
             if (mini) {
-                MiniWidget(onClick = { isMiniMode = false }, isWine = isWine)
+                MiniWidget(onClick = { isMiniMode = false }, isTransparent = shouldBeTransparent)
             } else {
                 if (viewModel.value != null) {
                     App(
                         viewModel = viewModel.value!!,
-                        onClose = { if (actualIsTraySupported) isVisible = false else if (isWine) isVisible = false else isMiniMode = true },
+                        onClose = { if (actualIsTraySupported) isVisible = false else if (!shouldBeTransparent) isVisible = false else isMiniMode = true },
                         onHeightRequest = { height ->
                             if (!isMiniMode) {
                                 targetHeight = height
                             }
                         },
-                        isWine = isWine,
+                        isTransparent = shouldBeTransparent,
                         headerModifier = Modifier.pointerInput(Unit) {
                             detectDragGestures { change, dragAmount ->
                                 change.consume()
@@ -372,10 +411,10 @@ fun runApplication() {
 }
 
 @Composable
-fun MiniWidget(onClick: () -> Unit, isWine: Boolean = false) {
+fun MiniWidget(onClick: () -> Unit, isTransparent: Boolean = true) {
     MaterialTheme {
-        // Se Wine (sem transparência), usa fundo sólido ou ajusta layout
-        val surfaceColor = if (isWine) Color(0xFF202020) else Color.Transparent
+        // Se sem transparência (Wine ou force), usa fundo sólido ou ajusta layout
+        val surfaceColor = if (!isTransparent) Color(0xFF202020) else Color.Transparent
         
         Surface(color = surfaceColor, modifier = Modifier.fillMaxSize()) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(4.dp)) {
