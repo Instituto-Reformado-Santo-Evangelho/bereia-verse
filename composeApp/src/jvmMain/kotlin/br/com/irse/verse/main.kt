@@ -324,9 +324,6 @@ fun runApplication() {
         resizable = false
     ) {
         SideEffect { currentWindow = window }
-        if (shouldBeTransparent) {
-            LaunchedEffect(Unit) { window.setBackground(java.awt.Color(0, 0, 0, 0)) }
-        }
         
         AnimatedContent(
             targetState = isMiniMode,
