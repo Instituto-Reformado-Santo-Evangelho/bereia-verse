@@ -15,7 +15,11 @@ data class UserSettings(
     val animatedWindow: Boolean = true,
     val signature: String = "",
     val showSnapshotAction: Boolean = false,
-    val isTransparent: Boolean = true
+    val isTransparent: Boolean = false, // Padrão desabilitado no Windows
+    val windowWidth: Int = 400,
+    val windowHeight: Int = 400,
+    val windowX: Int? = null,  // Posição X salva (null = usar padrão)
+    val windowY: Int? = null   // Posição Y salva (null = usar padrão)
 )
 
 object SettingsManager {

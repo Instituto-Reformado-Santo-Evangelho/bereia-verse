@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.io.File
 
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 class VerseViewModel(
     val parser: BibleParser,
     private val database: BibleDatabase,
@@ -223,7 +224,6 @@ class VerseViewModel(
         _editingVerseRequest.value = request
         _editingNote.value = note
         _isNoteEditorOpen.value = true
-        // Se abrir editor, fecha viewer
         _viewingNote.value = null
     }
 
@@ -461,12 +461,28 @@ class VerseViewModel(
         }
     }
 
-    fun saveNote(verseId: Int?, content: String) {
+    fun saveNote(content: String) {
+        // CAPTURA o verseId ANTES da coroutine (síncrono)
+        // Isso evita race condition com closeNoteEditor()
+        val verseIdFromRequest = _editingVerseRequest.value?.id
+        val existingNote = _editingNote.value
+        
         viewModelScope.launch {
             try {
-                val existingNote = verseId?.let { notesRepository.getNoteForVerse(it) }
+                // Se está editando nota existente, mantém o verseId dela
+                val finalVerseId = existingNote?.verseId ?: verseIdFromRequest
+                
+                val existing = finalVerseId?.let { notesRepository.getNoteForVerse(it) }
                 val now = currentTimeMillis()
-                val note = Note(id = existingNote?.id ?: generateUuid(), verseId = verseId, content = content, createdAt = existingNote?.createdAt ?: now, updatedAt = now, syncStatus = SyncStatus.PENDING)
+                val note = Note(
+                    id = existing?.id ?: existingNote?.id ?: generateUuid(), 
+                    verseId = finalVerseId,  // null = nota livre, not-null = referenciada
+                    content = content, 
+                    createdAt = existing?.createdAt ?: existingNote?.createdAt ?: now, 
+                    updatedAt = now, 
+                    syncStatus = SyncStatus.PENDING
+                )
+                
                 notesRepository.saveNote(note)
             } catch (e: Exception) {
                 _errorState.value = "Erro ao salvar nota: ${e.message}"

@@ -81,5 +81,5 @@ windowrulev2 = pin,class:^(VerseReaderIRSE)$
 
 ## Solução de Problemas
 *   **Erro de Build:** `./gradlew clean`
-*   **Versão do Java:** Certifique-se de estar usando o **JDK 21**.
+*   **Versão do Java:** Certifique-se de estar usando o **JDK 17** ou superior.
 *   **Texto não detectado?** O app suporta o formato `Livro Cap:Verso` (ex: `Gênesis 1:1`, `Gn 1.1`, `Jo 3:16`).

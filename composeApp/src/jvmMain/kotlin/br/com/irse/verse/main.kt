@@ -151,14 +151,26 @@ fun runApplication() {
     }
 
     application {
-    val fullWidth = 400.dp
+    val defaultWidth = 400.dp
+    val defaultHeight = 400.dp
     val miniSize = 64.dp
     val screenPadding = 20
     
+    // Carrega configuração salva
+    val savedSettings = remember { SettingsManager.getSettingsSync() }
+    
+    // SEMPRE inicia com dimensões padrão (não carrega dimensões salvas)
+    // Mas CARREGA a posição salva se existir
+    val initialPosition = if (savedSettings.windowX != null && savedSettings.windowY != null) {
+        WindowPosition(savedSettings.windowX.dp, savedSettings.windowY.dp)
+    } else {
+        WindowPosition(Alignment.TopEnd)
+    }
+    
     val state = rememberWindowState(
-        width = fullWidth, 
-        height = 400.dp,
-        position = WindowPosition(Alignment.TopEnd)
+        width = defaultWidth, 
+        height = defaultHeight,
+        position = initialPosition
     )
     
     var isVisible by remember { mutableStateOf(true) }
@@ -166,9 +178,13 @@ fun runApplication() {
     var isReady by remember { mutableStateOf(false) }
     var hasSetInitialPosition by remember { mutableStateOf(false) }
     var currentScreenBounds by remember { mutableStateOf<Rectangle?>(null) }
+    
+    // Memoriza a última posição não-mini para restaurar
+    var lastNormalPosition by remember { mutableStateOf(initialPosition) }
+    var lastNormalSize by remember { mutableStateOf(DpSize(defaultWidth, defaultHeight)) }
 
-    // Gerenciamento de altura
-    var targetHeight by remember { mutableStateOf(400.dp) }
+    // Gerenciamento de altura - largura é FIXA exceto se usuário redimensionar manualmente
+    var targetHeight by remember { mutableStateOf(defaultHeight) }
     
     // Dependencies via Koin
     val viewModel = remember { mutableStateOf<VerseViewModel?>(null) }
@@ -187,21 +203,44 @@ fun runApplication() {
     )
 
     val finalHeight = if (isAnimatedWindow) animatedHeight else targetHeight
+    
+    // Salva a posição sempre que mudar (modo normal)
+    LaunchedEffect(state.position, state.size, isMiniMode) {
+        if (isReady && !isMiniMode) {
+            // Memoriza posição e tamanho para restaurar depois
+            lastNormalPosition = state.position
+            lastNormalSize = state.size
+            
+            // Salva no arquivo de configuração
+            delay(500) // Debounce
+            val currentSettings = SettingsManager.getSettingsSync()
+            SettingsManager.saveSettingsSync(
+                currentSettings.copy(
+                    windowX = state.position.x.value.toInt(),
+                    windowY = state.position.y.value.toInt()
+                )
+            )
+        }
+    }
 
-    // Efeito de redimensionamento: Ajusta apenas Y se sair da tela, mantém X intacto
+    // Efeito de redimensionamento: Mantém largura estável, ajusta apenas altura
     LaunchedEffect(finalHeight) {
         if (!isMiniMode && isReady) {
             val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return@LaunchedEffect
-            val currentX = state.position.x
             val currentY = state.position.y.value
             
             var adjustedY = currentY
+            
+            // Ajusta Y se sair da tela
             if (currentY + finalHeight.value > bounds.y + bounds.height - screenPadding) {
                 adjustedY = bounds.y + bounds.height - screenPadding - finalHeight.value
             }
             
-            state.position = WindowPosition(currentX, adjustedY.dp)
-            state.size = DpSize(fullWidth, finalHeight)
+            // Mantém a largura atual (não força para permitir resize manual do usuário)
+            state.size = DpSize(state.size.width, finalHeight)
+            if (adjustedY != currentY) {
+                state.position = WindowPosition(state.position.x, adjustedY.dp)
+            }
         }
     }
     
@@ -209,33 +248,40 @@ fun runApplication() {
     val icon = painterResource(Res.drawable.logo)
     val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
     val isWindows = remember { System.getProperty("os.name").lowercase().contains("win") }
-    // Usa a propriedade definida no início do main()
     val isWine = remember { System.getProperty("verse.isWine") == "true" }
     val forceNoTransparent = remember { System.getProperty("verse.noTransparent") == "true" }
     
-    // Carrega configuração salva
-    val savedSettings = remember { SettingsManager.getSettingsSync() }
-    
-    // Transparência ativa se: NÃO for Wine, NÃO houver flag manual E estiver ativa no JSON
-    val shouldBeTransparent = !isWine && !forceNoTransparent && savedSettings.isTransparent
+    // Windows: transparência SEMPRE desabilitada por padrão
+    // Outros SOs: pode ser habilitada via configuração
+    val defaultTransparency = if (isWindows) false else savedSettings.isTransparent
+    val shouldBeTransparent = !isWine && !forceNoTransparent && defaultTransparency
 
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
         val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return
-        val targetWidth = if (mini) miniSize else fullWidth
-        val h = if (mini) miniSize else (height ?: targetHeight).coerceAtLeast(400.dp)
         
         if (mini) {
+            // Salva posição atual antes de ir para mini mode
+            lastNormalPosition = state.position
+            lastNormalSize = state.size
+            
             val newX = bounds.x + bounds.width - screenPadding - miniSize.value.toInt()
             val newY = bounds.y + (bounds.height / 2) - (miniSize.value.toInt() / 2)
             state.position = WindowPosition(newX.dp, newY.dp)
+            state.size = DpSize(miniSize, miniSize)
         } else {
-            val newX = bounds.x + bounds.width - screenPadding - targetWidth.value.toInt()
-            val newY = bounds.y + screenPadding
-            state.position = WindowPosition(newX.dp, newY.dp)
-            hasSetInitialPosition = true
+            // Restaura a última posição conhecida ao sair do mini mode
+            if (lastNormalPosition != initialPosition || hasSetInitialPosition) {
+                state.position = lastNormalPosition
+                state.size = DpSize(lastNormalSize.width, height ?: lastNormalSize.height)
+            } else {
+                // Primeira vez - usa posição padrão
+                val newX = bounds.x + bounds.width - screenPadding - defaultWidth.value.toInt()
+                val newY = bounds.y + screenPadding
+                state.position = WindowPosition(newX.dp, newY.dp)
+                state.size = DpSize(defaultWidth, height ?: defaultHeight)
+                hasSetInitialPosition = true
+            }
         }
-        
-        state.size = DpSize(targetWidth, h)
     }
 
     // Initialization
@@ -360,7 +406,7 @@ fun runApplication() {
         undecorated = true, 
         transparent = shouldBeTransparent, 
         alwaysOnTop = true, 
-        resizable = false
+        resizable = true // Permite redimensionamento
     ) {
         SideEffect { currentWindow = window }
         
@@ -369,7 +415,11 @@ fun runApplication() {
             transitionSpec = { fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300)) }
         ) { mini ->
             if (mini) {
-                MiniWidget(onClick = { isMiniMode = false }, isTransparent = shouldBeTransparent)
+                MiniWidget(onClick = { 
+                    isMiniMode = false
+                    // Restaura posição e tamanho ao sair do mini mode
+                    applyAnchorPosition(mini = false)
+                }, isTransparent = shouldBeTransparent)
             } else {
                 if (viewModel.value != null) {
                     App(

@@ -41,9 +41,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
     buildToolsVersion = "36.1.0"
     defaultConfig {
         minSdk = 24

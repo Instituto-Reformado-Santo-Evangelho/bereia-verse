@@ -132,7 +132,7 @@ fun VersesView(
                     textColor = textColor,
                     fontFamily = fontFamily,
                     onSave = { content ->
-                        viewModel.saveNote(req.id, content)
+                        viewModel.saveNote(content)
                         viewModel.closeNoteEditor()
                     },
                     onDismiss = { viewModel.closeNoteEditor() }

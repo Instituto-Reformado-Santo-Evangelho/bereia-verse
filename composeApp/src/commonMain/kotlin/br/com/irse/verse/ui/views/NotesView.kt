@@ -55,6 +55,7 @@ fun NotesView(
     val noteFilter by viewModel.noteFilter.collectAsState()
     val isNoteEditorOpen by viewModel.isNoteEditorOpen.collectAsState()
     val editingNote by viewModel.editingNote.collectAsState()
+    val editingVerseRequest by viewModel.editingVerseRequest.collectAsState()
     val viewingNote by viewModel.viewingNote.collectAsState()
     val noteToDelete by viewModel.noteToDelete.collectAsState()
     val showSnapshotAction by viewModel.showSnapshotAction.collectAsState()
@@ -169,7 +170,10 @@ fun NotesView(
                                     viewModel.showCopyFeedback("Nota copiada!") 
                                 },
                                 onSnapshot = { viewModel.captureNoteSnapshot(note = note) },
-                                onLinkClick = { } // Links disabled in list
+                                onLinkClick = { linkText -> 
+                                    viewModel.processQuery(linkText)
+                                    // Nota: mudança de aba é automática ao processar query
+                                }
                             )
                         }
                     }
@@ -192,16 +196,21 @@ fun NotesView(
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            val reference = remember(editingNote) {
-                editingNote?.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
+            val reference = if (editingNote != null) {
+                // Editando nota existente
+                editingNote!!.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
+            } else {
+                // Criando nova nota - verifica se tem editingVerseRequest
+                editingVerseRequest?.let { "${it.book} ${it.chapter}:${it.verse}" } ?: "Nota Livre"
             }
+            
             InlineNoteEditor(
                 initialText = editingNote?.content ?: "",
                 reference = reference,
                 textColor = textColor,
                 fontFamily = fontFamily,
                 onSave = { content ->
-                    viewModel.saveNote(editingNote?.verseId, content)
+                    viewModel.saveNote(content)
                     viewModel.closeNoteEditor()
                 },
                 onDismiss = { viewModel.closeNoteEditor() }
@@ -336,17 +345,19 @@ fun NoteSmartText(
     isViewerMode: Boolean,
     linksEnabled: Boolean = true
 ) {
+    // Scanner robusto: detecta TODAS as referências bíblicas no texto
     val annotatedString = remember(text, isViewerMode, linksEnabled) {
         buildAnnotatedString {
             append(text)
             
             if (linksEnabled) {
+                // Usa o parser para escanear o texto e encontrar referências
                 val matches = parser.refRegex.findAll(text)
                 for (match in matches) {
                     val start = match.range.first
                     val end = match.range.last + 1
                     
-                    // Style as Link (No decoration if viewer mode)
+                    // Estilo: âmbar, negrito, sem sublinhado no viewer
                     addStyle(
                         style = SpanStyle(
                             color = VerseColors.PrimaryAmber,
@@ -357,6 +368,7 @@ fun NoteSmartText(
                         end = end
                     )
                     
+                    // Adiciona anotação clicável com a referência exata
                     addStringAnnotation(
                         tag = "VERSE_LINK",
                         annotation = match.value,
@@ -380,10 +392,14 @@ fun NoteSmartText(
         overflow = TextOverflow.Ellipsis,
         onClick = { offset ->
             if (linksEnabled) {
-                annotatedString.getStringAnnotations(tag = "VERSE_LINK", start = offset, end = offset)
-                    .firstOrNull()?.let { annotation ->
-                        onLinkClick(annotation.item)
-                    }
+                // Detecta qual link foi clicado baseado no offset exato
+                annotatedString.getStringAnnotations(
+                    tag = "VERSE_LINK",
+                    start = offset,
+                    end = offset
+                ).firstOrNull()?.let { annotation ->
+                    onLinkClick(annotation.item)
+                }
             }
         }
     )

@@ -157,10 +157,15 @@ open class BibleParser(val repository: BibleRepository) {
          val cleanPart = versePart.replace(Regex("""[\u2013\u002d\u2014]""" ), "-").replace(Regex("""\s+""" ), "")
          val ids = mutableListOf<VerseRequest>()
          
+         // Validação: capítulo deve existir
+         if (chapter < 1 || chapter > book.metaData.chapters.size) {
+             return emptyList()
+         }
+         
          // Calculate startId manually since Repository doesn't expose it anymore
          var startId = book.metaData.start
          for (i in 0 until chapter - 1) {
-             startId += book.metaData.chapters[i]
+             startId += book.metaData.chapters.getOrElse(i) { 0 }
          }
          
          val maxVerse = book.metaData.chapters.getOrNull(chapter - 1) ?: return emptyList()

@@ -2,6 +2,7 @@ package br.com.irse.verse.core
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -41,6 +42,13 @@ class VerseViewModelTest {
             verses: List<Pair<VerseRequest, String?>>,
             template: VerseViewModel.SnapshotTemplate
         ) {}
+        
+        override suspend fun captureNoteAndSave(
+            content: String,
+            reference: String?,
+            signature: String?,
+            template: VerseViewModel.SnapshotTemplate
+        ) {}
     }
     
     class FakeSettingsRepository : SettingsRepository() {
@@ -58,6 +66,15 @@ class VerseViewModelTest {
         override suspend fun loadHistory() {}
         override suspend fun saveEntry(query: String) {}
     }
+    
+    class FakeNotesRepository : NotesRepository {
+        override val notes = MutableStateFlow<List<Note>>(emptyList())
+        override suspend fun loadNotes() {}
+        override suspend fun saveNote(note: Note) {}
+        override suspend fun deleteNote(noteId: String) {}
+        override fun getNoteForVerse(verseId: Int): Note? = null
+        override fun searchNotes(query: String): List<Note> = emptyList()
+    }
 
     private lateinit var viewModel: VerseViewModel
     private val testDispatcher = StandardTestDispatcher()
@@ -74,6 +91,9 @@ class VerseViewModelTest {
         val repo = FakeRepository()
         val parser = FakeParser(repo)
         val database = FakeDatabase()
+        val notesRepo = FakeNotesRepository()
+        val syncManager = SyncManager(notesRepo, null, testDispatchers)
+        
         viewModel = VerseViewModel(
             parser = parser,
             database = database,
@@ -81,6 +101,8 @@ class VerseViewModelTest {
             settingsRepository = FakeSettingsRepository(),
             searchUseCase = FakeSearchUseCase(parser, database),
             historyRepository = FakeHistoryRepository(),
+            notesRepository = notesRepo,
+            syncManager = syncManager,
             dispatchers = testDispatchers
         )
     }
