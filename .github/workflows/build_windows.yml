@@ -22,7 +22,7 @@ jobs:
         cache: gradle
 
     - name: Build Windows MSI
-      run: ./gradlew :composeApp:packageMsi
+      run: ./gradlew :composeApp:packageMsi --no-configuration-cache
 
     # Opcional: Se quiser um .exe simples além do MSI, o Compose também suporta packageExe 
     # se configurado no build.gradle.kts (TargetFormat.Exe)
