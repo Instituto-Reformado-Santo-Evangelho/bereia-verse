@@ -56,7 +56,7 @@ fun App(
     viewModel: VerseViewModel,
     onClose: () -> Unit = {},
     onHeightRequest: (Dp) -> Unit = {},
-    isWine: Boolean = false,
+    isTransparent: Boolean = true,
     headerModifier: Modifier = Modifier
 )
 {
@@ -113,8 +113,8 @@ fun App(
     val footerColor = if (isDark) VerseColors.DarkFooter else VerseColors.LightFooter
     val borderColor = if (isDark) VerseColors.DarkBorder else VerseColors.LightBorder
     
-    // Se estiver no Wine (sem transparência), usa cantos retos para evitar fundo preto
-    val windowShape = if (isWine) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(16.dp)
+    // Se sem transparência, usa cantos retos para evitar fundo preto ou orelhas
+    val windowShape = if (!isTransparent) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(16.dp)
 
     val globalFontFamily = when (fontFamily) {
         "serif" -> androidx.compose.ui.text.font.FontFamily.Serif
@@ -175,8 +175,10 @@ fun App(
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     // Header
+                    val headerShape = if (!isTransparent) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
                     Row(
                         modifier = Modifier.fillMaxWidth()
+                            .clip(headerShape)
                             .background(VerseColors.PrimaryAmber)
                             .then(headerModifier) // Aplica o modificador de arrasto aqui
                             .padding(horizontal = 16.dp, vertical = 8.dp),
