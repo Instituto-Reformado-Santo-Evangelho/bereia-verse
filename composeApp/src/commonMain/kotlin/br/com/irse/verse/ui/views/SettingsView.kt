@@ -37,6 +37,9 @@ import compose.icons.feathericons.CloudOff
 import br.com.irse.verse.ui.pointerHoverIconHand
 import kotlinx.coroutines.launch
 
+import br.com.irse.verse.ui.components.SnapshotLayout
+import br.com.irse.verse.core.VerseRequest
+
 @Composable
 fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
     val fontSize by viewModel.fontSize.collectAsState()
@@ -91,12 +94,25 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
 
         // --- SEÇÃO: COMPARTILHAMENTO ---
         SettingsSection(title = "Compartilhamento (Fotos)") {
-            Text("Modelo de Imagem", style = MaterialTheme.typography.labelMedium, color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold)
+            // SUBSEÇÃO: VERSÍCULOS
+            Text("Versículos", style = MaterialTheme.typography.titleMedium, color = textColor, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Selecione o modelo padrão para compartilhamento de versículos.", style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.6f))
             Spacer(modifier = Modifier.height(12.dp))
+            
             TemplateSelector(viewModel, selectedTemplate, textColor)
             
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = textColor.copy(alpha = 0.1f))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // SUBSEÇÃO: NOTAS
+            Text("Notas", style = MaterialTheme.typography.titleMedium, color = textColor, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Personalize o compartilhamento de suas anotações.", style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.6f))
             Spacer(modifier = Modifier.height(16.dp))
             
+            // Assinatura
             Text("Assinatura", style = MaterialTheme.typography.labelMedium, color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             TextField(
@@ -116,7 +132,12 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                 )
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Exibida no rodapé dos snapshots de notas.", style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
+            Text(text = "Exibida exclusivamente no rodapé dos snapshots de notas.", style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
+
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Selector de Modelos de Notas
+            NoteTemplateSelector(viewModel, selectedTemplate, textColor)
         }
 
         // --- SEÇÃO: PERFORMANCE E SISTEMA ---
@@ -265,10 +286,17 @@ fun SettingsToggle(title: String, desc: String, checked: Boolean, textColor: Col
 fun TemplateSelector(viewModel: VerseViewModel, selectedTemplate: VerseViewModel.SnapshotTemplate, textColor: Color) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    
+    // Dados fake para preview
+    val previewVerses = listOf(
+        VerseRequest(1, "João", 11, 35) to "Jesus chorou."
+    )
+
     LazyRow(
         state = listState,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxWidth().height(100.dp).pointerInput(Unit) {
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp),
+        modifier = Modifier.fillMaxWidth().height(160.dp).pointerInput(Unit) {
             awaitPointerEventScope {
                 while (true) {
                     val event = awaitPointerEvent()
@@ -283,16 +311,139 @@ fun TemplateSelector(viewModel: VerseViewModel, selectedTemplate: VerseViewModel
     ) {
         items(viewModel.templatesList) { template ->
             val isSelected = selectedTemplate.id == template.id
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color.Transparent, 
-                border = if (isSelected) BorderStroke(2.dp, VerseColors.PrimaryAmber) else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f)),
-                modifier = Modifier.size(100.dp, 70.dp).clickable { viewModel.setTemplate(template) }
-            ) {
-                Box(modifier = Modifier.fillMaxSize().background(template.backgroundBrush), contentAlignment = Alignment.Center) {
-                    Text("Aa", style = MaterialTheme.typography.titleLarge.copy(fontFamily = if (template.fontFamilyName == "Serif") FontFamily.Serif else FontFamily.SansSerif), color = template.contentColor)
-                    if (isSelected) Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f))) { Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.align(Alignment.Center).size(20.dp)) }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.Transparent, 
+                    border = if (isSelected) BorderStroke(3.dp, VerseColors.PrimaryAmber) else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f)),
+                    shadowElevation = if (isSelected) 8.dp else 2.dp,
+                    modifier = Modifier
+                        .size(130.dp, 130.dp)
+                        .clickable { viewModel.setTemplate(template) }
+                        .pointerHoverIconHand()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        // Renderiza o Layout Real em escala reduzida
+                        SnapshotLayout(
+                            verses = previewVerses, 
+                            template = template,
+                            isPreview = true
+                        )
+                        
+                        // Overlay de seleção
+                        if (isSelected) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.3f)),
+                                contentAlignment = Alignment.Center
+                            ) { 
+                                Icon(
+                                    imageVector = Icons.Default.Check, 
+                                    contentDescription = "Selecionado", 
+                                    tint = VerseColors.PrimaryAmber, 
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .background(Color.White, CircleShape)
+                                        .padding(4.dp)
+                                ) 
+                            }
+                        }
+                    }
                 }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = template.displayName,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.7f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun NoteTemplateSelector(viewModel: VerseViewModel, selectedTemplate: VerseViewModel.SnapshotTemplate, textColor: Color) {
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Dados fake para preview
+    val content = "O SENHOR é o meu pastor, nada me faltará."
+    val signature = "Davi"
+
+    LazyRow(
+        state = listState,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp),
+        modifier = Modifier.fillMaxWidth().height(160.dp).pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    val event = awaitPointerEvent()
+                    if (event.type == PointerEventType.Scroll) {
+                        val delta = event.changes.first().scrollDelta
+                        event.changes.forEach { it.consume() }
+                        coroutineScope.launch { listState.scrollBy(delta.y * 30) }
+                    }
+                }
+            }
+        }
+    ) {
+        items(viewModel.templatesList) { template ->
+            val isSelected = selectedTemplate.id == template.id
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.Transparent, 
+                    border = if (isSelected) BorderStroke(3.dp, VerseColors.PrimaryAmber) else BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f)),
+                    shadowElevation = if (isSelected) 8.dp else 2.dp,
+                    modifier = Modifier
+                        .size(130.dp, 130.dp)
+                        .clickable { viewModel.setTemplate(template) }
+                        .pointerHoverIconHand()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        // Renderiza o Layout de NOTA em escala reduzida
+                        br.com.irse.verse.ui.components.NoteSnapshotLayout(
+                            content = content,
+                            reference = "Salmos 23:1",
+                            signature = signature,
+                            template = template,
+                            isPreview = true
+                        )
+                        
+                        // Overlay de seleção
+                        if (isSelected) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.3f)),
+                                contentAlignment = Alignment.Center
+                            ) { 
+                                Icon(
+                                    imageVector = Icons.Default.Check, 
+                                    contentDescription = "Selecionado", 
+                                    tint = VerseColors.PrimaryAmber, 
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .background(Color.White, CircleShape)
+                                        .padding(4.dp)
+                                ) 
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = template.displayName,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.7f)
+                )
             }
         }
     }

@@ -102,69 +102,234 @@ class VerseViewModel(
         val logoAlpha: Float = 1.0f,
         val showFooter: Boolean = true,
         val useLogoBackground: Boolean = false,
-        val textAlignment: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Justify
+        val textAlignment: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Justify,
+        val backgroundImage: String? = null,
+        val imageAlpha: Float = 0.6f
     )
 
     val templatesList = listOf(
+        // --- NOVOS MODELOS PARA NOTAS (TEXTURAS/SÓLIDOS) ---
         SnapshotTemplate(
-            id = "classic", displayName = "Clássico", 
-            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(VerseColors.PrimaryAmber, androidx.compose.ui.graphics.Color(0xFFFFD54F))), 
-            contentColor = androidx.compose.ui.graphics.Color(0xFF333333)
-        ),
-        SnapshotTemplate(
-            id = "exclusive", displayName = "Exclusivo", 
-            // Gradiente Preto Transparente (Overlay)
-            // Topo: Mais escuro (85%) para garantir leitura
-            // Base: Mais claro (40%) para revelar a imagem com brilho
-            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                colors = listOf(
-                    androidx.compose.ui.graphics.Color(0xD9000000), // Preto 85%
-                    androidx.compose.ui.graphics.Color(0x99000000), // Preto 60%
-                    androidx.compose.ui.graphics.Color(0x66000000)  // Preto 40%
-                )
-            ), 
-            contentColor = androidx.compose.ui.graphics.Color(0xFFFFFFFF), // Branco Puro
+            id = "note_pergaminho", displayName = "Pergaminho",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFE3DAC9), androidx.compose.ui.graphics.Color(0xFFF0E6D2))),
+            contentColor = androidx.compose.ui.graphics.Color(0xFF3E2723), // Marrom Escuro
+            backgroundImage = "note_bg_5.png",
+            imageAlpha = 1.0f,
             showLogo = false,
-            showFooter = false,
-            useLogoBackground = true,
+            fontFamilyName = "Serif",
             textAlignment = androidx.compose.ui.text.style.TextAlign.Start
         ),
         SnapshotTemplate(
-            id = "clean", displayName = "Limpo", // Novo: Sem logo
+            id = "note_papiro", displayName = "Papiro Antigo",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFF5DEB3), androidx.compose.ui.graphics.Color(0xFFEEE8AA))),
+            contentColor = androidx.compose.ui.graphics.Color(0xFF212121),
+            backgroundImage = "note_bg_6.png",
+            imageAlpha = 1.0f,
+            showLogo = false,
+            fontFamilyName = "Serif",
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_pedra", displayName = "Pedra Angular",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF424242), androidx.compose.ui.graphics.Color(0xFF212121))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "note_bg_8.png",
+            imageAlpha = 0.9f,
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_manuscrito", displayName = "Manuscrito",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF3E2723), androidx.compose.ui.graphics.Color(0xFF212121))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "note_bg_9.png",
+            imageAlpha = 0.85f,
+            showLogo = false,
+            fontFamilyName = "Serif",
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_oliva", displayName = "Oliva",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF33691E), androidx.compose.ui.graphics.Color(0xFF1B5E20))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "note_bg_10.png",
+            imageAlpha = 0.9f,
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_terra", displayName = "Terra Prometida",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF5D4037), androidx.compose.ui.graphics.Color(0xFF3E2723))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "note_bg_11.png",
+            imageAlpha = 0.9f,
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_vinho", displayName = "Vinho Novo",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF880E4F), androidx.compose.ui.graphics.Color(0xFF4A148C))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "note_bg_12.png",
+            imageAlpha = 0.9f,
+            showLogo = false,
+            fontFamilyName = "Serif",
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_noite", displayName = "Noite Estrelada",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF1A237E), androidx.compose.ui.graphics.Color(0xFF000051))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "note_bg_13.png",
+            imageAlpha = 0.9f,
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_deserto", displayName = "Deserto",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFE65100), androidx.compose.ui.graphics.Color(0xFFFF6F00))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "note_bg_14.png",
+            imageAlpha = 0.9f,
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_sinai", displayName = "Monte Sinai",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF455A64), androidx.compose.ui.graphics.Color(0xFF263238))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "note_bg_15.png",
+            imageAlpha = 0.9f,
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_cedro", displayName = "Cedro",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF3E2723), androidx.compose.ui.graphics.Color(0xFF212121))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "note_bg_16.png",
+            imageAlpha = 0.9f,
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "note_marmore", displayName = "Mármore",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFFAFAFA), androidx.compose.ui.graphics.Color(0xFFF5F5F5))),
+            contentColor = androidx.compose.ui.graphics.Color(0xFF212121),
+            backgroundImage = "note_bg_17.png",
+            imageAlpha = 1.0f,
+            showLogo = false,
+            fontFamilyName = "Serif",
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+
+        // --- GRADIENTES PARA NOTAS ---
+        SnapshotTemplate(
+            id = "grad_aurora", displayName = "Aurora",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFF00c6ff), androidx.compose.ui.graphics.Color(0xFF0072ff))
+            ),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "grad_crepusculo", displayName = "Crepúsculo",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFF141E30), androidx.compose.ui.graphics.Color(0xFF243B55))
+            ),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            showLogo = false,
+            fontFamilyName = "Serif",
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "grad_meianoite", displayName = "Meia-noite",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.radialGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFF232526), androidx.compose.ui.graphics.Color(0xFF414345))
+            ),
+            contentColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0),
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "grad_real", displayName = "Realeza",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFF5f2c82), androidx.compose.ui.graphics.Color(0xFF49a09d))
+            ),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            showLogo = false,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+
+        // --- NATUREZA (VERSÍCULOS) ---
+        SnapshotTemplate(
+            id = "nature_1", displayName = "Natureza 1",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xCC000000), androidx.compose.ui.graphics.Color(0x66000000))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "bg1.png", imageAlpha = 0.7f, showLogo = false
+        ),
+        SnapshotTemplate(
+            id = "nature_2", displayName = "Natureza 2",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xD9000000), androidx.compose.ui.graphics.Color(0x4D000000))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "bg2.png", imageAlpha = 0.75f, showLogo = false
+        ),
+        SnapshotTemplate(
+            id = "nature_3", displayName = "Natureza 3",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xE6000000), androidx.compose.ui.graphics.Color(0x66000000))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "bg3.png", imageAlpha = 0.65f, showLogo = false
+        ),
+        SnapshotTemplate(
+            id = "nature_4", displayName = "Natureza 4",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xD9000000), androidx.compose.ui.graphics.Color(0x59000000))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "bg4.png", imageAlpha = 0.8f, showLogo = false
+        ),
+        SnapshotTemplate(
+            id = "nature_5", displayName = "Natureza 5",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xCC000000), androidx.compose.ui.graphics.Color(0x4D000000))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "bg5.png", imageAlpha = 0.7f, showLogo = false
+        ),
+        SnapshotTemplate(
+            id = "nature_6", displayName = "Natureza 6",
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xD9000000), androidx.compose.ui.graphics.Color(0x66000000))),
+            contentColor = androidx.compose.ui.graphics.Color.White,
+            backgroundImage = "bg6.png", imageAlpha = 0.75f, showLogo = false
+        ),
+
+        // --- CLÁSSICOS/SIMPLES ---
+        SnapshotTemplate(
+            id = "classic", displayName = "Clássico", 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(VerseColors.PrimaryAmber, androidx.compose.ui.graphics.Color(0xFFFFD54F))), 
+            contentColor = androidx.compose.ui.graphics.Color(0xFF333333),
+            showLogo = false
+        ),
+        SnapshotTemplate(
+            id = "exclusive", displayName = "Exclusivo", 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xD9000000), androidx.compose.ui.graphics.Color(0x66000000))), 
+            contentColor = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+            showLogo = false, showFooter = false, useLogoBackground = true,
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+        ),
+        SnapshotTemplate(
+            id = "clean", displayName = "Limpo",
             backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFFFFFFF), androidx.compose.ui.graphics.Color(0xFFF0F0F0))), 
             contentColor = androidx.compose.ui.graphics.Color(0xFF333333),
             showLogo = false
         ),
         SnapshotTemplate(
-            id = "minimal", displayName = "Minimalista", // Novo: Logo opaca
-            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFE0E0E0), androidx.compose.ui.graphics.Color(0xFFD0D0D0))), 
-            contentColor = androidx.compose.ui.graphics.Color(0xFF202020),
+            id = "note_solid_1", displayName = "Nota Solene", 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                colors = listOf(androidx.compose.ui.graphics.Color(0xFF232526), androidx.compose.ui.graphics.Color(0xFF414345))
+            ), 
+            contentColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0), 
+            fontFamilyName = "Serif",
+            textAlignment = androidx.compose.ui.text.style.TextAlign.Start,
+            showLogo = false,
             logoAlpha = 0.3f
-        ),
-        SnapshotTemplate(
-            id = "dark_modern", displayName = "Dark", 
-            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF1E1E1E), androidx.compose.ui.graphics.Color(0xFF2C2C2C))), 
-            contentColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0)
-        ),
-        SnapshotTemplate(
-            id = "sunset", displayName = "Pôr do Sol", 
-            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFff512f), androidx.compose.ui.graphics.Color(0xFFdd2476))), 
-            contentColor = androidx.compose.ui.graphics.Color.White
-        ),
-        SnapshotTemplate(
-            id = "ocean", displayName = "Oceano", 
-            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF2193b0), androidx.compose.ui.graphics.Color(0xFF6dd5ed))), 
-            contentColor = androidx.compose.ui.graphics.Color.White
-        ),
-        SnapshotTemplate(
-            id = "elegant", displayName = "Elegante", 
-            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFF5F5DC), androidx.compose.ui.graphics.Color(0xFFE8E8C8))), 
-            contentColor = androidx.compose.ui.graphics.Color(0xFF2C1B18), fontFamilyName = "Serif"
-        ),
-        SnapshotTemplate(
-            id = "night", displayName = "Noite", 
-            backgroundBrush = androidx.compose.ui.graphics.Brush.radialGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF1A237E), androidx.compose.ui.graphics.Color(0xFF000000))), 
-            contentColor = androidx.compose.ui.graphics.Color.White
         )
     )
 
