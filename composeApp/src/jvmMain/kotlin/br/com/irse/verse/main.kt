@@ -42,6 +42,7 @@ import br.com.irse.verse.platform.JvmSnapshotHandler
 import br.com.irse.verse.platform.JvmGoogleDriveProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.painterResource
@@ -177,6 +178,7 @@ fun runApplication() {
     var isVisible by remember { mutableStateOf(true) }
     var isMiniMode by remember { mutableStateOf(false) }
     var isReady by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     var hasSetInitialPosition by remember { mutableStateOf(false) }
     var currentScreenBounds by remember { mutableStateOf<Rectangle?>(null) }
     
@@ -391,8 +393,22 @@ fun runApplication() {
 
     val actualIsTraySupported = isTraySupported && !isLinux && !isWine
     if (actualIsTraySupported) {
-        Tray(icon = icon, tooltip = "IRSE | Bereia Verse", onAction = { isVisible = !isVisible }, menu = {
-            Item("Exibir/Ocultar", onClick = { isVisible = !isVisible })
+        val toggleAction = {
+            if (isVisible) {
+                isVisible = false
+            } else {
+                scope.launch {
+                    isVisible = true
+                    state.isMinimized = false
+                    if (isWindows) delay(250)
+                    currentWindow?.toFront()
+                    currentWindow?.requestFocus()
+                }
+            }
+        }
+
+        Tray(icon = icon, tooltip = "IRSE | Bereia Verse", onAction = toggleAction, menu = {
+            Item("Exibir/Ocultar", onClick = toggleAction)
             Separator()
             Item("Sair", onClick = { exitApplication() })
         })
