@@ -404,6 +404,7 @@ fun runApplication() {
                     currentWindow?.toFront()
                     currentWindow?.requestFocus()
                 }
+                Unit
             }
         }
 
