@@ -145,10 +145,12 @@ compose.desktop {
 }
 
 // Injeta arquivos customizados no pacote .deb (usa matching para ser resiliente à ordem de criação)
-tasks.matching { it.name == "packageDeb" }.all {
+tasks.matching { it.name == "packageDeb" }.configureEach {
+    val buildDirProvider = project.layout.buildDirectory
+    val resourcesDir = project.file("src/jvmMain/resources")
+    
     doLast {
-        val buildDir = project.layout.buildDirectory.get().asFile
-        val resourcesDir = project.file("src/jvmMain/resources")
+        val buildDir = buildDirProvider.get().asFile
         val debOutDir = File(buildDir, "compose/binaries/main/deb")
         if (resourcesDir.exists() && debOutDir.exists()) {
             resourcesDir.copyRecursively(File(debOutDir, "extra_resources"), overwrite = true)
