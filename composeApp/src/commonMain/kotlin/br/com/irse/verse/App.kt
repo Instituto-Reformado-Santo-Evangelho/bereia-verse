@@ -191,7 +191,11 @@ fun App(
                                 .pointerHoverIconHand()
                                 .clickable { currentTab = AppTab.ABOUT }
                         ) {
-                            Image(painter = painterResource(Res.drawable.logo), contentDescription = null, modifier = Modifier.size(36.dp))
+                            Image(
+                                painter = painterResource(Res.drawable.logo), 
+                                contentDescription = null, 
+                                modifier = Modifier.size(48.dp).clip(CircleShape)
+                            )
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(text = Strings.APP_TITLE, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = VerseColors.HeaderContentColor, fontSize = 16.sp)

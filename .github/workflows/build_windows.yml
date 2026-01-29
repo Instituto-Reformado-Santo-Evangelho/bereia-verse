@@ -21,6 +21,13 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Inject Google Client Secrets
+      env:
+        GOOGLE_SECRETS: ${{ secrets.GOOGLE_CLIENT_SECRETS }}
+      run: |
+        echo "$env:GOOGLE_SECRETS" > composeApp/src/jvmMain/resources/client_secrets.json
+      shell: powershell
+
     - name: Build Windows MSI
       run: ./gradlew :composeApp:packageMsi --no-configuration-cache
 

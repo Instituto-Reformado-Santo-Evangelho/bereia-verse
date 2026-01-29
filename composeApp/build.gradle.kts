@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -9,14 +10,6 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.shadow)
-}
-
-// Configuração para ferramentas de build externas
-val launch4jConfig: Configuration? by configurations.creating
-
-dependencies {
-    launch4jConfig?.invoke("net.sf.launch4j:launch4j:3.14")
-    launch4jConfig?.invoke("com.thoughtworks.xstream:xstream:1.4.20")
 }
 
 kotlin {
@@ -158,127 +151,10 @@ tasks.matching { it.name == "packageDeb" }.configureEach {
     }
 }
 
-// Tarefa Manual para criar JAR Universal (Fat Jar)
-val packageUniversalJar by tasks.registering(Jar::class) {
-    archiveBaseName.set("bereia-verse-universal")
-    archiveVersion.set("1.0.0")
-    
-    manifest {
-        attributes["Main-Class"] = "br.com.irse.verse.MainKt"
-    }
-
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    val mainCompilation = kotlin.jvm().compilations.getByName("main")
-    from(mainCompilation.output)
-
-    from(provider {
-        project.configurations.getByName("jvmRuntimeClasspath").map { 
-            if (it.isDirectory) it else zipTree(it) 
-        }
-    })
-    
-    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
-}
-
-// Tarefa Customizada para criar o EXE Windows localmente
-tasks.register<JavaExec>("createExe") {
-    group = "distribution"
-    description = "Empacota o UberJar em um executável Windows (.exe) com JRE embutido"
-    
-    dependsOn(packageUniversalJar)
-    
-    val buildDirFile = project.layout.buildDirectory.get().asFile
-    val outputDir = File(buildDirFile, "compose/binaries/main/exe")
-    val outputExe = File(outputDir, "BereiaVerse.exe")
-    val configFile = File(outputDir, "launch4j-config.xml")
-    val jarFile = packageUniversalJar.get().archiveFile.get().asFile
-    
-    val launch4jDir = File(buildDirFile, "launch4j-tool")
-    val launch4jTgz = File(buildDirFile, "launch4j.tgz")
-    val jreZip = File(buildDirFile, "windows-jre-17.zip")
-    val jreUrl = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.13%2B11/OpenJDK17U-jre_x64_windows_hotspot_17.0.13_11.zip"
-    val launch4jUrl = "https://sourceforge.net/projects/launch4j/files/launch4j-3/3.14/launch4j-3.14-linux-x64.tgz"
-
-    this.classpath = project.files(File(launch4jDir, "launch4j.jar"))
-    this.mainClass.set("net.sf.launch4j.Main")
-    this.args(configFile.absolutePath)
-    this.workingDir = launch4jDir
-    
-    this.inputs.file(jarFile)
-    this.outputs.file(outputExe)
-
-    doFirst {
-        if (!launch4jDir.exists()) {
-            val proc = ProcessBuilder("curl", "-L", "-o", launch4jTgz.absolutePath, launch4jUrl).start()
-            proc.waitFor()
-            ProcessBuilder("tar", "-xzf", launch4jTgz.absolutePath, "-C", buildDirFile.absolutePath).start().waitFor()
-            val extracted = File(buildDirFile, "launch4j")
-            if (extracted.exists()) extracted.renameTo(launch4jDir)
-        }
-        
-        File(launch4jDir, "bin/windres").setExecutable(true)
-        File(launch4jDir, "bin/ld").setExecutable(true)
-
-        if (!jreZip.exists()) {
-            ProcessBuilder("curl", "-L", "-o", jreZip.absolutePath, jreUrl).start().waitFor()
-        }
-        
-        val jreTargetDir = File(outputDir, "jre")
-        if (!jreTargetDir.exists()) {
-            if (!outputDir.exists()) outputDir.mkdirs()
-            ProcessBuilder("unzip", "-q", jreZip.absolutePath, "-d", outputDir.absolutePath).start().waitFor()
-            outputDir.listFiles()?.find { it.isDirectory && it.name.startsWith("jdk") }?.renameTo(jreTargetDir)
-        }
-
-        jarFile.copyTo(File(outputDir, jarFile.name), overwrite = true)
-
-        val configXml = """
-            <launch4jConfig>
-              <dontWrapJar>false</dontWrapJar>
-              <headerType>gui</headerType>
-              <jar>${jarFile.name}</jar>
-              <outfile>${outputExe.absolutePath}</outfile>
-              <errTitle>IRSE | Bereia Verse</errTitle>
-              <chdir>.</chdir>
-              <priority>normal</priority>
-              <downloadUrl>https://java.com/download</downloadUrl>
-              <stayAlive>false</stayAlive>
-              <jre>
-                <path>jre</path>
-                <bundledJre64Bit>true</bundledJre64Bit>
-                <minVersion>17.0.0</minVersion>
-                <jdkPreference>preferJre</jdkPreference>
-                <runtimeBits>64</runtimeBits>
-              </jre>
-            </launch4jConfig>
-        """.trimIndent()
-        configFile.writeText(configXml)
-    }
-    
-    val distDir = project.rootProject.file("dist/windows")
-    doLast {
-        if (!distDir.exists()) distDir.mkdirs()
-        outputDir.copyRecursively(distDir, overwrite = true)
+// Configuração manual de dependências para o pacote DEB
+tasks.withType<AbstractJPackageTask>().configureEach {
+    if (name == "packageDeb") {
+        freeArgs.add("--linux-package-deps")
+        freeArgs.add("libasound2,libpng16-16,libgtk-3-0,libgl1,libx11-6,zlib1g")
     }
 }
-
-// Tarefa para copiar instaladores Linux (.deb) para dist/linux
-val copyLinuxDistributables by tasks.registering(Copy::class) {
-    val debSourceDir = project.layout.buildDirectory.dir("compose/binaries/main/deb")
-    val distDir = project.rootProject.layout.projectDirectory.dir("dist/linux")
-    from(debSourceDir)
-    into(distDir)
-}
-
-tasks.matching { it.name == "packageDeb" }.all { finalizedBy(copyLinuxDistributables) }
-
-// Tarefa para copiar instaladores macOS (.dmg) para dist/mac
-val copyMacDistributables by tasks.registering(Copy::class) {
-    val dmgSourceDir = project.layout.buildDirectory.dir("compose/binaries/main/dmg")
-    val distDir = project.rootProject.layout.projectDirectory.dir("dist/mac")
-    from(dmgSourceDir)
-    into(distDir)
-}
-
-tasks.matching { it.name == "packageDmg" }.all { finalizedBy(copyMacDistributables) }

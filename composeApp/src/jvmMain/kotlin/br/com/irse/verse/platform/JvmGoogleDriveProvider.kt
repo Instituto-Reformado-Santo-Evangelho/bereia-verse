@@ -38,30 +38,103 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
 
     private var driveService: Drive? = null
 
-    private val dataStoreDir = File(System.getProperty("user.home"), ".bereia-verse/tokens")
+    // Diretório de configuração padrão do app
+    private val appConfigDir: File by lazy {
+        val os = System.getProperty("os.name").lowercase()
+        val baseDir = if (os.contains("win")) {
+            File(System.getenv("APPDATA"), "BereiaVerse")
+        } else {
+            File(System.getProperty("user.home"), ".local/share/bereia-verse")
+        }
+        if (!baseDir.exists()) baseDir.mkdirs()
+        baseDir
+    }
+
+    private val dataStoreDir by lazy { File(appConfigDir, "tokens") }
 
     init {
         // Tenta re-autorizar silenciosamente se já tiver token
-        if (dataStoreDir.exists() && dataStoreDir.listFiles()?.isNotEmpty() == true) {
-            try {
-                // Em um app real, faríamos a inicialização do serviço aqui
-                // _isAuthorized.value = true
-            } catch (e: Exception) {}
+        try {
+             if (dataStoreDir.exists() && dataStoreDir.listFiles()?.isNotEmpty() == true) {
+                 // Inicializa o serviço em background se houver tokens
+                 // Não podemos chamar authorize() aqui pois ele abre o browser se o token estiver inválido/expirado
+                 // Mas podemos tentar reconstruir o serviço
+                 restoreSession()
+             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun restoreSession() {
+        try {
+            val secretsStream = getClientSecretsStream() ?: return
+            val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
+            val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(secretsStream))
+
+            val flow = GoogleAuthorizationCodeFlow.Builder(
+                HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES
+            )
+            .setDataStoreFactory(FileDataStoreFactory(dataStoreDir))
+            .setAccessType("offline")
+            .build()
+
+            // Carrega credencial armazenada (userId="user")
+            val credential = flow.loadCredential("user")
+            
+            if (credential != null && (credential.refreshToken != null || credential.expiresInSeconds == null || credential.expiresInSeconds > 60)) {
+                // Se tiver refresh token, ele atualiza automaticamente quando precisar
+                driveService = Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+                    .setApplicationName(APPLICATION_NAME)
+                    .build()
+                _isAuthorized.value = true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _isAuthorized.value = false
+        }
+    }
+    
+    private fun getClientSecretsStream(): java.io.InputStream? {
+        // 1. Tenta carregar do recurso embutido (JAR) - Ideal para Produção
+        val resourceStream = object {}.javaClass.getResourceAsStream("/client_secrets.json")
+        if (resourceStream != null) return resourceStream
+
+        // 2. Fallback para arquivos externos (Desenvolvimento/Override)
+        val possibilities = listOf(
+            File(appConfigDir, "client_secrets.json"),
+            File(System.getProperty("user.dir"), "client_secrets.json"),
+            File("client_secrets.json")
+        )
+        
+        return possibilities.find { it.exists() }?.inputStream()
+    }
+
+    private fun logError(message: String, error: Throwable? = null) {
+        try {
+            val logFile = File(appConfigDir, "auth_debug.txt")
+            val timestamp = java.time.LocalDateTime.now()
+            val stackTrace = error?.stackTraceToString() ?: ""
+            logFile.appendText("[$timestamp] $message\n$stackTrace\n\n")
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     override suspend fun authorize() = withContext(Dispatchers.IO) {
         try {
+            logError("Starting authorization process...")
             val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
             
-            // Carrega credenciais (Placeholder ou Arquivo)
-            // Para o usuário: Ele deve colocar o client_secrets.json na pasta de recursos
-            val secretsFile = File("client_secrets.json")
-            if (!secretsFile.exists()) {
-                throw Exception("Arquivo client_secrets.json não encontrado. Configure no Google Cloud Console.")
+            val secretsStream = getClientSecretsStream()
+            if (secretsStream == null) {
+                val msg = "client_secrets.json NOT FOUND. Searched in: Resources, ${appConfigDir.absolutePath}, ${System.getProperty("user.dir")}"
+                logError(msg)
+                throw Exception("Arquivo de credenciais (client_secrets.json) não encontrado.\nVerifique o arquivo auth_debug.txt na pasta do aplicativo.")
             }
 
-            val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, secretsFile.reader())
+            logError("Secrets file found. Loading...")
+            val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(secretsStream))
             
             val flow = GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES
@@ -70,16 +143,29 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             .setAccessType("offline")
             .build()
 
-            val credential = AuthorizationCodeInstalledApp(flow, LocalServerReceiver()).authorize("user")
+            logError("Flow built. Attempting to authorize...")
             
+            // Custom receiver that logs the URL if browser fails
+            val receiver = LocalServerReceiver.Builder().setPort(8888).build()
+            
+            val credential = try {
+                AuthorizationCodeInstalledApp(flow, receiver).authorize("user")
+            } catch (e: Exception) {
+                logError("AuthorizationCodeInstalledApp failed", e)
+                throw e
+            }
+            
+            logError("Authorization successful. Building Drive service...")
             driveService = Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
                 .build()
             
             _isAuthorized.value = true
+            logError("Service ready.")
         } catch (e: Exception) {
-            e.printStackTrace()
+            logError("CRITICAL AUTHORIZATION ERROR", e)
             _isAuthorized.value = false
+            throw e 
         }
     }
 
@@ -92,6 +178,8 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
     override suspend fun uploadNote(note: Note) = withContext(Dispatchers.IO) {
         val service = driveService ?: return@withContext
         try {
+            _syncState.value = CloudSyncState.SYNCING
+            
             val fileMetadata = com.google.api.services.drive.model.File()
             fileMetadata.name = "${note.id}.json"
             fileMetadata.parents = listOf("appDataFolder")
@@ -104,7 +192,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             // Verifica se o arquivo já existe para atualizar (update) ou criar (insert)
             val existingFiles = service.files().list()
                 .setSpaces("appDataFolder")
-                .setQ("name = '${note.id}.json'")
+                .setQ("name = '${note.id}.json' and trashed = false")
                 .execute()
 
             if (existingFiles.files.isEmpty()) {
@@ -113,20 +201,26 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                 service.files().update(existingFiles.files[0].id, null, mediaContent).execute()
             }
             tempFile.delete()
+            
+            _syncState.value = CloudSyncState.SUCCESS
         } catch (e: Exception) {
             e.printStackTrace()
+            _syncState.value = CloudSyncState.ERROR
         }
     }
 
     override suspend fun downloadNotes(): List<Note> = withContext(Dispatchers.IO) {
         val service = driveService ?: return@withContext emptyList()
         try {
+            _syncState.value = CloudSyncState.SYNCING
+            
             val result = service.files().list()
                 .setSpaces("appDataFolder")
+                .setQ("trashed = false and name contains '.json'")
                 .setFields("files(id, name)")
                 .execute()
 
-            result.files.mapNotNull { file ->
+            val notes = result.files.mapNotNull { file ->
                 val outputStream = java.io.ByteArrayOutputStream()
                 service.files().get(file.id).executeMediaAndDownloadTo(outputStream)
                 try {
@@ -135,8 +229,12 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                     null
                 }
             }
+            
+            _syncState.value = CloudSyncState.SUCCESS
+            notes
         } catch (e: Exception) {
             e.printStackTrace()
+            _syncState.value = CloudSyncState.ERROR
             emptyList()
         }
     }
@@ -144,16 +242,21 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
     override suspend fun deleteNote(noteId: String) = withContext(Dispatchers.IO) {
         val service = driveService ?: return@withContext
         try {
+            _syncState.value = CloudSyncState.SYNCING
+            
             val existingFiles = service.files().list()
                 .setSpaces("appDataFolder")
-                .setQ("name = '$noteId.json'")
+                .setQ("name = '$noteId.json' and trashed = false")
                 .execute()
 
             existingFiles.files.forEach { file ->
                 service.files().delete(file.id).execute()
             }
+            
+            _syncState.value = CloudSyncState.SUCCESS
         } catch (e: Exception) {
             e.printStackTrace()
+            _syncState.value = CloudSyncState.ERROR
         }
     }
 }

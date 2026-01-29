@@ -416,7 +416,13 @@ fun runApplication() {
     }
 
     Window(
-        onCloseRequest = { exitApplication() },
+        onCloseRequest = { 
+            if (actualIsTraySupported) {
+                isVisible = false
+            } else {
+                exitApplication() 
+            }
+        },
         title = "IRSE | Bereia Verse",
         state = state,
         icon = icon,
@@ -442,7 +448,7 @@ fun runApplication() {
                 if (viewModel.value != null) {
                     App(
                         viewModel = viewModel.value!!,
-                        onClose = { if (actualIsTraySupported) isVisible = false else if (!shouldBeTransparent) isVisible = false else isMiniMode = true },
+                        onClose = { if (actualIsTraySupported) isVisible = false else isMiniMode = true },
                         onHeightRequest = { height ->
                             if (!isMiniMode) {
                                 targetHeight = height
@@ -450,20 +456,37 @@ fun runApplication() {
                         },
                         isTransparent = shouldBeTransparent,
                         headerModifier = Modifier.pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
+                            var startWindowX = 0
+                            var startWindowY = 0
+                            var startMouseX = 0
+                            var startMouseY = 0
+                            
+                            detectDragGestures(
+                                onDragStart = {
+                                    val awtWindow = window
+                                    startWindowX = awtWindow.x
+                                    startWindowY = awtWindow.y
+                                    
+                                    val mousePos = MouseInfo.getPointerInfo().location
+                                    startMouseX = mousePos.x
+                                    startMouseY = mousePos.y
+                                },
+                                onDragEnd = {
+                                    val awtWindow = window
+                                    val density = this.density
+                                    state.position = WindowPosition(
+                                        (awtWindow.x / density).dp,
+                                        (awtWindow.y / density).dp
+                                    )
+                                }
+                            ) { change, _ ->
                                 change.consume()
-                                val awtWindow = window
-                                val windowPos = awtWindow.location
                                 
-                                // Converte o dragAmount (pixels) para a posição da janela
-                                val newX = (windowPos.x + dragAmount.x).toInt()
-                                val newY = (windowPos.y + dragAmount.y).toInt()
+                                val currentMousePos = MouseInfo.getPointerInfo().location
+                                val deltaX = currentMousePos.x - startMouseX
+                                val deltaY = currentMousePos.y - startMouseY
                                 
-                                awtWindow.setLocation(newX, newY)
-                                
-                                // Sincroniza o estado do Compose usando density para converter pixels de volta para DP corretamente
-                                val density = this.density
-                                state.position = WindowPosition((newX / density).dp, (newY / density).dp)
+                                window.setLocation(startWindowX + deltaX, startWindowY + deltaY)
                             }
                         }
                     )
@@ -486,8 +509,12 @@ fun MiniWidget(onClick: () -> Unit, isTransparent: Boolean = true) {
         
         Surface(color = surfaceColor, modifier = Modifier.fillMaxSize()) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(4.dp)) {
-                Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(VerseColors.PrimaryAmber.copy(alpha = 0.8f)).clickable { onClick() }) {
-                    Image(painter = painterResource(Res.drawable.logo), contentDescription = null, modifier = Modifier.size(32.dp).align(Alignment.Center))
+                Box(modifier = Modifier.size(64.dp).clip(CircleShape).background(VerseColors.PrimaryAmber.copy(alpha = 0.8f)).clickable { onClick() }) {
+                    Image(
+                        painter = painterResource(Res.drawable.logo), 
+                        contentDescription = null, 
+                        modifier = Modifier.size(40.dp).align(Alignment.Center)
+                    )
                 }
             }
         }

@@ -24,3 +24,9 @@ pkg/
 dist/
 installers/linux/arch/src/
 installers/linux/arch/pkg/
+
+# Google Drive Sync
+client_secrets.json
+composeApp/src/jvmMain/resources/client_secrets.json
+.bereia-verse/tokens/
+tokens/

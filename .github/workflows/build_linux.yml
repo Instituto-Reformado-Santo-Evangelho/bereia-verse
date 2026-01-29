@@ -21,13 +21,19 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Inject Google Client Secrets
+      env:
+        GOOGLE_SECRETS: ${{ secrets.GOOGLE_CLIENT_SECRETS }}
+      run: |
+        echo "$GOOGLE_SECRETS" > composeApp/src/jvmMain/resources/client_secrets.json
+
     - name: Install Build Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y fakeroot binutils
 
-    - name: Build Linux DEB
-      run: ./gradlew :composeApp:packageDeb --no-configuration-cache
+    - name: Build Linux DEB and Distributable
+      run: ./gradlew :composeApp:packageDeb :composeApp:createDistributable --no-configuration-cache
 
     - name: Upload DEB Artifact
       uses: actions/upload-artifact@v4
