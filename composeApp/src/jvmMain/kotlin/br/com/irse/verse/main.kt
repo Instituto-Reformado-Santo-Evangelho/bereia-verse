@@ -161,6 +161,16 @@ fun runApplication() {
     // Carrega configuração salva
     val savedSettings = remember { SettingsManager.getSettingsSync() }
     
+    val icon = painterResource(Res.drawable.logo)
+    val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
+    val isWindows = remember { System.getProperty("os.name").lowercase().contains("win") }
+    val isWine = remember { System.getProperty("verse.isWine") == "true" }
+    val forceNoTransparent = remember { System.getProperty("verse.noTransparent") == "true" }
+    
+    // Windows: transparência agora respeita a configuração do usuário
+    val defaultTransparency = savedSettings.isTransparent
+    val shouldBeTransparent = !isWine && !forceNoTransparent && defaultTransparency
+
     // SEMPRE inicia com dimensões padrão (não carrega dimensões salvas)
     // Mas CARREGA a posição salva se existir
     val initialPosition = if (savedSettings.windowX != null && savedSettings.windowY != null) {
@@ -188,6 +198,8 @@ fun runApplication() {
 
     // Gerenciamento de altura - largura é FIXA exceto se usuário redimensionar manualmente
     var targetHeight by remember { mutableStateOf(defaultHeight) }
+    
+    var currentWindow by remember { mutableStateOf<java.awt.Window?>(null) }
     
     // Dependencies via Koin
     val viewModel = remember { mutableStateOf<VerseViewModel?>(null) }
@@ -226,39 +238,40 @@ fun runApplication() {
         }
     }
 
+    val density = androidx.compose.ui.platform.LocalDensity.current
+
     // Efeito de redimensionamento: Mantém largura estável, ajusta apenas altura
     LaunchedEffect(finalHeight) {
-        if (!isMiniMode && isReady) {
-            val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return@LaunchedEffect
-            val currentY = state.position.y.value
+        if (!isMiniMode && isReady && currentWindow != null) {
+            val win = currentWindow!!
+            // Usa os bounds do monitor em pixels
+            val bounds = currentScreenBounds ?: getActiveMonitorBounds()
             
-            var adjustedY = currentY
-            
-            // Ajusta Y se sair da tela
-            if (currentY + finalHeight.value > bounds.y + bounds.height - screenPadding) {
-                adjustedY = bounds.y + bounds.height - screenPadding - finalHeight.value
-            }
-            
-            // Mantém a largura atual (não força para permitir resize manual do usuário)
-            state.size = DpSize(state.size.width, finalHeight)
-            if (adjustedY != currentY) {
-                state.position = WindowPosition(state.position.x, adjustedY.dp)
+            if (bounds != null) {
+                // Converte a altura alvo (DP) para Pixels Inteiros usando a densidade correta
+                val targetHeightPx = with(density) { finalHeight.roundToPx() }
+                
+                // Obtém a largura nativa atual em Pixels (EVITA O CONFLITO COM O COMPOSE STATE)
+                val currentWidthPx = win.width
+                
+                val currentYPx = win.y
+                var newYPx = currentYPx
+                val screenPaddingPx = with(density) { screenPadding.dp.roundToPx() }
+                
+                // Lógica de ancoragem no fundo (em Pixels)
+                if (currentYPx + targetHeightPx > bounds.y + bounds.height - screenPaddingPx) {
+                    newYPx = bounds.y + bounds.height - screenPaddingPx - targetHeightPx
+                }
+                
+                // Aplica a atualização via AWT apenas se a altura mudou (tolerância de 1px)
+                // Isso permite que o usuário redimensione a largura livremente, pois repassamos o currentWidthPx
+                if (abs(win.height - targetHeightPx) > 1) {
+                    win.setBounds(win.x, newYPx, currentWidthPx, targetHeightPx)
+                }
             }
         }
     }
     
-    var currentWindow by remember { mutableStateOf<java.awt.Window?>(null) }
-    val icon = painterResource(Res.drawable.logo)
-    val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
-    val isWindows = remember { System.getProperty("os.name").lowercase().contains("win") }
-    val isWine = remember { System.getProperty("verse.isWine") == "true" }
-    val forceNoTransparent = remember { System.getProperty("verse.noTransparent") == "true" }
-    
-    // Windows: transparência SEMPRE desabilitada por padrão
-    // Outros SOs: pode ser habilitada via configuração
-    val defaultTransparency = if (isWindows) false else savedSettings.isTransparent
-    val shouldBeTransparent = !isWine && !forceNoTransparent && defaultTransparency
-
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
         val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return
         
@@ -448,7 +461,13 @@ fun runApplication() {
                 if (viewModel.value != null) {
                     App(
                         viewModel = viewModel.value!!,
-                        onClose = { if (actualIsTraySupported) isVisible = false else isMiniMode = true },
+                        onClose = { 
+                            if (isWindows) {
+                                state.isMinimized = true
+                            } else {
+                                if (actualIsTraySupported) isVisible = false else isMiniMode = true 
+                            }
+                        },
                         onHeightRequest = { height ->
                             if (!isMiniMode) {
                                 targetHeight = height

@@ -102,7 +102,12 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "bereia-verse"
+            
+            // No Windows, o packageName define o nome no Menu Iniciar.
+            // No Linux, ele deve ser minúsculo e sem espaços para o .deb
+            val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
+            packageName = if (isWindows) "Bereia Verse" else "bereia-verse"
+            
             packageVersion = "1.0.0"
             description = "IRSE | Bereia Verse - Leitor Bíblico Automático"
             vendor = "IRSE"
