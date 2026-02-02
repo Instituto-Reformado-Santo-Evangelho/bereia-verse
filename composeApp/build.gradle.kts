@@ -63,13 +63,13 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             
-            // Desabilita ProGuard para evitar erros de compilação com bibliotecas externas
             buildTypes.release.proguard {
                 isEnabled.set(false)
             }
             
             val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
-            packageName = if (isWindows) "Bereia Versículos" else "bereia-verse"
+            // Usamos nome sem acento para a pasta para evitar erros de encoding no Windows/Gradle
+            packageName = if (isWindows) "Bereia Versiculos" else "bereia-verse"
             
             packageVersion = "1.1.0"
             description = "IRSE | Bereia Verse - Leitor Bíblico Automático"
@@ -77,15 +77,9 @@ compose.desktop {
             copyright = "© 2026 Instituto Reformado Santo Evangelho - IRSE"
             
             modules(
-                "java.sql",
-                "java.naming",
-                "java.desktop",
-                "java.xml",
-                "java.management",
-                "java.security.jgss",
-                "java.instrument",
-                "jdk.crypto.ec",
-                "jdk.unsupported"
+                "java.sql", "java.naming", "java.desktop", "java.xml", 
+                "java.management", "java.security.jgss", "java.instrument", 
+                "jdk.crypto.ec", "jdk.unsupported"
             )
             
             linux {
@@ -115,7 +109,7 @@ compose.desktop {
 // Configuração do Plugin MSIX
 msix {
     manifest {
-        displayName.set("Bereia Versículos")
+        displayName.set("Bereia Versículos") // O nome visual pode ter acento
         publisher.set("CN=B41FD2FB-AD80-4515-8823-5F91386585CC")
         publisherDisplayName.set("Organização IRSE")
         identityName.set("OrganizaoIRSE.BereiaVersculos")
@@ -127,25 +121,19 @@ msix {
 }
 
 afterEvaluate {
-    val packageName = "Bereia Versículos"
-    val appDir = project.layout.buildDirectory.dir("compose/binaries/main/app/$packageName").get().asFile
+    val folderName = "Bereia Versiculos" // Pasta sem acento
+    val appDir = project.layout.buildDirectory.dir("compose/binaries/main-release/app/$folderName").get().asFile
     
     tasks.named("createAppxManifest", de.stefan_oltmann.msix.CreateAppxManifestTask::class) {
-        appExecutable.set("$packageName.exe")
+        appExecutable.set("$folderName.exe")
     }
     
     tasks.named("createMsix", de.stefan_oltmann.msix.CreateMsixTask::class) {
-        dependsOn("createDistributable")
+        dependsOn("createReleaseDistributable")
         appDirectory.set(appDir)
         msixOutputFile.set(project.layout.buildDirectory.file("outputs/msix/BereiaVerse.msix"))
     }
 }
-
-// Garante que o MSIX só rode DEPOIS que o Compose Desktop gerar os arquivos
-tasks.matching { it.name == "packageMsix" }.configureEach {
-    dependsOn("createDistributable")
-}
-
 
 tasks.matching { it.name == "packageDeb" }.configureEach {
     val buildDirProvider = project.layout.buildDirectory
