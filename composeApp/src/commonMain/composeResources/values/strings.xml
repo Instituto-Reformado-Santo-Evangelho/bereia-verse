@@ -73,9 +73,29 @@ or by keywords (Ex: love, faith)</string>
         <string name="settings_sync_login">Connect Google Drive</string>
         <string name="settings_sync_status_syncing">Status: Syncing...</string>
         <string name="settings_sync_status_success">Status: All up to date</string>
-            <string name="settings_sync_status_error">Status: Sync error</string>
+                <string name="settings_sync_status_error">Status: Sync error</string>
+                
+                <string name="error_drive_connect">Error connecting to Google Drive: %s</string>
+                <string name="error_drive_disconnect">Error disconnecting: %s</string>
+                <string name="error_load_data">Failed to load initial data: %s</string>
+                <string name="error_search">Search error: %s</string>
+                <string name="error_select_verse">Error selecting verse: %s</string>
+                <string name="error_process_text">Error processing text: %s</string>
+                <string name="error_load_context">Error loading context: %s</string>
+                <string name="error_update_history">Error updating history: %s</string>
+                <string name="error_save_note">Error saving note: %s</string>
+                <string name="error_delete_note">Error deleting note: %s</string>
+                <string name="error_sync">Sync error: %s</string>
+                <string name="error_restart">Could not restart automatically. Please open the app manually.</string>
+                <string name="error_snapshot_too_many_verses">Too many verses (%d) for image. Edit to fit better.</string>
+                <string name="error_snapshot_too_long">Text too long for image. Edit to fit better.</string>
+                <string name="error_snapshot_capture">Error capturing image: %s</string>
+                <string name="error_note_too_long_editor">Still too long (%d/%d). Summarize more.</string>
+                <string name="error_note_too_long_general">Note too long for image. Reduce content.</string>
+                <string name="error_note_capture">Error capturing note: %s</string>
             
-            <string name="search_scope_verses">Verses</string>
+                <string name="search_scope_verses">Verses</string>
+            
             <string name="search_scope_notes">Notes</string>
                 <string name="note_general">General Note</string>
                 

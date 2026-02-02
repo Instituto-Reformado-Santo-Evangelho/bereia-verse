@@ -5,6 +5,13 @@ import kotlinx.coroutines.flow.*
 import java.io.File
 
 import br.com.irse.verse.ui.theme.VerseColors
+import org.jetbrains.compose.resources.StringResource
+import verse.composeapp.generated.resources.*
+
+data class UiError(
+    val resource: StringResource,
+    val args: List<Any> = emptyList()
+)
 
 @OptIn(kotlinx.coroutines.FlowPreview::class)
 class VerseViewModel(
@@ -20,7 +27,7 @@ class VerseViewModel(
 ) {
     private val viewModelScope = CoroutineScope(dispatchers.main + SupervisorJob())
     
-    private val _errorState = MutableStateFlow<String?>(null)
+    private val _errorState = MutableStateFlow<UiError?>(null)
     val errorState = _errorState.asStateFlow()
 
     fun clearError() { _errorState.value = null }
@@ -372,7 +379,7 @@ class VerseViewModel(
             try {
                 syncManager.authorize()
             } catch (e: Exception) {
-                _errorState.value = "Erro ao conectar Google Drive: ${e.message}"
+                _errorState.value = UiError(Res.string.error_drive_connect, listOf(e.message ?: ""))
             }
         }
     }
@@ -382,7 +389,7 @@ class VerseViewModel(
             try {
                 syncManager.signOut()
             } catch (e: Exception) {
-                _errorState.value = "Erro ao desconectar: ${e.message}"
+                _errorState.value = UiError(Res.string.error_drive_disconnect, listOf(e.message ?: ""))
             }
         }
     }
@@ -418,7 +425,7 @@ class VerseViewModel(
                 settingsRepository.loadSettings()
                 notesRepository.loadNotes()
             } catch (e: Exception) {
-                _errorState.value = "Falha ao carregar dados iniciais: ${e.message}"
+                _errorState.value = UiError(Res.string.error_load_data, listOf(e.message ?: ""))
             }
         }
 
@@ -498,7 +505,7 @@ class VerseViewModel(
                 _noteSearchResults.value = emptyList()
             }
         } catch (e: Exception) {
-            _errorState.value = "Erro na busca: ${e.message}"
+            _errorState.value = UiError(Res.string.error_search, listOf(e.message ?: ""))
         }
     }
     
@@ -514,7 +521,7 @@ class VerseViewModel(
                     _detectedVerses.value = results
                     currentOriginalVerses = results
                 } catch (e: Exception) {
-                    _errorState.value = "Erro ao selecionar versículo: ${e.message}"
+                    _errorState.value = UiError(Res.string.error_select_verse, listOf(e.message ?: ""))
                 }
             }
         }
@@ -549,7 +556,7 @@ class VerseViewModel(
                     _tabRequest.emit(AppTab.VERSES)
                 }
             } catch (e: Exception) {
-                _errorState.value = "Erro ao processar texto: ${e.message}"
+                _errorState.value = UiError(Res.string.error_process_text, listOf(e.message ?: ""))
                 e.printStackTrace()
             } finally {
                 _isProcessing.value = false
@@ -580,7 +587,7 @@ class VerseViewModel(
                 _detectedVerses.value = results
                 currentOriginalVerses = results
             } catch (e: Exception) {
-                _errorState.value = "Erro ao abrir versículo: ${e.message}"
+                _errorState.value = UiError(Res.string.error_select_verse, listOf(e.message ?: ""))
             }
         }
     }
@@ -615,7 +622,7 @@ class VerseViewModel(
                 _detectedVerses.value = newVerses
                 _isInternalUpdate.value = true
             } catch (e: Exception) {
-                _errorState.value = "Erro ao carregar contexto: ${e.message}"
+                _errorState.value = UiError(Res.string.error_load_context, listOf(e.message ?: ""))
             }
         }
     }
@@ -631,7 +638,7 @@ class VerseViewModel(
     
     fun refreshHistory() {
         viewModelScope.launch {
-             try { historyRepository.loadHistory() } catch (e: Exception) { _errorState.value = "Erro ao atualizar histórico: ${e.message}" }
+             try { historyRepository.loadHistory() } catch (e: Exception) { _errorState.value = UiError(Res.string.error_update_history, listOf(e.message ?: "")) }
         }
     }
 
@@ -659,7 +666,7 @@ class VerseViewModel(
                 
                 notesRepository.saveNote(note)
             } catch (e: Exception) {
-                _errorState.value = "Erro ao salvar nota: ${e.message}"
+                _errorState.value = UiError(Res.string.error_save_note, listOf(e.message ?: ""))
             }
         }
     }
@@ -683,7 +690,7 @@ class VerseViewModel(
                     closeNoteViewer()
                 }
             } catch (e: Exception) { 
-                _errorState.value = "Erro ao excluir nota: ${e.message}" 
+                _errorState.value = UiError(Res.string.error_delete_note, listOf(e.message ?: "")) 
             }
         }
     }
@@ -789,7 +796,7 @@ class VerseViewModel(
             try {
                 syncManager.performFullSync()
             } catch (e: Exception) {
-                _errorState.value = "Erro na sincronização: ${e.message}"
+                _errorState.value = UiError(Res.string.error_sync, listOf(e.message ?: ""))
             }
         }
     }
@@ -835,7 +842,7 @@ class VerseViewModel(
             }
             System.exit(0)
         } catch (e: Exception) {
-            _errorState.value = "Não foi possível reiniciar automaticamente. Por favor, abra o app manualmente."
+            _errorState.value = UiError(Res.string.error_restart)
         }
     }
 
@@ -860,15 +867,18 @@ class VerseViewModel(
             )
             openNoteEditor(note = tempNote)
             
-            val reason = if (verseCount > MAX_SNAPSHOT_VERSES) "Muitos versículos ($verseCount)" else "Texto muito longo"
-            _errorState.value = "$reason para imagem. Edite para caber melhor."
+            if (verseCount > MAX_SNAPSHOT_VERSES) {
+                _errorState.value = UiError(Res.string.error_snapshot_too_many_verses, listOf(verseCount))
+            } else {
+                _errorState.value = UiError(Res.string.error_snapshot_too_long)
+            }
             return
         }
 
         val template = _selectedTemplate.value
         viewModelScope.launch {
             _isProcessing.value = true
-            try { snapshotHandler.captureAndSave(currentVerses, template) } catch (e: Exception) { _errorState.value = "Erro ao capturar imagem: ${e.message}"; e.printStackTrace() } finally { _isProcessing.value = false }
+            try { snapshotHandler.captureAndSave(currentVerses, template) } catch (e: Exception) { _errorState.value = UiError(Res.string.error_snapshot_capture, listOf(e.message ?: "")); e.printStackTrace() } finally { _isProcessing.value = false }
         }
     }
 
@@ -878,10 +888,10 @@ class VerseViewModel(
         
         if (content.length > MAX_SNAPSHOT_CHARS) {
             if (_isNoteEditorOpen.value) {
-                _errorState.value = "Ainda muito longo (${content.length}/$MAX_SNAPSHOT_CHARS). Resuma mais."
+                _errorState.value = UiError(Res.string.error_note_too_long_editor, listOf(content.length, MAX_SNAPSHOT_CHARS))
             } else {
                 openNoteEditor(note = targetNote)
-                _errorState.value = "Nota muito longa para imagem. Reduza o conteúdo."
+                _errorState.value = UiError(Res.string.error_note_too_long_general)
             }
             return
         }
@@ -895,7 +905,7 @@ class VerseViewModel(
             try {
                 snapshotHandler.captureNoteAndSave(content, ref, sign, template)
             } catch (e: Exception) {
-                _errorState.value = "Erro ao capturar nota: ${e.message}"
+                _errorState.value = UiError(Res.string.error_note_capture, listOf(e.message ?: ""))
                 e.printStackTrace()
             } finally {
                 _isProcessing.value = false

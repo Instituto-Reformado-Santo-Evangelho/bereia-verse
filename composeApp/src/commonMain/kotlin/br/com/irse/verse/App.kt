@@ -375,13 +375,16 @@ fun App(
                 }
 
                 // Error Overlay
-                errorState?.let { error ->
+                errorState?.let { uiError ->
                     Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)).clickable { viewModel.clearError() }, contentAlignment = Alignment.Center) {
                         Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(12.dp), tonalElevation = 4.dp, modifier = Modifier.padding(32.dp).clickable(enabled = false) { }) {
                             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Icon(imageVector = Icons.Default.Close, contentDescription = null, tint = VerseColors.ErrorRed, modifier = Modifier.size(32.dp))
                                 Text(text = stringResource(Res.string.error_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text(text = error, style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.7f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                
+                                val errorMessage = stringResource(uiError.resource, *uiError.args.toTypedArray())
+                                Text(text = errorMessage, style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.7f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Surface(color = VerseColors.PrimaryAmber, shape = RoundedCornerShape(8.dp), modifier = Modifier.pointerHoverIconHand().clickable { viewModel.clearError() }) {
                                     Text(text = stringResource(Res.string.understood), modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge, color = VerseColors.HeaderContentColor)

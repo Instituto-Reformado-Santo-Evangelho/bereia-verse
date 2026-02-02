@@ -5,6 +5,8 @@ import br.com.irse.verse.core.CloudSyncState
 import br.com.irse.verse.core.Note
 import br.com.irse.verse.core.SyncStatus
 import com.google.api.client.auth.oauth2.Credential
+import com.google.api.client.auth.oauth2.TokenResponseException
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
@@ -175,6 +177,24 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         _isAuthorized.value = false
     }
 
+    private fun handleSyncException(e: Exception) {
+        e.printStackTrace()
+        _syncState.value = CloudSyncState.ERROR
+        
+        // Verifica se é um erro de autenticação (Token revogado ou expirado sem refresh)
+        val isAuthError = (e is TokenResponseException && e.statusCode == 401) ||
+                         (e is GoogleJsonResponseException && e.statusCode == 401) ||
+                         (e.cause is TokenResponseException && (e.cause as TokenResponseException).statusCode == 401)
+
+        if (isAuthError) {
+            logError("Authentication failed (401). Resetting session.", e)
+            _isAuthorized.value = false
+            driveService = null
+            // Limpa tokens locais para forçar novo login no próximo authorize()
+            if (dataStoreDir.exists()) dataStoreDir.deleteRecursively()
+        }
+    }
+
     override suspend fun uploadNote(note: Note) = withContext(Dispatchers.IO) {
         val service = driveService ?: return@withContext
         try {
@@ -204,8 +224,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             
             _syncState.value = CloudSyncState.SUCCESS
         } catch (e: Exception) {
-            e.printStackTrace()
-            _syncState.value = CloudSyncState.ERROR
+            handleSyncException(e)
         }
     }
 
@@ -233,8 +252,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             _syncState.value = CloudSyncState.SUCCESS
             notes
         } catch (e: Exception) {
-            e.printStackTrace()
-            _syncState.value = CloudSyncState.ERROR
+            handleSyncException(e)
             emptyList()
         }
     }
@@ -255,8 +273,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             
             _syncState.value = CloudSyncState.SUCCESS
         } catch (e: Exception) {
-            e.printStackTrace()
-            _syncState.value = CloudSyncState.ERROR
+            handleSyncException(e)
         }
     }
 }

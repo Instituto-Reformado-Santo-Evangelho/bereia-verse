@@ -73,9 +73,29 @@ ou por palavras-chave (Ex: amor, fé)</string>
         <string name="settings_sync_login">Conectar Google Drive</string>
         <string name="settings_sync_status_syncing">Status: Sincronizando...</string>
         <string name="settings_sync_status_success">Status: Tudo atualizado</string>
-            <string name="settings_sync_status_error">Status: Erro na sincronização</string>
+                <string name="settings_sync_status_error">Status: Erro na sincronização</string>
+                
+                <string name="error_drive_connect">Erro ao conectar Google Drive: %s</string>
+                <string name="error_drive_disconnect">Erro ao desconectar: %s</string>
+                <string name="error_load_data">Falha ao carregar dados iniciais: %s</string>
+                <string name="error_search">Erro na busca: %s</string>
+                <string name="error_select_verse">Erro ao selecionar versículo: %s</string>
+                <string name="error_process_text">Erro ao processar texto: %s</string>
+                <string name="error_load_context">Erro ao carregar contexto: %s</string>
+                <string name="error_update_history">Erro ao atualizar histórico: %s</string>
+                <string name="error_save_note">Erro ao salvar nota: %s</string>
+                <string name="error_delete_note">Erro ao excluir nota: %s</string>
+                <string name="error_sync">Erro na sincronização: %s</string>
+                <string name="error_restart">Não foi possível reiniciar automaticamente. Por favor, abra o app manualmente.</string>
+                <string name="error_snapshot_too_many_verses">Muitos versículos (%d) para imagem. Edite para caber melhor.</string>
+                <string name="error_snapshot_too_long">Texto muito longo para imagem. Edite para caber melhor.</string>
+                <string name="error_snapshot_capture">Erro ao capturar imagem: %s</string>
+                <string name="error_note_too_long_editor">Ainda muito longo (%d/%d). Resuma mais.</string>
+                <string name="error_note_too_long_general">Nota muito longa para imagem. Reduza o conteúdo.</string>
+                <string name="error_note_capture">Erro ao capturar nota: %s</string>
             
-            <string name="search_scope_verses">Versículos</string>
+                <string name="search_scope_verses">Versículos</string>
+            
             <string name="search_scope_notes">Notas</string>
                 <string name="note_general">Nota Geral</string>
                 
