@@ -120,6 +120,25 @@ msix {
     }
 }
 
+afterEvaluate {
+    val packageName = "Bereia Versículos"
+    val appDir = project.layout.buildDirectory.dir("compose/binaries/main/app/$packageName").get().asFile
+    
+    tasks.named("createAppxManifest", de.stefan_oltmann.msix.CreateAppxManifestTask::class) {
+        appExecutable.set("$packageName.exe")
+    }
+    
+    tasks.named("createMsix", de.stefan_oltmann.msix.CreateMsixTask::class) {
+        dependsOn("createDistributable")
+        appDirectory.set(appDir)
+    }
+}
+
+// Garante que o MSIX só rode DEPOIS que o Compose Desktop gerar os arquivos
+tasks.matching { it.name == "packageMsix" }.configureEach {
+    dependsOn("createDistributable")
+}
+
 
 tasks.matching { it.name == "packageDeb" }.configureEach {
     val buildDirProvider = project.layout.buildDirectory
