@@ -526,7 +526,14 @@ class VerseViewModel(
         viewModelScope.launch {
             _isProcessing.value = true
             try {
-                val requests = withContext(dispatchers.io) { parser.processSelection(text) }
+                // No modo externo (clipboard), usamos o modo estrito para evitar popups indesejados
+                val requests = withContext(dispatchers.io) { parser.processSelection(text, strict = isExternal) }
+                
+                // LOG PARA ANDROID
+                if (isExternal) {
+                    println("DEBUG: processQuery detectou ${requests.size} versículos no texto: '$text'")
+                }
+
                 if (requests.isNotEmpty()) {
                     val currentFirst = _detectedVerses.value.firstOrNull()?.first
                     val newFirst = requests.firstOrNull()
@@ -798,16 +805,25 @@ class VerseViewModel(
     fun updateIsTransparent(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.updateIsTransparent(enabled)
-            // Aguarda salvar e reinicia
-            delay(500)
-            restartApp()
+            
+            // Reinício automático apenas para Desktop
+            val os = System.getProperty("os.name")?.lowercase() ?: ""
+            val isDesktop = os.contains("win") || os.contains("linux") || os.contains("mac")
+            
+            if (isDesktop) {
+                delay(500)
+                restartApp()
+            }
         }
     }
 
     private fun restartApp() {
         try {
+            val os = System.getProperty("os.name")?.lowercase() ?: ""
+            if (os.contains("android")) return // Falha silenciosa no Android se chegar aqui
+
             val javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
-            val jarFile = File(VerseViewModel::class.java.protectionDomain.codeSource.location.toURI())
+            val jarFile = File(VerseViewModel::class.java.protectionDomain?.codeSource?.location?.toURI() ?: return)
             
             if (jarFile.extension == "jar") {
                 ProcessBuilder(javaBin, "-jar", jarFile.absolutePath).start()

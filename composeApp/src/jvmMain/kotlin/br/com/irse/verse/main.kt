@@ -317,6 +317,7 @@ fun runApplication() {
                             module {
                                 single { mapping }
                                 single { BibleDatabase(tempDbFile.absolutePath) }
+                                single { SettingsManager.dataDir }
                                 single<SnapshotHandler> { JvmSnapshotHandler() }
                                 single<CloudSyncProvider> { JvmGoogleDriveProvider() }
                             }

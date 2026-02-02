@@ -8,18 +8,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.Json
 import java.io.File
 
-class LocalNotesRepository : NotesRepository {
+class LocalNotesRepository(private val baseDir: File) : NotesRepository {
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
     private val _notes = MutableStateFlow<List<Note>>(emptyList())
     override val notes: StateFlow<List<Note>> = _notes.asStateFlow()
 
     private val notesDir: File by lazy {
-        val os = System.getProperty("os.name")?.lowercase() ?: ""
-        val baseDir = if (os.contains("win")) {
-            File(System.getenv("APPDATA"), "BereiaVerse")
-        } else {
-            File(System.getProperty("user.home") ?: "", ".local/share/bereia-verse")
-        }
         val dir = File(baseDir, "notes")
         if (!dir.exists()) dir.mkdirs()
         dir

@@ -6,8 +6,6 @@ open class BibleParser(val repository: BibleRepository) {
     private val suffixPattern = """(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?(?:\s*[\u2013\u002d\u2014]\s*(\d+)(?:\s*[:.,]\s*((?:[\d\s,]|[\u2013\u002d\u2014](?!\s*\d+\s*[:.,]))+))?)?"""
 
     // Construída dinamicamente para garantir que apenas livros válidos sejam detectados
-    // Usa Alternância para tratar separadamente "Com Livro" e "Sem Livro"
-    // "Sem Livro" usa Lookahead Negativo para não engolir prefixos de livros (ex: "1" de "1 João")
     val refRegex by lazy {
         val allKeys = repository.getAllBooks().keys + BibleConstants.BOOK_ABBREVIATIONS.keys
         val triggers = allKeys
@@ -15,73 +13,72 @@ open class BibleParser(val repository: BibleRepository) {
                 key.split(" ").joinToString("\\s*") { part -> Regex.escape(part) }
             }
 
-        // Alt 1: Book + Suffix (Groups 1..5)
-        // Alt 2: Lookahead(!Book) + Suffix (Groups 6..9 - Group 6 is the first capture in suffix, etc)
-        // Note: Suffix has 4 capturing groups.
-        // Structure:
-        // (Book) (Cap) (Ver) (EndCap) (EndVer)  -> 5 groups
-        // |
-        // (?!) (Cap) (Ver) (EndCap) (EndVer)    -> 4 groups (start index 6)
-        
+        // Agora EXIGE o livro (removida a alternativa sem livro para evitar falsos positivos no clipboard)
         Regex(
-            """(?:((?:$triggers)\.?\s*)$suffixPattern)|(?:(?!(?:$triggers))$suffixPattern)""",
+            """((?:$triggers)\.?\s*)$suffixPattern""",
             RegexOption.IGNORE_CASE
         )
     }
 
-    open fun processSelection(text: String): List<VerseRequest> {
-        if (text.length < 3) return emptyList()
+    /**
+     * @param text O texto a ser processado
+     * @param strict Se true, o texto deve conter APENAS referências válidas (e pontuação básica), 
+     *               rejeitando se houver palavras extras ou se for um texto longo.
+     */
+    open fun processSelection(text: String, strict: Boolean = false): List<VerseRequest> {
+        val trimmed = text.trim()
+        if (trimmed.length < 3) return emptyList()
+        
+        // Se estiver no modo estrito (vindo do clipboard), rejeita textos muito longos
+        // Uma referência bíblica raramente passa de 100 caracteres
+        if (strict && trimmed.length > 150) return emptyList()
 
         // Remove footnote markers like [1], [12]
-        val cleanText = text.replace(Regex("""\[\d+]"""), "").replace(Regex("""\s+""" ), " ")
+        val cleanText = trimmed.replace(Regex("""\[\d+]"""), "").replace(Regex("""\s+""" ), " ")
         val chunks = cleanText.split(";")
         
         var currentBook: Book? = null
         val allRequests = mutableListOf<VerseRequest>()
+        
+        // No modo estrito, vamos validar se o que foi detectado "cobre" o essencial do texto
+        var totalMatchedLength = 0
 
         for (rawChunk in chunks) {
             var chunk = rawChunk.trim()
             if (chunk.isEmpty()) continue
 
-            chunk = chunk.replace(Regex("""^(cf\.|e\s|and\s|ver\s)""", RegexOption.IGNORE_CASE), "").trim()
+            // Remove prefixos comuns de citação
+            val prefixRegex = Regex("""^(cf\.|e\s|and\s|ver\s)""", RegexOption.IGNORE_CASE)
+            val prefixMatch = prefixRegex.find(chunk)
+            if (prefixMatch != null) {
+                if (strict) return emptyList() // No modo estrito, não aceitamos nem prefixos "cf." etc se for puro
+                chunk = chunk.substring(prefixMatch.range.last + 1).trim()
+            }
 
-            val matches = refRegex.findAll(chunk)
+            val matches = refRegex.findAll(chunk).toList()
             
+            // Se modo estrito e não achou nada no chunk, ou achou texto extra
+            if (strict && matches.isEmpty()) return emptyList()
+
             for (match in matches) {
                 if (match.value.isEmpty()) continue
+                
+                totalMatchedLength += match.value.length
 
-                // Extraction Logic with Alternatives
-                // Alt 1 (With Book): Groups 1, 2, 3, 4, 5
-                // Alt 2 (No Book): Groups 6, 7, 8, 9
-                
-                // Group 1: Book
-                val rawBook = match.groupValues.getOrNull(1)?.takeIf { it.isNotBlank() }
-                
-                // Start Cap: Group 2 OR Group 6
-                val startCapStr = match.groupValues.getOrNull(2)?.takeIf { it.isNotBlank() }
-                    ?: match.groupValues.getOrNull(6)
-                
-                // Start Verse: Group 3 OR Group 7
-                var startVersePart = match.groupValues.getOrNull(3)?.takeIf { it.isNotBlank() }
-                    ?: match.groupValues.getOrNull(7)?.takeIf { it.isNotBlank() } 
-                    ?: "1-999"
-                    
-                // End Cap: Group 4 OR Group 8
-                val endCapStr = match.groupValues.getOrNull(4)?.takeIf { it.isNotBlank() }
-                    ?: match.groupValues.getOrNull(8)
-                    
-                // End Verse: Group 5 OR Group 9
-                var endVersePart = match.groupValues.getOrNull(5)?.takeIf { it.isNotBlank() }
-                    ?: match.groupValues.getOrNull(9)?.takeIf { it.isNotBlank() } 
-                    ?: "1-999"
+                // Extraction Logic (Agora simplificada pois o livro é obrigatório)
+                val rawBook = match.groupValues[1].takeIf { it.isNotBlank() }
+                val startCapStr = match.groupValues[2].takeIf { it.isNotBlank() }
+                var startVersePart = match.groupValues[3].takeIf { it.isNotBlank() } ?: "1-999"
+                val endCapStr = match.groupValues[4].takeIf { it.isNotBlank() }
+                var endVersePart = match.groupValues[5].takeIf { it.isNotBlank() } ?: "1-999"
 
                 if (startCapStr.isNullOrBlank()) continue
                 val startCap = startCapStr.toIntOrNull() ?: continue
                 val endCap = endCapStr?.takeIf { it.isNotBlank() }?.toIntOrNull()
 
                 // Clean trailing dashes
-                 startVersePart = startVersePart.replace(Regex("""[\s\u2013\u002d\u2014]+\$""" ), "")
-                 endVersePart = endVersePart.replace(Regex("""[\s\u2013\u002d\u2014]+\$""" ), "")
+                 startVersePart = startVersePart.replace(Regex("""[\s\u2013\u002d\u2014]+$""" ), "")
+                 endVersePart = endVersePart.replace(Regex("""[\s\u2013\u002d\u2014]+$""" ), "")
 
                 if (rawBook != null) {
                     val found = repository.findBook(rawBook.trim())
@@ -94,14 +91,12 @@ open class BibleParser(val repository: BibleRepository) {
                         val startRange = getMinMaxVerses(startVersePart)
                         val endRange = getMinMaxVerses(endVersePart)
                         
-                        // 1. Start Cap
                         val maxVerseStartCap = currentBook.metaData.chapters.getOrNull(startCap - 1)
                         if (maxVerseStartCap != null) {
                             val part = "${startRange.min}-$maxVerseStartCap"
                             allRequests.addAll(parseVerses(currentBook, startCap, part))
                         }
 
-                        // 2. Middle Caps
                         for (c in (startCap + 1) until endCap) {
                             val maxV = currentBook.metaData.chapters.getOrNull(c - 1)
                             if (maxV != null) {
@@ -109,7 +104,6 @@ open class BibleParser(val repository: BibleRepository) {
                             }
                         }
 
-                        // 3. End Cap
                         val maxVerseEndCap = currentBook.metaData.chapters.getOrNull(endCap - 1)
                         if (maxVerseEndCap != null) {
                             var finalV = endRange.max
@@ -119,11 +113,18 @@ open class BibleParser(val repository: BibleRepository) {
                         }
 
                     } else {
-                        // Só um capitulo
                         allRequests.addAll(parseVerses(currentBook, startCap, startVersePart))
                     }
                 }
             }
+        }
+        
+        // Validação final de "Pureza" no modo estrito:
+        // O comprimento dos matches + separadores (;) deve ser próximo ao comprimento total
+        if (strict) {
+            val ratio = totalMatchedLength.toDouble() / cleanText.length.toDouble()
+            // Se os matches cobrirem menos de 80% do texto (descontando espaços/pontuação), provavelmente há lixo
+            if (ratio < 0.75) return emptyList()
         }
 
         return allRequests.distinctBy { it.id }

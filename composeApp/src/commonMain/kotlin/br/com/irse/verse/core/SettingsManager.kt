@@ -25,7 +25,7 @@ data class UserSettings(
 object SettingsManager {
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
     
-    private val dataDir: File by lazy {
+    val dataDir: File by lazy {
         val os = System.getProperty("os.name")?.lowercase() ?: ""
         val dir = if (os.contains("win")) {
             File(System.getenv("APPDATA"), "BereiaVerse")

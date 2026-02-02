@@ -202,7 +202,28 @@ class BibleParserTest {
         assertEquals(0, parser.processSelection("João").size, "Book name only should not match")
         assertEquals(0, parser.processSelection("3:16").size, "Numbers without book should not match")
         assertEquals(0, parser.processSelection("João:16").size, "Missing chapter should not match")
-        // Note: Some parsers might interpret "João 3:" as "João 3" (whole chapter)
-        // This is acceptable behavior, so we don't test it as strictly invalid
+    }
+
+    @Test
+    fun `test strict mode purity`() {
+        // Válido: Referência pura
+        val textValid = "João 3:16"
+        assertTrue(parser.processSelection(textValid, strict = true).isNotEmpty(), "Deveria aceitar João 3:16 puro no modo estrito")
+
+        // Válido: Múltiplas referências puras separadas por ponto e vírgula
+        val textMulti = "João 3:16; Gn 1:1"
+        assertTrue(parser.processSelection(textMulti, strict = true).size >= 2, "Deveria aceitar múltiplas referências separadas por ;")
+
+        // Inválido: Texto extra em volta (Modo Estrito deve rejeitar)
+        val textWithExtra = "Veja João 3:16 agora"
+        assertTrue(parser.processSelection(textWithExtra, strict = true).isEmpty(), "Deveria REJEITAR 'Veja João 3:16 agora' no modo estrito")
+
+        // Inválido: Texto extra no final
+        val textWithExtraEnd = "João 3:16 é um verso"
+        assertTrue(parser.processSelection(textWithExtraEnd, strict = true).isEmpty(), "Deveria REJEITAR 'João 3:16 é um verso' no modo estrito")
+        
+        // Inválido: Texto muito longo
+        val longText = "João 3:16 " + "A".repeat(200)
+        assertTrue(parser.processSelection(longText, strict = true).isEmpty(), "Deveria REJEITAR texto excessivamente longo")
     }
 }

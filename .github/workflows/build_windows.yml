@@ -28,14 +28,14 @@ jobs:
         echo "$env:GOOGLE_SECRETS" > composeApp/src/jvmMain/resources/client_secrets.json
       shell: powershell
 
-    - name: Build Windows MSI
-      run: ./gradlew :composeApp:packageMsi --no-configuration-cache
+    - name: Build Windows MSIX
+      run: ./gradlew :composeApp:packageMsix --no-configuration-cache
 
     # Opcional: Se quiser um .exe simples além do MSI, o Compose também suporta packageExe 
     # se configurado no build.gradle.kts (TargetFormat.Exe)
     
-    - name: Upload MSI Artifact
+    - name: Upload MSIX Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: verse-windows-msi
-        path: composeApp/build/compose/binaries/main/msi/*.msi
+        name: verse-windows-msix
+        path: composeApp/build/compose/binaries/main/msix/*.msix

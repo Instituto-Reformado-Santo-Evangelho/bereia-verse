@@ -24,6 +24,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.lifecycle.service)
             implementation(libs.androidx.savedstate)
+            implementation(libs.koin.android) // Movido para cá
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -69,7 +70,7 @@ kotlin {
 }
 
 android {
-    namespace = "br.com.irse.verse.ui"
+    namespace = "br.com.irse.verse.compose"
 
     packaging {
         resources {
@@ -101,20 +102,31 @@ compose.desktop {
         mainClass = "br.com.irse.verse.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Msix)
             
             // No Windows, o packageName define o nome no Menu Iniciar.
             // No Linux, ele deve ser minúsculo e sem espaços para o .deb
             val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
-            packageName = if (isWindows) "Bereia Verse" else "bereia-verse"
+            packageName = if (isWindows) "Bereia Versículos" else "bereia-verse"
             
-            packageVersion = "1.0.0"
+            packageVersion = "1.1.0"
             description = "IRSE | Bereia Verse - Leitor Bíblico Automático"
             vendor = "IRSE"
             copyright = "© 2026 Instituto Reformado Santo Evangelho - IRSE"
             
-            // Força a inclusão do módulo SQL para o SQLite funcionar
-            modules("java.sql")
+            // Otimização de tamanho (jlink): Inclui apenas o necessário para o app rodar.
+            // Isso reduz o instalador de ~120MB para ~50MB.
+            modules(
+                "java.sql",           // Para o SQLite
+                "java.naming",        // Dependência de libs JDBC e Google Client
+                "java.desktop",       // Core do Compose Desktop (AWT/Swing)
+                "java.xml",           // Parsers XML
+                "java.management",    // Monitoramento da JVM
+                "java.security.jgss", // Autenticação Segura
+                "java.instrument",    // Necessário para algumas libs de introspecção
+                "jdk.crypto.ec",      // CRÍTICO: Permite conexões HTTPS (Google Drive)
+                "jdk.unsupported"     // Necessário para performance da Skia/Compose
+            )
             
             linux {
                 shortcut = true
@@ -137,6 +149,14 @@ compose.desktop {
                 menuGroup = "IRSE"
                 upgradeUuid = "550e8400-e29b-41d4-a716-446655440000" 
                 iconFile.set(project.file("src/jvmMain/resources/icon.ico"))
+
+                // Configuração específica para Microsoft Store (MSIX)
+                msix {
+                    bundleID = "OrganizaoIRSE.BereiaVersculos"
+                    publisher = "CN=B41FD2FB-AD80-4515-8823-5F91386585CC"
+                    publisherDisplayName = "Organização IRSE"
+                    store = true 
+                }
             }
         }
     }

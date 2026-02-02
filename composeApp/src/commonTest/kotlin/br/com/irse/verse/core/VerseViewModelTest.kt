@@ -23,7 +23,7 @@ class VerseViewModelTest {
     }
 
     class FakeParser(repo: BibleRepository) : BibleParser(repo) {
-        override fun processSelection(text: String): List<VerseRequest> {
+        override fun processSelection(text: String, strict: Boolean): List<VerseRequest> {
              if (text == "Error") throw Exception("Parser Failure")
              return emptyList()
         }

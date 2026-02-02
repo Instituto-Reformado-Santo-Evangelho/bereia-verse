@@ -25,7 +25,7 @@ val appModule = module {
     
     single { SettingsRepository() }
     single { HistoryRepository() }
-    single<NotesRepository> { LocalNotesRepository() }
+    single<NotesRepository> { LocalNotesRepository(get()) }
     single { SearchUseCase(get(), get()) }
     single { CoroutineDispatchers() }
     
