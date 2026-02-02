@@ -6,16 +6,16 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="${identityName}"
-    Publisher="${publisher}"
-    Version="${version}"
-    ProcessorArchitecture="${processorArchitecture}" />
+    Name="OrganizaoIRSE.BereiaVersculos"
+    Publisher="CN=B41FD2FB-AD80-4515-8823-5F91386585CC"
+    Version="1.1.0.0"
+    ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>${displayName}</DisplayName>
-    <PublisherDisplayName>${publisherDisplayName}</PublisherDisplayName>
+    <DisplayName>Bereia Versículos</DisplayName>
+    <PublisherDisplayName>Organização IRSE</PublisherDisplayName>
     <Logo>resources\StoreLogo.png</Logo>
-    <Description>${description}</Description>
+    <Description>IRSE | Bereia Verse - Leitor Bíblico Automático</Description>
   </Properties>
 
   <Resources>
@@ -35,12 +35,12 @@
   </Capabilities>
 
   <Applications>
-    <Application Id="${appId}"
-      Executable="${appExecutable}"
+    <Application Id="BereiaVerse"
+      Executable="Bereia Versiculos.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="${displayName}"
-        Description="${description}"
+        DisplayName="Bereia Versículos"
+        Description="IRSE | Bereia Verse - Leitor Bíblico Automático"
         BackgroundColor="transparent"
         Square150x150Logo="resources\Square150x150Logo.png"
         Square44x44Logo="resources\Square44x44Logo.png">
