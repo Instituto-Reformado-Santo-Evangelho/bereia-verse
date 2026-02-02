@@ -191,7 +191,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                     text = if (isSyncAuthorized) 
                         stringResource(Res.string.settings_sync_desc_connected) 
                     else 
-                        stringResource(Res.string.settings_sync_desc_disconnected),
+                        stringResource(Res.string.settings_sync_desc_disconnected) + " (Necessita navegador padrão configurado)",
                     style = MaterialTheme.typography.bodySmall,
                     color = textColor.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)

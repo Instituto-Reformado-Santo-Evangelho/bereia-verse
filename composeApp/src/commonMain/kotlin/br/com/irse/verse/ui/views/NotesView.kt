@@ -172,7 +172,7 @@ fun NotesView(
                                 onView = { viewModel.openNoteViewer(note) },
                                 onCopy = { 
                                     clipboard.setText(AnnotatedString(note.content))
-                                    viewModel.showCopyFeedback(noteCopiedLabel) 
+                                    viewModel.showToast(noteCopiedLabel) 
                                 },
                                 onSnapshot = { viewModel.captureNoteSnapshot(note = note) },
                                 onLinkClick = { linkText -> 

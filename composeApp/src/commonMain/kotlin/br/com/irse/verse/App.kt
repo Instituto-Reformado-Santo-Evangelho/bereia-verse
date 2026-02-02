@@ -140,7 +140,7 @@ fun App(
         colorScheme = if (isDark) darkColorScheme(primary = VerseColors.PrimaryAmber, surface = surfaceColor, onSurface = textColor)
         else lightColorScheme(primary = VerseColors.PrimaryAmber, surface = surfaceColor, onSurface = textColor)
     ) {
-        val copyMessage by viewModel.copyMessage.collectAsState()
+        val toastState by viewModel.toastState.collectAsState()
         
         LaunchedEffect(detectedVerses, currentTab) {
             // Pode resetar estados se necessário
@@ -338,11 +338,11 @@ fun App(
                                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { 
                                             val text = viewModel.formatVersesForClipboard(detectedVerses)
                                             clipboard.setText(AnnotatedString(text))
-                                            viewModel.showCopyFeedback("$copiedLabel ${viewModel.getConsolidatedReference(detectedVerses)}")
+                                            viewModel.showToast("$copiedLabel ${viewModel.getConsolidatedReference(detectedVerses)}")
                                         }
                                 ) {
                                     Box(modifier = Modifier.padding(8.dp)) { 
-                                        if (copyMessage != null && copyMessage!!.startsWith(copiedLabel)) CheckIcon(color = VerseColors.SuccessGreen) 
+                                        if (toastState != null && toastState!!.message.startsWith(copiedLabel)) CheckIcon(color = VerseColors.SuccessGreen) 
                                         else CopyIcon(color = if (isCopyHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) 
                                     }
                                 }
@@ -351,22 +351,28 @@ fun App(
                     }
                 }
 
-                // Copy Feedback Floating Overlay
+                // Toast Feedback Floating Overlay
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = copyMessage != null,
+                    visible = toastState != null,
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 60.dp)
                 ) {
+                    val backgroundColor = when (toastState?.type) {
+                        VerseViewModel.ToastType.ERROR -> VerseColors.ErrorRed
+                        VerseViewModel.ToastType.INFO -> VerseColors.PrimaryAmber
+                        else -> VerseColors.SuccessGreen
+                    }
+                    
                     Surface(
-                        color = VerseColors.SuccessGreen.copy(alpha = 0.9f),
+                        color = backgroundColor.copy(alpha = 0.9f),
                         contentColor = Color.White,
                         shape = RoundedCornerShape(24.dp),
                         tonalElevation = 4.dp,
                         shadowElevation = 4.dp
                     ) {
                         Text(
-                            text = copyMessage ?: "",
+                            text = toastState?.message ?: "",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold

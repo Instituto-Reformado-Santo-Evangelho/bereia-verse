@@ -221,7 +221,8 @@ fun runApplication() {
     
     // Salva a posição sempre que mudar (modo normal)
     LaunchedEffect(state.position, state.size, isMiniMode) {
-        if (isReady && !isMiniMode) {
+        // Só salva se estiver pronto, NÃO estiver em mini mode E o tamanho for maior que o mini widget
+        if (isReady && !isMiniMode && state.size.width > miniSize) {
             // Memoriza posição e tamanho para restaurar depois
             lastNormalPosition = state.position
             lastNormalSize = state.size
@@ -241,7 +242,7 @@ fun runApplication() {
     val density = androidx.compose.ui.platform.LocalDensity.current
 
     // Efeito de redimensionamento: Mantém largura estável, ajusta apenas altura
-    LaunchedEffect(finalHeight) {
+    LaunchedEffect(finalHeight, isMiniMode) {
         if (!isMiniMode && isReady && currentWindow != null) {
             val win = currentWindow!!
             // Usa os bounds do monitor em pixels
@@ -355,7 +356,7 @@ fun runApplication() {
         if (isReady) {
             // Se o aviso estiver ativo, mostra via feedback do ViewModel
             if (System.getProperty("verse.transparencyWarning") == "true") {
-                viewModel.value?.showCopyFeedback("Aviso: Bordas arredondadas desativadas por segurança.")
+                viewModel.value?.showToast("Aviso: Bordas arredondadas desativadas por segurança.")
             }
             
             delay(5000)
@@ -446,7 +447,17 @@ fun runApplication() {
         alwaysOnTop = true, 
         resizable = true // Permite redimensionamento
     ) {
-        SideEffect { currentWindow = window }
+        SideEffect { 
+            currentWindow = window
+            // No Windows, define como janela utilitária para não aparecer na barra de tarefas
+            if (isWindows && window is java.awt.Window) {
+                try {
+                    val frame = window as? java.awt.Frame
+                    // Em janelas undecorated, isso ajuda a ocultar da barra de tarefas
+                    window.type = java.awt.Window.Type.UTILITY
+                } catch (e: Exception) { e.printStackTrace() }
+            }
+        }
         
         AnimatedContent(
             targetState = isMiniMode,

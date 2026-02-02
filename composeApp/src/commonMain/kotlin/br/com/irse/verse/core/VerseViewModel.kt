@@ -57,7 +57,8 @@ class VerseViewModel(
     val history = historyRepository.history
     val notes = notesRepository.notes
 
-    val filteredNotes = combine(notes, _noteFilter) { noteList, filter ->
+    val filteredNotes = combine(notes, _noteFilter) {
+        noteList, filter ->
         when (filter) {
             NoteFilter.ALL -> noteList
             NoteFilter.FREE -> noteList.filter { it.verseId == null }
@@ -115,11 +116,10 @@ class VerseViewModel(
     )
 
     val templatesList = listOf(
-        // --- NOVOS MODELOS PARA NOTAS (TEXTURAS/SÓLIDOS) ---
         SnapshotTemplate(
             id = "note_pergaminho", displayName = "Pergaminho",
             backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFFE3DAC9), androidx.compose.ui.graphics.Color(0xFFF0E6D2))),
-            contentColor = androidx.compose.ui.graphics.Color(0xFF3E2723), // Marrom Escuro
+            contentColor = androidx.compose.ui.graphics.Color(0xFF3E2723), 
             backgroundImage = "note_bg_5.png",
             imageAlpha = 1.0f,
             showLogo = false,
@@ -229,47 +229,30 @@ class VerseViewModel(
             fontFamilyName = "Serif",
             textAlignment = androidx.compose.ui.text.style.TextAlign.Start
         ),
-
-        // --- GRADIENTES PARA NOTAS ---
         SnapshotTemplate(
             id = "grad_aurora", displayName = "Aurora",
-            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                colors = listOf(androidx.compose.ui.graphics.Color(0xFF00c6ff), androidx.compose.ui.graphics.Color(0xFF0072ff))
-            ),
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF00c6ff), androidx.compose.ui.graphics.Color(0xFF0072ff))),
             contentColor = androidx.compose.ui.graphics.Color.White,
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false, textAlignment = androidx.compose.ui.text.style.TextAlign.Start
         ),
         SnapshotTemplate(
             id = "grad_crepusculo", displayName = "Crepúsculo",
-            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(
-                colors = listOf(androidx.compose.ui.graphics.Color(0xFF141E30), androidx.compose.ui.graphics.Color(0xFF243B55))
-            ),
+            backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF141E30), androidx.compose.ui.graphics.Color(0xFF243B55))),
             contentColor = androidx.compose.ui.graphics.Color.White,
-            showLogo = false,
-            fontFamilyName = "Serif",
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false, fontFamilyName = "Serif", textAlignment = androidx.compose.ui.text.style.TextAlign.Start
         ),
         SnapshotTemplate(
             id = "grad_meianoite", displayName = "Meia-noite",
-            backgroundBrush = androidx.compose.ui.graphics.Brush.radialGradient(
-                colors = listOf(androidx.compose.ui.graphics.Color(0xFF232526), androidx.compose.ui.graphics.Color(0xFF414345))
-            ),
+            backgroundBrush = androidx.compose.ui.graphics.Brush.radialGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF232526), androidx.compose.ui.graphics.Color(0xFF414345))),
             contentColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0),
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false, textAlignment = androidx.compose.ui.text.style.TextAlign.Start
         ),
         SnapshotTemplate(
             id = "grad_real", displayName = "Realeza",
-            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                colors = listOf(androidx.compose.ui.graphics.Color(0xFF5f2c82), androidx.compose.ui.graphics.Color(0xFF49a09d))
-            ),
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF5f2c82), androidx.compose.ui.graphics.Color(0xFF49a09d))),
             contentColor = androidx.compose.ui.graphics.Color.White,
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false, textAlignment = androidx.compose.ui.text.style.TextAlign.Start
         ),
-
-        // --- NATUREZA (VERSÍCULOS) ---
         SnapshotTemplate(
             id = "nature_1", displayName = "Natureza 1",
             backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xCC000000), androidx.compose.ui.graphics.Color(0x66000000))),
@@ -306,8 +289,6 @@ class VerseViewModel(
             contentColor = androidx.compose.ui.graphics.Color.White,
             backgroundImage = "bg6.png", imageAlpha = 0.75f, showLogo = false
         ),
-
-        // --- CLÁSSICOS/SIMPLES ---
         SnapshotTemplate(
             id = "classic", displayName = "Clássico", 
             backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(VerseColors.PrimaryAmber, androidx.compose.ui.graphics.Color(0xFFFFD54F))), 
@@ -329,37 +310,32 @@ class VerseViewModel(
         ),
         SnapshotTemplate(
             id = "note_solid_1", displayName = "Nota Solene", 
-            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                colors = listOf(androidx.compose.ui.graphics.Color(0xFF232526), androidx.compose.ui.graphics.Color(0xFF414345))
-            ), 
+            backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF232526), androidx.compose.ui.graphics.Color(0xFF414345))), 
             contentColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0), 
-            fontFamilyName = "Serif",
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start,
-            showLogo = false,
-            logoAlpha = 0.3f
+            fontFamilyName = "Serif", textAlignment = androidx.compose.ui.text.style.TextAlign.Start, showLogo = false, logoAlpha = 0.3f
         )
     )
 
     private val _selectedTemplate = MutableStateFlow(templatesList.first())
     val selectedTemplate = _selectedTemplate.asStateFlow()
 
-    // Estado do Editor de Notas persistente
     private val _isNoteEditorOpen = MutableStateFlow(false)
     val isNoteEditorOpen = _isNoteEditorOpen.asStateFlow()
 
-    // Estado do Visualizador de Notas (Modo Leitura)
     private val _viewingNote = MutableStateFlow<Note?>(null)
     val viewingNote = _viewingNote.asStateFlow()
 
-    // Estado para diálogo de confirmação de exclusão
     private val _noteToDelete = MutableStateFlow<Note?>(null)
     val noteToDelete = _noteToDelete.asStateFlow()
 
+    enum class ToastType { SUCCESS, ERROR, INFO }
+    data class ToastState(val message: String, val type: ToastType = ToastType.SUCCESS)
+
+    private val _toastState = MutableStateFlow<ToastState?>(null)
+    val toastState = _toastState.asStateFlow()
+
     private val _tabRequest = MutableSharedFlow<AppTab>()
     val tabRequest = _tabRequest.asSharedFlow()
-
-    private val _copyMessage = MutableStateFlow<String?>(null)
-    val copyMessage = _copyMessage.asStateFlow()
 
     private val _editingVerseRequest = MutableStateFlow<VerseRequest?>(null)
     val editingVerseRequest = _editingVerseRequest.asStateFlow()
@@ -370,16 +346,24 @@ class VerseViewModel(
     private val MAX_SNAPSHOT_CHARS = 600
     private val MAX_SNAPSHOT_VERSES = 5
 
-    // Sync States exposed from Manager/Provider
     val syncState = syncManager.syncState
     val isSyncAuthorized = syncManager.isAuthorized
+
+    fun showToast(message: String, type: ToastType = ToastType.SUCCESS) {
+        viewModelScope.launch {
+            _toastState.value = ToastState(message, type)
+            delay(3000)
+            _toastState.value = null
+        }
+    }
 
     fun loginToDrive() {
         viewModelScope.launch {
             try {
+                showToast("Abrindo navegador para login...", ToastType.INFO)
                 syncManager.authorize()
             } catch (e: Exception) {
-                _errorState.value = UiError(Res.string.error_drive_connect, listOf(e.message ?: ""))
+                showToast("Falha no login: ${e.message}", ToastType.ERROR)
             }
         }
     }
@@ -388,8 +372,9 @@ class VerseViewModel(
         viewModelScope.launch {
             try {
                 syncManager.signOut()
+                showToast("Conta desconectada com sucesso.")
             } catch (e: Exception) {
-                _errorState.value = UiError(Res.string.error_drive_disconnect, listOf(e.message ?: ""))
+                showToast("Erro ao desconectar: ${e.message}", ToastType.ERROR)
             }
         }
     }
@@ -428,7 +413,6 @@ class VerseViewModel(
                 _errorState.value = UiError(Res.string.error_load_data, listOf(e.message ?: ""))
             }
         }
-
         viewModelScope.launch {
             _searchQuery.debounce(300).distinctUntilChanged().filter { it.length >= 2 }.collect { query -> performSearch(query) }
         }
@@ -479,13 +463,10 @@ class VerseViewModel(
         }
     }
 
-    fun setNoteFilter(filter: NoteFilter) {
-        _noteFilter.value = filter
-    }
+    fun setNoteFilter(filter: NoteFilter) { _noteFilter.value = filter }
 
     fun setSearchScope(scope: SearchScope) {
         _searchScope.value = scope
-        // Re-executa a busca com a query atual no novo escopo
         val currentQuery = _searchQuery.value
         if (currentQuery.length >= 2) {
              viewModelScope.launch { performSearch(currentQuery) }
@@ -533,14 +514,7 @@ class VerseViewModel(
         viewModelScope.launch {
             _isProcessing.value = true
             try {
-                // No modo externo (clipboard), usamos o modo estrito para evitar popups indesejados
                 val requests = withContext(dispatchers.io) { parser.processSelection(text, strict = isExternal) }
-                
-                // LOG PARA ANDROID
-                if (isExternal) {
-                    println("DEBUG: processQuery detectou ${requests.size} versículos no texto: '$text'")
-                }
-
                 if (requests.isNotEmpty()) {
                     val currentFirst = _detectedVerses.value.firstOrNull()?.first
                     val newFirst = requests.firstOrNull()
@@ -552,7 +526,6 @@ class VerseViewModel(
                         val historyLabel = formatHistoryLabel(requests)
                         historyRepository.saveEntry(historyLabel)
                     }
-                    // Solicita navegação para aba de versículos
                     _tabRequest.emit(AppTab.VERSES)
                 }
             } catch (e: Exception) {
@@ -643,27 +616,21 @@ class VerseViewModel(
     }
 
     fun saveNote(content: String) {
-        // CAPTURA o verseId ANTES da coroutine (síncrono)
-        // Isso evita race condition com closeNoteEditor()
         val verseIdFromRequest = _editingVerseRequest.value?.id
         val existingNote = _editingNote.value
-        
         viewModelScope.launch {
             try {
-                // Se está editando nota existente, mantém o verseId dela
                 val finalVerseId = existingNote?.verseId ?: verseIdFromRequest
-                
                 val existing = finalVerseId?.let { notesRepository.getNoteForVerse(it) }
                 val now = currentTimeMillis()
                 val note = Note(
                     id = existing?.id ?: existingNote?.id ?: generateUuid(), 
-                    verseId = finalVerseId,  // null = nota livre, not-null = referenciada
+                    verseId = finalVerseId, 
                     content = content, 
                     createdAt = existing?.createdAt ?: existingNote?.createdAt ?: now, 
                     updatedAt = now, 
                     syncStatus = SyncStatus.PENDING
                 )
-                
                 notesRepository.saveNote(note)
             } catch (e: Exception) {
                 _errorState.value = UiError(Res.string.error_save_note, listOf(e.message ?: ""))
@@ -671,13 +638,8 @@ class VerseViewModel(
         }
     }
 
-    fun confirmDeleteNote(note: Note) {
-        _noteToDelete.value = note
-    }
-
-    fun cancelDeleteNote() {
-        _noteToDelete.value = null
-    }
+    fun confirmDeleteNote(note: Note) { _noteToDelete.value = note }
+    fun cancelDeleteNote() { _noteToDelete.value = null }
 
     fun performDeleteNote() {
         val note = _noteToDelete.value ?: return
@@ -685,21 +647,8 @@ class VerseViewModel(
             try { 
                 notesRepository.deleteNote(note.id) 
                 _noteToDelete.value = null
-                // Se estiver visualizando a nota excluída, fecha o viewer
-                if (_viewingNote.value?.id == note.id) {
-                    closeNoteViewer()
-                }
-            } catch (e: Exception) { 
-                _errorState.value = UiError(Res.string.error_delete_note, listOf(e.message ?: "")) 
-            }
-        }
-    }
-
-    fun showCopyFeedback(message: String) {
-        viewModelScope.launch {
-            _copyMessage.value = message
-            delay(3000)
-            _copyMessage.value = null
+                if (_viewingNote.value?.id == note.id) closeNoteViewer()
+            } catch (e: Exception) { _errorState.value = UiError(Res.string.error_delete_note, listOf(e.message ?: "")) }
         }
     }
 
@@ -710,72 +659,34 @@ class VerseViewModel(
 
     fun formatVersesForClipboard(verses: List<Pair<VerseRequest, String?>>): String {
         if (verses.isEmpty()) return ""
-        
         val result = StringBuilder()
         var currentBook = ""
         var currentChapter = -1
         var currentVerse = -1
         var segmentStart: VerseRequest? = null
         var segmentVerses = mutableListOf<Pair<VerseRequest, String?>>()
-        
         fun flushSegment() {
             if (segmentVerses.isEmpty()) return
-            
-            // Texto do segmento (contínuo)
-            val segmentText = segmentVerses.joinToString(" ") { (_, content) ->
-                content?.replace(Regex("<[^>]*>"), "")?.trim() ?: ""
-            }
-            
-            // Referência do segmento no formato padrão
+            val segmentText = segmentVerses.joinToString(" ") { (_, content) -> content?.replace(Regex("<[^>]*>"), "")?.trim() ?: "" }
             val start = segmentStart!!
             val end = segmentVerses.last().first
-            val reference = if (start.chapter == end.chapter && start.verse == end.verse) {
-                // Versículo único
-                "(${start.book} ${start.chapter}:${start.verse} - ACF)"
-            } else if (start.chapter == end.chapter) {
-                // Mesmo capítulo, múltiplos versículos
-                "(${start.book} ${start.chapter}:${start.verse}-${end.verse} - ACF)"
-            } else {
-                // Capítulos diferentes
-                "(${start.book} ${start.chapter}:${start.verse}-${end.chapter}:${end.verse} - ACF)"
-            }
-            
-            result.append(segmentText)
-            result.append(" ")
-            result.append(reference)
+            val reference = if (start.chapter == end.chapter && start.verse == end.verse) "(${start.book} ${start.chapter}:${start.verse} - ACF)"
+            else if (start.chapter == end.chapter) "(${start.book} ${start.chapter}:${start.verse}-${end.verse} - ACF)"
+            else "(${start.book} ${start.chapter}:${start.verse}-${end.chapter}:${end.verse} - ACF)"
+            result.append(segmentText).append(" ").append(reference)
         }
-        
         verses.forEach { (req, text) ->
-            val isNewBook = req.book != currentBook
-            val isNewChapter = currentChapter != -1 && req.chapter != currentChapter
-            val isGapInVerse = currentVerse != -1 && req.verse != currentVerse + 1
-            
-            val needsBreak = isNewBook || isNewChapter || isGapInVerse
-            
+            val needsBreak = req.book != currentBook || (currentChapter != -1 && req.chapter != currentChapter) || (currentVerse != -1 && req.verse != currentVerse + 1)
             if (needsBreak && segmentVerses.isNotEmpty()) {
-                // Finaliza segmento anterior
                 flushSegment()
-                
-                // Separador simples entre segmentos (dupla quebra de linha)
                 result.append("\n\n")
-                
-                // Inicia novo segmento
                 segmentVerses.clear()
                 segmentStart = req
-            } else if (segmentStart == null) {
-                segmentStart = req
-            }
-            
+            } else if (segmentStart == null) segmentStart = req
             segmentVerses.add(req to text)
-            
-            currentBook = req.book
-            currentChapter = req.chapter
-            currentVerse = req.verse
+            currentBook = req.book; currentChapter = req.chapter; currentVerse = req.verse
         }
-        
-        // Finaliza último segmento
         flushSegment()
-        
         return result.toString().trim()
     }
 
@@ -793,11 +704,7 @@ class VerseViewModel(
 
     fun triggerSync() {
         viewModelScope.launch {
-            try {
-                syncManager.performFullSync()
-            } catch (e: Exception) {
-                _errorState.value = UiError(Res.string.error_sync, listOf(e.message ?: ""))
-            }
+            try { syncManager.performFullSync() } catch (e: Exception) { _errorState.value = UiError(Res.string.error_sync, listOf(e.message ?: "")) }
         }
     }
 
@@ -808,73 +715,39 @@ class VerseViewModel(
     fun updateAnimatedWindow(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateAnimatedWindow(enabled) } }
     fun updateSignature(text: String) { viewModelScope.launch { settingsRepository.updateSignature(text) } }
     fun updateShowSnapshotAction(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateShowSnapshotAction(enabled) } }
-    
     fun updateIsTransparent(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.updateIsTransparent(enabled)
-            
-            // Reinício automático apenas para Desktop
             val os = System.getProperty("os.name")?.lowercase() ?: ""
-            val isDesktop = os.contains("win") || os.contains("linux") || os.contains("mac")
-            
-            if (isDesktop) {
-                delay(500)
-                restartApp()
-            }
+            if (os.contains("win") || os.contains("linux") || os.contains("mac")) { delay(500); restartApp() }
         }
     }
 
     private fun restartApp() {
         try {
             val os = System.getProperty("os.name")?.lowercase() ?: ""
-            if (os.contains("android")) return // Falha silenciosa no Android se chegar aqui
-
+            if (os.contains("android")) return
             val javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
             val jarFile = File(VerseViewModel::class.java.protectionDomain?.codeSource?.location?.toURI() ?: return)
-            
-            if (jarFile.extension == "jar") {
-                ProcessBuilder(javaBin, "-jar", jarFile.absolutePath).start()
-            } else {
-                // Se rodando via IDE/Gradle
-                val cp = System.getProperty("java.class.path")
-                val mainClass = "br.com.irse.verse.MainKt"
-                ProcessBuilder(javaBin, "-cp", cp, mainClass).start()
-            }
+            if (jarFile.extension == "jar") ProcessBuilder(javaBin, "-jar", jarFile.absolutePath).start()
+            else { val cp = System.getProperty("java.class.path"); ProcessBuilder(javaBin, "-cp", cp, "br.com.irse.verse.MainKt").start() }
             System.exit(0)
-        } catch (e: Exception) {
-            _errorState.value = UiError(Res.string.error_restart)
-        }
+        } catch (e: Exception) { _errorState.value = UiError(Res.string.error_restart) }
     }
 
     fun captureSnapshot() {
         val currentVerses = _detectedVerses.value
         if (currentVerses.isEmpty()) return
-        
-        // Verifica limites (Caracteres e Quantidade de Versículos)
         val totalLength = currentVerses.sumOf { it.second?.length ?: 0 }
         val verseCount = currentVerses.size
-
         if (totalLength > MAX_SNAPSHOT_CHARS || verseCount > MAX_SNAPSHOT_VERSES) {
-            // Texto muito longo ou muitos versículos: Redireciona para edição manual
             val fullText = currentVerses.joinToString("\n\n") { it.second?.replace(Regex("<[^>]*>"), "") ?: "" }
-            val tempNote = Note(
-                id = generateUuid(), 
-                verseId = currentVerses.first().first.id,
-                content = fullText,
-                createdAt = currentTimeMillis(),
-                updatedAt = currentTimeMillis(),
-                syncStatus = SyncStatus.PENDING
-            )
+            val tempNote = Note(id = generateUuid(), verseId = currentVerses.first().first.id, content = fullText, createdAt = currentTimeMillis(), updatedAt = currentTimeMillis(), syncStatus = SyncStatus.PENDING)
             openNoteEditor(note = tempNote)
-            
-            if (verseCount > MAX_SNAPSHOT_VERSES) {
-                _errorState.value = UiError(Res.string.error_snapshot_too_many_verses, listOf(verseCount))
-            } else {
-                _errorState.value = UiError(Res.string.error_snapshot_too_long)
-            }
+            if (verseCount > MAX_SNAPSHOT_VERSES) _errorState.value = UiError(Res.string.error_snapshot_too_many_verses, listOf(verseCount))
+            else _errorState.value = UiError(Res.string.error_snapshot_too_long)
             return
         }
-
         val template = _selectedTemplate.value
         viewModelScope.launch {
             _isProcessing.value = true
@@ -885,31 +758,17 @@ class VerseViewModel(
     fun captureNoteSnapshot(note: Note? = null, editorContent: String? = null) {
         val targetNote = note ?: _editingNote.value
         val content = editorContent ?: targetNote?.content ?: return
-        
         if (content.length > MAX_SNAPSHOT_CHARS) {
-            if (_isNoteEditorOpen.value) {
-                _errorState.value = UiError(Res.string.error_note_too_long_editor, listOf(content.length, MAX_SNAPSHOT_CHARS))
-            } else {
-                openNoteEditor(note = targetNote)
-                _errorState.value = UiError(Res.string.error_note_too_long_general)
-            }
+            if (_isNoteEditorOpen.value) _errorState.value = UiError(Res.string.error_note_too_long_editor, listOf(content.length, MAX_SNAPSHOT_CHARS))
+            else { openNoteEditor(note = targetNote); _errorState.value = UiError(Res.string.error_note_too_long_general) }
             return
         }
-
         val ref = targetNote?.verseId?.let { getVerseReference(it) } ?: _editingVerseRequest.value?.let { "${it.book} ${it.chapter}:${it.verse}" }
         val template = _selectedTemplate.value
         val sign = signature.value
-
         viewModelScope.launch {
             _isProcessing.value = true
-            try {
-                snapshotHandler.captureNoteAndSave(content, ref, sign, template)
-            } catch (e: Exception) {
-                _errorState.value = UiError(Res.string.error_note_capture, listOf(e.message ?: ""))
-                e.printStackTrace()
-            } finally {
-                _isProcessing.value = false
-            }
+            try { snapshotHandler.captureNoteAndSave(content, ref, sign, template) } catch (e: Exception) { _errorState.value = UiError(Res.string.error_note_capture, listOf(e.message ?: "")); e.printStackTrace() } finally { _isProcessing.value = false }
         }
     }
 }

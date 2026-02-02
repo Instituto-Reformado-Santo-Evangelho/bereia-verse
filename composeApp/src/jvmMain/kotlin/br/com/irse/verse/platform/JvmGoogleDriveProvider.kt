@@ -150,11 +150,15 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             // Custom receiver that logs the URL if browser fails
             val receiver = LocalServerReceiver.Builder().setPort(8888).build()
             
+            val authApp = AuthorizationCodeInstalledApp(flow, receiver)
+            
             val credential = try {
-                AuthorizationCodeInstalledApp(flow, receiver).authorize("user")
+                // Tenta abrir o navegador padrão de forma customizada se necessário
+                authApp.authorize("user")
             } catch (e: Exception) {
-                logError("AuthorizationCodeInstalledApp failed", e)
-                throw e
+                logError("AuthorizationCodeInstalledApp failed. Try manual fallback.", e)
+                // Se o erro for relacionado à abertura do browser, tentamos notificar melhor
+                throw Exception("Não foi possível abrir o seu navegador para o login.\nVerifique se você tem um navegador padrão configurado ou tente novamente.")
             }
             
             logError("Authorization successful. Building Drive service...")
@@ -167,7 +171,13 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         } catch (e: Exception) {
             logError("CRITICAL AUTHORIZATION ERROR", e)
             _isAuthorized.value = false
-            throw e 
+            
+            val userMsg = when {
+                e.message?.contains("browse") == true -> "Falha ao abrir navegador. Certifique-se de que há um navegador padrão configurado."
+                e.message?.contains("access_denied") == true -> "Acesso negado. Você precisa autorizar o aplicativo para sincronizar."
+                else -> "Erro na autenticação: ${e.localizedMessage ?: "Falha desconhecida"}"
+            }
+            throw Exception(userMsg)
         }
     }
 
