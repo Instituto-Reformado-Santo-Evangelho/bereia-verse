@@ -63,6 +63,11 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             
+            // Desabilita ProGuard para evitar erros de compilação com bibliotecas externas
+            buildTypes.release.proguard {
+                isEnabled.set(false)
+            }
+            
             val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
             packageName = if (isWindows) "Bereia Versículos" else "bereia-verse"
             
@@ -117,15 +122,16 @@ msix {
         version.set("1.1.0.0")
         appId.set("BereiaVerse")
         processorArchitecture.set("x64")
+        description.set("IRSE | Bereia Verse - Leitor Bíblico Automático")
     }
 }
 
 afterEvaluate {
-    val packageName = "Bereia Versículos"
+    val packageName = "bereia-verse"
     val appDir = project.layout.buildDirectory.dir("compose/binaries/main/app/$packageName").get().asFile
     
     tasks.named("createAppxManifest", de.stefan_oltmann.msix.CreateAppxManifestTask::class) {
-        appExecutable.set("$packageName.exe")
+        appExecutable.set("$packageName")
     }
     
     tasks.named("createMsix", de.stefan_oltmann.msix.CreateMsixTask::class) {
