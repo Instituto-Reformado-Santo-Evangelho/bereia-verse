@@ -118,6 +118,10 @@ msix {
         processorArchitecture.set("x64")
         description.set("IRSE | Bereia Verse - Leitor Bíblico Automático")
     }
+    
+    icon {
+        input.set(project.file("packaging/msix/resources/AppIcon.svg"))
+    }
 }
 
 afterEvaluate {
@@ -130,8 +134,11 @@ afterEvaluate {
     }
 
     val copyMsixResources = tasks.register<Copy>("copyMsixResources") {
-        from(project.file("packaging/msix/resources"))
+        from(project.file("packaging/msix/resources")) {
+            include("*.png")
+        }
         into(appDir.resolve("resources"))
+        mustRunAfter("createMsixIcons")
     }
     
     tasks.named("createMsix", de.stefan_oltmann.msix.CreateMsixTask::class) {
