@@ -128,9 +128,15 @@ afterEvaluate {
         appExecutable.set("$folderName.exe")
         templateFile.set(project.file("packaging/msix/AppxManifest.xml.template"))
     }
+
+    val copyMsixResources = tasks.register<Copy>("copyMsixResources") {
+        from(project.file("packaging/msix/resources"))
+        into(appDir.resolve("resources"))
+    }
     
     tasks.named("createMsix", de.stefan_oltmann.msix.CreateMsixTask::class) {
         dependsOn("createReleaseDistributable")
+        dependsOn(copyMsixResources)
         appDirectory.set(appDir)
         msixOutputFile.set(project.layout.buildDirectory.file("outputs/msix/BereiaVerse.msix"))
         
