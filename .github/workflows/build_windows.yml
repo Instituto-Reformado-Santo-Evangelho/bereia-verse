@@ -29,10 +29,17 @@ jobs:
       shell: powershell
 
     - name: Build Windows MSIX
-      run: ./gradlew :composeApp:packageMsix --no-configuration-cache
+      # O nome correto da tarefa identificado no seu projeto é createMsix
+      run: ./gradlew :composeApp:createMsix --no-configuration-cache
 
-    - name: Upload MSIX Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: verse-windows-msix
-        path: composeApp/build/outputs/msix/*.msix
+        - name: Upload MSIX Artifact
+
+          uses: actions/upload-artifact@v4
+
+          with:
+
+            name: verse-windows-msix
+
+            path: composeApp/build/outputs/msix/BereiaVerse.msix
+
+    

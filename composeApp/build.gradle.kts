@@ -137,6 +137,7 @@ afterEvaluate {
     tasks.named("createMsix", de.stefan_oltmann.msix.CreateMsixTask::class) {
         dependsOn("createDistributable")
         appDirectory.set(appDir)
+        msixOutputFile.set(project.layout.buildDirectory.file("outputs/msix/BereiaVerse.msix"))
     }
 }
 
