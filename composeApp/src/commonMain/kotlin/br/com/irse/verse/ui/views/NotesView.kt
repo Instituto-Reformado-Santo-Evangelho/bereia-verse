@@ -45,6 +45,8 @@ import br.com.irse.verse.ui.theme.VerseColors
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Camera
 import compose.icons.feathericons.Eye
+import org.jetbrains.compose.resources.stringResource
+import verse.composeapp.generated.resources.*
 
 @Composable
 fun NotesView(
@@ -74,16 +76,16 @@ fun NotesView(
     if (noteToDelete != null) {
         AlertDialog(
             onDismissRequest = { viewModel.cancelDeleteNote() },
-            title = { Text("Excluir Nota?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
-            text = { Text("Tem certeza que deseja excluir esta anotação? Esta ação não pode ser desfeita.", color = textColor.copy(alpha = 0.8f)) },
+            title = { Text(stringResource(Res.string.delete_note_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(Res.string.delete_note_confirm), color = textColor.copy(alpha = 0.8f)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.performDeleteNote() }) {
-                    Text("Excluir", color = VerseColors.ErrorRed, fontWeight = FontWeight.Bold)
+                    Text(stringResource(Res.string.delete), color = VerseColors.ErrorRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.cancelDeleteNote() }) {
-                    Text("Cancelar", color = textColor.copy(alpha = 0.7f))
+                    Text(stringResource(Res.string.cancel), color = textColor.copy(alpha = 0.7f))
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -94,8 +96,9 @@ fun NotesView(
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
         if (viewingNote != null) {
             // MODO VISUALIZAÇÃO (LEITURA)
+            val noteFreeLabel = stringResource(Res.string.note_free)
             val reference = remember(viewingNote) {
-                viewingNote?.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
+                viewingNote?.verseId?.let { viewModel.getVerseReference(it) } ?: noteFreeLabel
             }
             NoteViewer(
                 note = viewingNote!!,
@@ -119,17 +122,17 @@ fun NotesView(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     NoteFilterChip(
-                        text = "Todas",
+                        text = stringResource(Res.string.filter_all),
                         selected = noteFilter == VerseViewModel.NoteFilter.ALL,
                         onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.ALL) }
                     )
                     NoteFilterChip(
-                        text = "Livres",
+                        text = stringResource(Res.string.filter_free),
                         selected = noteFilter == VerseViewModel.NoteFilter.FREE,
                         onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.FREE) }
                     )
                     NoteFilterChip(
-                        text = "Versículos",
+                        text = stringResource(Res.string.filter_verses),
                         selected = noteFilter == VerseViewModel.NoteFilter.VERSE,
                         onClick = { viewModel.setNoteFilter(VerseViewModel.NoteFilter.VERSE) }
                     )
@@ -144,7 +147,7 @@ fun NotesView(
                         // Using AutoMirrored if available, otherwise fallback to Default
                         Icon(Icons.Default.NoteAdd, contentDescription = null, modifier = Modifier.size(48.dp), tint = textColor.copy(alpha = 0.1f))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Nenhuma anotação encontrada", color = textColor.copy(alpha = 0.3f))
+                        Text(stringResource(Res.string.no_notes_found), color = textColor.copy(alpha = 0.3f))
                     }
                 } else {
                     LazyColumn(
@@ -153,8 +156,10 @@ fun NotesView(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(notes, key = { it.id }) { note ->
+                            val noteFreeLabel = stringResource(Res.string.note_free)
+                            val noteCopiedLabel = stringResource(Res.string.note_copied)
                             val reference = remember(note.verseId) {
-                                note.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
+                                note.verseId?.let { viewModel.getVerseReference(it) } ?: noteFreeLabel
                             }
                             NoteItem(
                                 note = note,
@@ -167,7 +172,7 @@ fun NotesView(
                                 onView = { viewModel.openNoteViewer(note) },
                                 onCopy = { 
                                     clipboard.setText(AnnotatedString(note.content))
-                                    viewModel.showCopyFeedback("Nota copiada!") 
+                                    viewModel.showCopyFeedback(noteCopiedLabel) 
                                 },
                                 onSnapshot = { viewModel.captureNoteSnapshot(note = note) },
                                 onLinkClick = { linkText -> 
@@ -196,12 +201,13 @@ fun NotesView(
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
+            val noteFreeLabel = stringResource(Res.string.note_free)
             val reference = if (editingNote != null) {
                 // Editando nota existente
-                editingNote!!.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Livre"
+                editingNote!!.verseId?.let { viewModel.getVerseReference(it) } ?: noteFreeLabel
             } else {
                 // Criando nova nota - verifica se tem editingVerseRequest
-                editingVerseRequest?.let { "${it.book} ${it.chapter}:${it.verse}" } ?: "Nota Livre"
+                editingVerseRequest?.let { "${it.book} ${it.chapter}:${it.verse}" } ?: noteFreeLabel
             }
             
             InlineNoteEditor(
@@ -249,13 +255,13 @@ fun NoteViewer(
             )
             Row {
                 IconButton(onClick = onEdit) { 
-                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) 
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(Res.string.edit), tint = textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) 
                 }
                 IconButton(onClick = onDelete) { 
-                    Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = VerseColors.ErrorRed.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) 
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(Res.string.delete), tint = VerseColors.ErrorRed.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) 
                 }
                 IconButton(onClick = onClose) { 
-                    Icon(Icons.Default.Close, contentDescription = "Fechar", tint = textColor.copy(alpha = 0.4f), modifier = Modifier.size(20.dp)) 
+                    Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.close), tint = textColor.copy(alpha = 0.4f), modifier = Modifier.size(20.dp)) 
                 }
             }
         }
@@ -306,12 +312,12 @@ fun NoteItem(
                 )
                 Row {
                     IconButton(onClick = onView, modifier = Modifier.size(32.dp)) { 
-                        Icon(imageVector = FeatherIcons.Eye, contentDescription = "Ler", modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
+                        Icon(imageVector = FeatherIcons.Eye, contentDescription = stringResource(Res.string.read), modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
                     }
                     
                     if (showSnapshotAction) {
                         IconButton(onClick = onSnapshot, modifier = Modifier.size(32.dp)) { 
-                            Icon(imageVector = FeatherIcons.Camera, contentDescription = null, modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
+                            Icon(imageVector = FeatherIcons.Camera, contentDescription = stringResource(Res.string.save_image), modifier = Modifier.size(18.dp), tint = textColor.copy(alpha = 0.4f)) 
                         }
                     }
 
@@ -484,7 +490,7 @@ fun InlineNoteEditor(
                             false
                         }
                     },
-                placeholder = { Text("Digite sua reflexão...", color = textColor.copy(alpha = 0.2f)) },
+                placeholder = { Text(stringResource(Res.string.note_placeholder), color = textColor.copy(alpha = 0.2f)) },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,

@@ -21,8 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.irse.verse.core.HistoryEntry
-import br.com.irse.verse.core.Strings
 import br.com.irse.verse.ui.pointerHoverIconHand
+import org.jetbrains.compose.resources.stringResource
+import verse.composeapp.generated.resources.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -37,7 +38,7 @@ fun HistoryView(
     val dateFormat = remember { SimpleDateFormat("HH:mm - dd/MM", Locale.getDefault()) }
     if (history.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { 
-            Text(Strings.NO_HISTORY, color = textColor.copy(alpha = 0.5f)) 
+            Text(stringResource(Res.string.no_history), color = textColor.copy(alpha = 0.5f)) 
         }
     } else {
         LazyColumn(

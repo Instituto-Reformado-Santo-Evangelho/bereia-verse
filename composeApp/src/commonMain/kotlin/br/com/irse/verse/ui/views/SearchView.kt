@@ -30,11 +30,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.com.irse.verse.core.Strings
 import br.com.irse.verse.core.VerseViewModel
 import br.com.irse.verse.ui.components.FireAnimation
 import br.com.irse.verse.ui.pointerHoverIconHand
 import br.com.irse.verse.ui.theme.VerseColors
+import org.jetbrains.compose.resources.stringResource
+import verse.composeapp.generated.resources.*
 
 @Composable
 fun SearchView(
@@ -71,7 +72,7 @@ fun SearchView(
             OutlinedTextField(
                 value = query,
                 onValueChange = { viewModel.onSearchQueryChanged(it) },
-                placeholder = { Text(Strings.SEARCH_HINT, color = textColor.copy(alpha = 0.4f), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily)) },
+                placeholder = { Text(stringResource(Res.string.search_hint), color = textColor.copy(alpha = 0.4f), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily)) },
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily, color = textColor),
                 modifier = Modifier.fillMaxWidth()
                     .onKeyEvent { keyEvent ->
@@ -131,12 +132,12 @@ fun SearchView(
             // Filtro de Escopo (Toast/Chips)
             Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ScopeChip(
-                    text = "Versículos",
+                    text = stringResource(Res.string.search_scope_verses),
                     selected = searchScope == VerseViewModel.SearchScope.VERSES,
                     onClick = { viewModel.setSearchScope(VerseViewModel.SearchScope.VERSES) }
                 )
                 ScopeChip(
-                    text = "Notas",
+                    text = stringResource(Res.string.search_scope_notes),
                     selected = searchScope == VerseViewModel.SearchScope.NOTES,
                     onClick = { viewModel.setSearchScope(VerseViewModel.SearchScope.NOTES) }
                 )
@@ -172,7 +173,7 @@ fun SearchView(
              Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                  if (query.length >= 2) {
                      Text(
-                        Strings.NO_RESULTS, 
+                        stringResource(Res.string.no_results), 
                         style = MaterialTheme.typography.bodySmall.copy(fontFamily = fontFamily), 
                         color = textColor.copy(alpha = 0.5f)
                     )
@@ -183,7 +184,7 @@ fun SearchView(
                      } else {
                          Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                              Text(
-                                text = Strings.SEARCH_EXAMPLES_TITLE, 
+                                text = stringResource(Res.string.search_examples_title), 
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = fontFamily,
@@ -195,7 +196,7 @@ fun SearchView(
                                 color = textColor
                             )
                              Text(
-                                 text = Strings.SEARCH_EXAMPLES_SUBTITLE, 
+                                 text = stringResource(Res.string.search_examples_subtitle), 
                                  style = MaterialTheme.typography.bodyMedium.copy(fontFamily = fontFamily), 
                                  color = textColor.copy(alpha = 0.6f),
                                  textAlign = TextAlign.Center
@@ -291,7 +292,7 @@ fun NoteResultItem(
     viewModel: VerseViewModel,
     onClick: () -> Unit
 ) {
-    val ref = note.verseId?.let { viewModel.getVerseReference(it) } ?: "Nota Geral"
+    val ref = note.verseId?.let { viewModel.getVerseReference(it) } ?: stringResource(Res.string.note_general)
     
     Surface(
         modifier = Modifier.fillMaxWidth().pointerHoverIconHand().clickable(onClick = onClick),

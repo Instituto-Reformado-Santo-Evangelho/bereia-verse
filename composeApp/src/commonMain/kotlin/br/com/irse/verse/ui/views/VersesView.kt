@@ -34,6 +34,8 @@ import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.ChevronUp
 import compose.icons.feathericons.Minus
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
+import verse.composeapp.generated.resources.*
 
 @Composable
 fun VersesView(
@@ -194,7 +196,7 @@ fun ContextControlZone(
                     ) {
                         Icon(
                             imageVector = if (isTop) FeatherIcons.ChevronUp else FeatherIcons.ChevronDown,
-                            contentDescription = "Expandir",
+                            contentDescription = stringResource(Res.string.expand),
                             tint = iconColor,
                             modifier = Modifier.size(26.dp)
                         )
@@ -208,7 +210,7 @@ fun ContextControlZone(
                         ) {
                             Icon(
                                 imageVector = FeatherIcons.Minus,
-                                contentDescription = "Recolher",
+                                contentDescription = stringResource(Res.string.collapse),
                                 tint = iconColor,
                                 modifier = Modifier.size(26.dp)
                             )
@@ -227,7 +229,7 @@ fun ContinuousVerseItem(request: VerseRequest, content: String?, textColor: Colo
             val annotatedString = buildAnnotatedString {
                 withStyle(style = SpanStyle(color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold, fontSize = (fontSize - 2).sp)) { append("${request.chapter}:${request.verse}  ") }
                 if (content != null) { append(remember(content) { HtmlTextFormatter.format(content) }) }
-                else { withStyle(style = SpanStyle(fontStyle = FontStyle.Italic, color = Color.Red)) { append(Strings.TEXT_NOT_AVAILABLE) } }
+                else { withStyle(style = SpanStyle(fontStyle = FontStyle.Italic, color = Color.Red)) { append(stringResource(Res.string.text_not_available)) } }
             }
             Text(text = annotatedString, style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize.sp, fontFamily = fontFamily), lineHeight = (fontSize * lineHeight).sp, color = textColor)
         }

@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.irse.verse.core.AppTab
-import br.com.irse.verse.core.Strings
 import br.com.irse.verse.core.VerseViewModel
 import br.com.irse.verse.ui.components.*
 import br.com.irse.verse.ui.onHover
@@ -45,6 +44,8 @@ import compose.icons.feathericons.ArrowRight
 import compose.icons.feathericons.Camera
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import verse.composeapp.generated.resources.*
 import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
 
@@ -99,12 +100,12 @@ fun App(
     
     val uniqueBooks = remember(detectedVerses) { detectedVerses.map { it.first.book }.distinct() }
     val titleDisplay = when (currentTab) {
-        AppTab.HISTORY -> Strings.HISTORY_TAB
-        AppTab.SEARCH -> Strings.SEARCH_TAB
-        AppTab.NOTES -> "Anotações"
-        AppTab.ABOUT -> Strings.ABOUT_TAB
-        AppTab.SETTINGS -> Strings.SETTINGS_TAB
-        AppTab.VERSES -> if (uniqueBooks.size == 1) uniqueBooks.first() else if (uniqueBooks.isEmpty()) Strings.VERSES_TAB else "${uniqueBooks.size} ${Strings.BOOKS_DETECTED}"
+        AppTab.HISTORY -> stringResource(Res.string.tab_history)
+        AppTab.SEARCH -> stringResource(Res.string.tab_search)
+        AppTab.NOTES -> stringResource(Res.string.tab_notes)
+        AppTab.ABOUT -> stringResource(Res.string.tab_about)
+        AppTab.SETTINGS -> stringResource(Res.string.tab_settings)
+        AppTab.VERSES -> if (uniqueBooks.size == 1) uniqueBooks.first() else if (uniqueBooks.isEmpty()) stringResource(Res.string.tab_verses) else "${uniqueBooks.size} ${stringResource(Res.string.books_detected)}"
     }
     
     val isDark = isSystemInDarkTheme()
@@ -198,7 +199,7 @@ fun App(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
-                                Text(text = Strings.APP_TITLE, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = VerseColors.HeaderContentColor, fontSize = 16.sp)
+                                Text(text = stringResource(Res.string.app_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = VerseColors.HeaderContentColor, fontSize = 16.sp)
                                 Text(text = titleDisplay, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = VerseColors.HeaderContentColor.copy(alpha = 0.8f), fontSize = 13.sp)
                             }
                         }
@@ -224,10 +225,10 @@ fun App(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 IconButton(onClick = { viewModel.navigateBack() }, enabled = canGoBack, modifier = Modifier.size(32.dp)) {
-                                    Icon(imageVector = FeatherIcons.ArrowLeft, contentDescription = "Voltar", tint = if (canGoBack) textColor else textColor.copy(alpha = 0.2f), modifier = Modifier.size(20.dp))
+                                    Icon(imageVector = FeatherIcons.ArrowLeft, contentDescription = stringResource(Res.string.back), tint = if (canGoBack) textColor else textColor.copy(alpha = 0.2f), modifier = Modifier.size(20.dp))
                                 }
                                 IconButton(onClick = { viewModel.navigateForward() }, enabled = canGoForward, modifier = Modifier.size(32.dp)) {
-                                    Icon(imageVector = FeatherIcons.ArrowRight, contentDescription = "Avançar", tint = if (canGoForward) textColor else textColor.copy(alpha = 0.2f), modifier = Modifier.size(20.dp))
+                                    Icon(imageVector = FeatherIcons.ArrowRight, contentDescription = stringResource(Res.string.forward), tint = if (canGoForward) textColor else textColor.copy(alpha = 0.2f), modifier = Modifier.size(20.dp))
                                 }
                             }
                             HorizontalDivider(thickness = 1.dp, color = borderColor.copy(alpha = 0.3f))
@@ -250,8 +251,8 @@ fun App(
                                             FireAnimation(modifier = Modifier.fillMaxSize().alpha(0.6f))
                                         } else {
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Text(text = Strings.COPY_HINT_TITLE, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, shadow = androidx.compose.ui.graphics.Shadow(color = Color.Black.copy(alpha = 0.3f), blurRadius = 8f)), color = textColor)
-                                                Text(text = Strings.COPY_HINT_SUBTITLE, style = MaterialTheme.typography.bodyLarge, color = textColor.copy(alpha = 0.6f))
+                                                Text(text = stringResource(Res.string.copy_hint_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, shadow = androidx.compose.ui.graphics.Shadow(color = Color.Black.copy(alpha = 0.3f), blurRadius = 8f)), color = textColor)
+                                                Text(text = stringResource(Res.string.copy_hint_subtitle), style = MaterialTheme.typography.bodyLarge, color = textColor.copy(alpha = 0.6f))
                                             }
                                         }
                                     }
@@ -321,7 +322,7 @@ fun App(
                                             if (isNoteEditorOpen) viewModel.captureNoteSnapshot() else viewModel.captureSnapshot()
                                         }
                                 ) {
-                                    Box(modifier = Modifier.padding(8.dp)) { Icon(imageVector = FeatherIcons.Camera, contentDescription = "Salvar Imagem", tint = if (isCameraHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) }
+                                    Box(modifier = Modifier.padding(8.dp)) { Icon(imageVector = FeatherIcons.Camera, contentDescription = stringResource(Res.string.save_image), tint = if (isCameraHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) }
                                 }
                             }
                             
@@ -329,6 +330,7 @@ fun App(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 var isCopyHovered by remember { mutableStateOf(false) }
                                 
+                                val copiedLabel = stringResource(Res.string.copied)
                                 Surface(
                                     color = if (isCopyHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, 
                                     shape = RoundedCornerShape(8.dp), 
@@ -336,11 +338,11 @@ fun App(
                                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { 
                                             val text = viewModel.formatVersesForClipboard(detectedVerses)
                                             clipboard.setText(AnnotatedString(text))
-                                            viewModel.showCopyFeedback("Copiado: ${viewModel.getConsolidatedReference(detectedVerses)}")
+                                            viewModel.showCopyFeedback("$copiedLabel ${viewModel.getConsolidatedReference(detectedVerses)}")
                                         }
                                 ) {
                                     Box(modifier = Modifier.padding(8.dp)) { 
-                                        if (copyMessage != null && copyMessage!!.startsWith("Copiado:")) CheckIcon(color = VerseColors.SuccessGreen) 
+                                        if (copyMessage != null && copyMessage!!.startsWith(copiedLabel)) CheckIcon(color = VerseColors.SuccessGreen) 
                                         else CopyIcon(color = if (isCopyHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f)) 
                                     }
                                 }
@@ -378,11 +380,11 @@ fun App(
                         Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(12.dp), tonalElevation = 4.dp, modifier = Modifier.padding(32.dp).clickable(enabled = false) { }) {
                             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Icon(imageVector = Icons.Default.Close, contentDescription = null, tint = VerseColors.ErrorRed, modifier = Modifier.size(32.dp))
-                                Text(text = "Ops! Algo deu errado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(text = stringResource(Res.string.error_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Text(text = error, style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.7f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Surface(color = VerseColors.PrimaryAmber, shape = RoundedCornerShape(8.dp), modifier = Modifier.pointerHoverIconHand().clickable { viewModel.clearError() }) {
-                                    Text(text = "Entendido", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge, color = VerseColors.HeaderContentColor)
+                                    Text(text = stringResource(Res.string.understood), modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge, color = VerseColors.HeaderContentColor)
                                 }
                             }
                         }

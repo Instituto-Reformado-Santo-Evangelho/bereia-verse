@@ -39,6 +39,8 @@ import kotlinx.coroutines.launch
 
 import br.com.irse.verse.ui.components.SnapshotLayout
 import br.com.irse.verse.core.VerseRequest
+import org.jetbrains.compose.resources.stringResource
+import verse.composeapp.generated.resources.*
 
 @Composable
 fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
@@ -60,12 +62,17 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         // --- SEÇÃO: APARÊNCIA DO TEXTO ---
-        SettingsSection(title = "Aparência do Texto") {
+        SettingsSection(title = stringResource(Res.string.settings_appearance)) {
             // Font Family
             Column {
-                Text(Strings.FONT_FAMILY, style = MaterialTheme.typography.labelMedium, color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold)
+                Text(stringResource(Res.string.font_family), style = MaterialTheme.typography.labelMedium, color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(12.dp))
-                val fontOptions = listOf("sans-serif" to Strings.SANS_SERIF, "serif" to Strings.SERIF, "monospace" to Strings.MONOSPACE, "cursive" to Strings.CURSIVE)
+                val fontOptions = listOf(
+                    "sans-serif" to stringResource(Res.string.font_sans_serif), 
+                    "serif" to stringResource(Res.string.font_serif), 
+                    "monospace" to stringResource(Res.string.font_monospace), 
+                    "cursive" to stringResource(Res.string.font_cursive)
+                )
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     fontOptions.forEach { (key, label) ->
                         val isSelected = currentFontFamily == key
@@ -88,16 +95,16 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Sliders (Fonte e Linha)
-            SettingsSlider(label = Strings.FONT_SIZE, value = fontSize.toFloat(), range = 12f..32f, valueLabel = "${fontSize}px") { viewModel.updateFontSize(it.toInt()) }
-            SettingsSlider(label = Strings.LINE_HEIGHT, value = lineHeight, range = 1.0f..2.5f, valueLabel = String.format("%.1fx", lineHeight)) { viewModel.updateLineHeight(it) }
+            SettingsSlider(label = stringResource(Res.string.font_size), value = fontSize.toFloat(), range = 12f..32f, valueLabel = "${fontSize}px") { viewModel.updateFontSize(it.toInt()) }
+            SettingsSlider(label = stringResource(Res.string.line_height), value = lineHeight, range = 1.0f..2.5f, valueLabel = String.format("%.1fx", lineHeight)) { viewModel.updateLineHeight(it) }
         }
 
         // --- SEÇÃO: COMPARTILHAMENTO ---
-        SettingsSection(title = "Compartilhamento (Fotos)") {
+        SettingsSection(title = stringResource(Res.string.settings_sharing)) {
             // SUBSEÇÃO: VERSÍCULOS
-            Text("Versículos", style = MaterialTheme.typography.titleMedium, color = textColor, fontWeight = FontWeight.Bold)
+            Text(stringResource(Res.string.tab_verses), style = MaterialTheme.typography.titleMedium, color = textColor, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Selecione o modelo padrão para compartilhamento de versículos.", style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.6f))
+            Text(stringResource(Res.string.settings_sharing_verses_desc), style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.6f))
             Spacer(modifier = Modifier.height(12.dp))
             
             TemplateSelector(viewModel, selectedTemplate, textColor)
@@ -107,14 +114,15 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             Spacer(modifier = Modifier.height(24.dp))
 
             // SUBSEÇÃO: NOTAS
-            Text("Notas", style = MaterialTheme.typography.titleMedium, color = textColor, fontWeight = FontWeight.Bold)
+            Text(stringResource(Res.string.tab_notes), style = MaterialTheme.typography.titleMedium, color = textColor, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Personalize o compartilhamento de suas anotações.", style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.6f))
+            Text(stringResource(Res.string.settings_sharing_notes_desc), style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.6f))
             Spacer(modifier = Modifier.height(16.dp))
             
             // Assinatura
-            Text("Assinatura", style = MaterialTheme.typography.labelMedium, color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold)
+            Text(stringResource(Res.string.settings_signature), style = MaterialTheme.typography.labelMedium, color = VerseColors.PrimaryAmber, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
+            val signatureHint = stringResource(Res.string.settings_signature_hint)
             TextField(
                 value = signatureValue,
                 onValueChange = { 
@@ -122,7 +130,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                     viewModel.updateSignature(it.text) 
                 },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Ex: Agostinho", fontSize = 14.sp, color = textColor.copy(alpha = 0.3f)) },
+                placeholder = { Text(signatureHint, fontSize = 14.sp, color = textColor.copy(alpha = 0.3f)) },
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = textColor.copy(alpha = 0.03f),
@@ -132,7 +140,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                 )
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Exibida exclusivamente no rodapé dos snapshots de notas.", style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
+            Text(text = stringResource(Res.string.settings_signature_desc), style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.5f))
 
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -141,16 +149,16 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
         }
 
         // --- SEÇÃO: PERFORMANCE E SISTEMA ---
-        SettingsSection(title = "Sistema") {
-            SettingsToggle(title = Strings.FIRE_ANIMATION, desc = Strings.FIRE_ANIMATION_DESC, checked = showFireAnimation, textColor = textColor) { viewModel.updateShowFireAnimation(it) }
+        SettingsSection(title = stringResource(Res.string.settings_system)) {
+            SettingsToggle(title = stringResource(Res.string.fire_animation), desc = stringResource(Res.string.fire_animation_desc), checked = showFireAnimation, textColor = textColor) { viewModel.updateShowFireAnimation(it) }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
-            SettingsToggle(title = Strings.WINDOW_ANIMATION, desc = Strings.WINDOW_ANIMATION_DESC, checked = animatedWindow, textColor = textColor) { viewModel.updateAnimatedWindow(it) }
+            SettingsToggle(title = stringResource(Res.string.window_animation), desc = stringResource(Res.string.window_animation_desc), checked = animatedWindow, textColor = textColor) { viewModel.updateAnimatedWindow(it) }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
             
             val showSnapshotAction by viewModel.showSnapshotAction.collectAsState()
             SettingsToggle(
-                title = "Captura de Imagem (Snapshot)", 
-                desc = "Exibir botão de captura na lista de notas e versículos.", 
+                title = stringResource(Res.string.settings_snapshot_title), 
+                desc = stringResource(Res.string.settings_snapshot_desc), 
                 checked = showSnapshotAction, 
                 textColor = textColor
             ) { viewModel.updateShowSnapshotAction(it) }
@@ -159,8 +167,8 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             
             val isTransparent by viewModel.isTransparent.collectAsState()
             SettingsToggle(
-                title = "Bordas Arredondadas (Transparência)", 
-                desc = "Desative se o app piscar ou fechar ao abrir. O app será reiniciado.", 
+                title = stringResource(Res.string.settings_transparency_title), 
+                desc = stringResource(Res.string.settings_transparency_desc), 
                 checked = isTransparent, 
                 textColor = textColor
             ) { viewModel.updateIsTransparent(it) }
@@ -170,20 +178,20 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
         val isSyncAuthorized by viewModel.isSyncAuthorized.collectAsState()
         val syncState by viewModel.syncState.collectAsState()
         
-        SettingsSection(title = "Sincronização") {
+        SettingsSection(title = stringResource(Res.string.settings_sync)) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Título e Descrição
                 Text(
-                    text = if (isSyncAuthorized) "Google Drive Conectado" else "Backup na Nuvem",
+                    text = if (isSyncAuthorized) stringResource(Res.string.settings_sync_connected) else stringResource(Res.string.settings_sync_disconnected),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = textColor
                 )
                 Text(
                     text = if (isSyncAuthorized) 
-                        "Suas notas estão sendo sincronizadas automaticamente com sua conta Google." 
+                        stringResource(Res.string.settings_sync_desc_connected) 
                     else 
-                        "Faça login para salvar suas anotações e acessá-las em qualquer dispositivo.",
+                        stringResource(Res.string.settings_sync_desc_disconnected),
                     style = MaterialTheme.typography.bodySmall,
                     color = textColor.copy(alpha = 0.7f),
                     modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
@@ -207,7 +215,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (isSyncAuthorized) "Desconectar Conta" else "Conectar Google Drive",
+                        text = if (isSyncAuthorized) stringResource(Res.string.settings_sync_logout) else stringResource(Res.string.settings_sync_login),
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -216,9 +224,9 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                 if (isSyncAuthorized) {
                     Text(
                         text = when(syncState) {
-                            CloudSyncState.SYNCING -> "Status: Sincronizando..."
-                            CloudSyncState.SUCCESS -> "Status: Tudo atualizado"
-                            CloudSyncState.ERROR -> "Status: Erro na sincronização"
+                            CloudSyncState.SYNCING -> stringResource(Res.string.settings_sync_status_syncing)
+                            CloudSyncState.SUCCESS -> stringResource(Res.string.settings_sync_status_success)
+                            CloudSyncState.ERROR -> stringResource(Res.string.settings_sync_status_error)
                             else -> ""
                         },
                         style = MaterialTheme.typography.labelSmall,

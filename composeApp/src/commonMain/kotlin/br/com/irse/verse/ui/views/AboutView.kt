@@ -13,11 +13,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.irse.verse.ui.theme.VerseColors
-import br.com.irse.verse.core.Strings
 import br.com.irse.verse.ui.components.ExternalLinkIcon
 import br.com.irse.verse.ui.pointerHoverIconHand
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import verse.composeapp.generated.resources.*
 import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
 import java.awt.Desktop
@@ -43,13 +44,13 @@ fun AboutView(textColor: Color) {
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            Strings.APP_TITLE,
+            stringResource(Res.string.app_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Black,
             color = textColor
         )
         Text(
-            Strings.APP_VERSION,
+            stringResource(Res.string.app_version),
             style = MaterialTheme.typography.titleMedium,
             color = VerseColors.PrimaryAmber,
             fontWeight = FontWeight.Bold
@@ -65,14 +66,14 @@ fun AboutView(textColor: Color) {
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = Strings.ABOUT_DESC_1,
+                    text = stringResource(Res.string.about_desc_1),
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 24.sp),
                     color = textColor,
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = Strings.ABOUT_DESC_2,
+                    text = stringResource(Res.string.about_desc_2),
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp, lineHeight = 22.sp),
                     color = textColor.copy(alpha = 0.7f)
                 )
@@ -83,12 +84,12 @@ fun AboutView(textColor: Color) {
 
         // Seção ACF
         SectionHeader(
-            title = Strings.ABOUT_ACF_TITLE, 
+            title = stringResource(Res.string.about_acf_title), 
             textColor = textColor,
-            trailing = { IconButton(onClick = { openUrl(Strings.ABOUT_ACF_URL) }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = VerseColors.PrimaryAmber) } }
+            trailing = { IconButton(onClick = { openUrl("https://biblias.com.br/artigo/introducao-a-edicao-almeida-corrigida-fiel-acf") }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = VerseColors.PrimaryAmber) } }
         )
         Text(
-            text = Strings.ABOUT_ACF_DESC,
+            text = stringResource(Res.string.about_acf_desc),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp, lineHeight = 24.sp),
             color = textColor.copy(alpha = 0.8f),
             modifier = Modifier.fillMaxWidth()
@@ -98,12 +99,12 @@ fun AboutView(textColor: Color) {
 
         // Seção IRSE
         SectionHeader(
-            title = Strings.ABOUT_IRSE_TITLE, 
+            title = stringResource(Res.string.about_irse_title), 
             textColor = textColor,
-            trailing = { IconButton(onClick = { openUrl(Strings.ABOUT_IRSE_URL) }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = VerseColors.PrimaryAmber) } }
+            trailing = { IconButton(onClick = { openUrl("https://tech.santoevangelho.com.br") }, modifier = Modifier.pointerHoverIconHand()) { ExternalLinkIcon(color = VerseColors.PrimaryAmber) } }
         )
         Text(
-            text = Strings.ABOUT_IRSE_DESC,
+            text = stringResource(Res.string.about_irse_desc),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp, lineHeight = 24.sp),
             color = textColor.copy(alpha = 0.8f),
             modifier = Modifier.fillMaxWidth()
@@ -112,7 +113,7 @@ fun AboutView(textColor: Color) {
         Spacer(modifier = Modifier.height(32.dp))
 
         // Atalhos
-        SectionHeader(Strings.SHORTCUTS_TITLE, textColor)
+        SectionHeader(stringResource(Res.string.shortcuts_title), textColor)
         Surface(
             color = textColor.copy(alpha = 0.04f),
             shape = RoundedCornerShape(12.dp),
@@ -125,19 +126,19 @@ fun AboutView(textColor: Color) {
                     fontWeight = FontWeight.Medium,
                     color = textColor.copy(alpha = 0.7f)
                 )
-                Text(Strings.SHORTCUT_MINIMIZE, style = shortcutStyle)
-                Text(Strings.SHORTCUT_SEARCH, style = shortcutStyle)
-                Text(Strings.SHORTCUT_HISTORY, style = shortcutStyle)
-                Text(Strings.SHORTCUT_VERSES, style = shortcutStyle)
-                Text(Strings.SHORTCUT_SETTINGS, style = shortcutStyle)
-                Text(Strings.SHORTCUT_ABOUT, style = shortcutStyle)
+                Text(stringResource(Res.string.shortcut_minimize), style = shortcutStyle)
+                Text(stringResource(Res.string.shortcut_search), style = shortcutStyle)
+                Text(stringResource(Res.string.shortcut_history), style = shortcutStyle)
+                Text(stringResource(Res.string.shortcut_verses), style = shortcutStyle)
+                Text(stringResource(Res.string.shortcut_settings), style = shortcutStyle)
+                Text(stringResource(Res.string.shortcut_about), style = shortcutStyle)
             }
         }
 
         Spacer(modifier = Modifier.height(48.dp))
         
         Text(
-            Strings.COPYRIGHT,
+            stringResource(Res.string.copyright),
             style = MaterialTheme.typography.bodySmall,
             color = textColor.copy(alpha = 0.4f),
             textAlign = TextAlign.Center

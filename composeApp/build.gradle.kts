@@ -116,7 +116,7 @@ msix {
         version.set("1.1.0.0")
         appId.set("BereiaVerse")
         processorArchitecture.set("x64")
-        description.set("IRSE | Bereia Verse - Leitor Bíblico Automático")
+        description.set("Leitor Bíblico Automático para Desktop")
     }
 }
 
