@@ -127,11 +127,11 @@ msix {
 }
 
 afterEvaluate {
-    val packageName = "bereia-verse"
+    val packageName = "Bereia Versículos"
     val appDir = project.layout.buildDirectory.dir("compose/binaries/main/app/$packageName").get().asFile
     
     tasks.named("createAppxManifest", de.stefan_oltmann.msix.CreateAppxManifestTask::class) {
-        appExecutable.set("$packageName")
+        appExecutable.set("$packageName.exe")
     }
     
     tasks.named("createMsix", de.stefan_oltmann.msix.CreateMsixTask::class) {
