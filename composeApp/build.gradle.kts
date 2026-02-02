@@ -116,7 +116,7 @@ msix {
         version.set("1.1.0.0")
         appId.set("BereiaVerse")
         processorArchitecture.set("x64")
-        description.set("Leitor Bíblico Automático para Desktop")
+        description.set("IRSE | Bereia Verse - Leitor Bíblico Automático")
     }
 }
 
@@ -126,6 +126,7 @@ afterEvaluate {
     
     tasks.named("createAppxManifest", de.stefan_oltmann.msix.CreateAppxManifestTask::class) {
         appExecutable.set("$folderName.exe")
+        templateFile.set(project.file("packaging/msix/AppxManifest.xml.template"))
     }
     
     tasks.named("createMsix", de.stefan_oltmann.msix.CreateMsixTask::class) {
