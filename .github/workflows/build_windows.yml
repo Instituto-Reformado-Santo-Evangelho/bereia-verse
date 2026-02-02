@@ -28,18 +28,25 @@ jobs:
         echo "$env:GOOGLE_SECRETS" > composeApp/src/jvmMain/resources/client_secrets.json
       shell: powershell
 
+    - name: Decode PFX Certificate
+      if: "${{ secrets.MSIX_PFX_BASE64 != '' }}"
+      env:
+        MSIX_PFX_BASE64: ${{ secrets.MSIX_PFX_BASE64 }}
+      run: |
+        [System.Convert]::FromBase64String($env:MSIX_PFX_BASE64) | Set-Content -Path "composeApp/signing.pfx" -AsByteStream
+      shell: powershell
+
     - name: Build Windows MSIX
-      # O nome correto da tarefa identificado no seu projeto é createMsix
-      run: ./gradlew :composeApp:createMsix --no-configuration-cache
+      env:
+        PFX_PASS: ${{ secrets.MSIX_PFX_PASSWORD }}
+      run: |
+        ./gradlew :composeApp:createMsix `
+          -Pmsix.pfx.path="signing.pfx" `
+          -Pmsix.pfx.password="$env:PFX_PASS" `
+          --no-configuration-cache
 
-        - name: Upload MSIX Artifact
-
-          uses: actions/upload-artifact@v4
-
-          with:
-
-            name: verse-windows-msix
-
-            path: composeApp/build/outputs/msix/BereiaVerse.msix
-
-    
+    - name: Upload MSIX Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: verse-windows-msix
+        path: composeApp/build/outputs/msix/BereiaVerse.msix

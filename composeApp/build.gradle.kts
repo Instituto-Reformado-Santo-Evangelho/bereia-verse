@@ -132,6 +132,15 @@ afterEvaluate {
         dependsOn("createReleaseDistributable")
         appDirectory.set(appDir)
         msixOutputFile.set(project.layout.buildDirectory.file("outputs/msix/BereiaVerse.msix"))
+        
+        // Configuração de Assinatura
+        val pfxPath = project.findProperty("msix.pfx.path")?.toString()
+        val pfxPassword = project.findProperty("msix.pfx.password")?.toString()
+        
+        if (!pfxPath.isNullOrEmpty() && File(pfxPath).exists()) {
+            signingPfxFile.set(File(pfxPath))
+            signingPassword.set(pfxPassword ?: "")
+        }
     }
 }
 
