@@ -36,7 +36,7 @@
 
   <Applications>
     <Application Id="BereiaVerse"
-      Executable="Bereia Versiculos.exe"
+      Executable="bereiaverse.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
         DisplayName="Bereia Versículos"

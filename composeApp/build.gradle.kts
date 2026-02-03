@@ -67,9 +67,8 @@ compose.desktop {
                 isEnabled.set(false)
             }
             
-            val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
-            // Usamos nome sem acento para a pasta para evitar erros de encoding no Windows/Gradle
-            packageName = if (isWindows) "Bereia Versiculos" else "bereia-verse"
+            // Usamos nome padronizado bereiaverse para todas as plataformas
+            packageName = "bereiaverse"
             
             packageVersion = "1.1.0"
             description = "IRSE | Bereia Verse - Leitor Bíblico Automático"
@@ -86,13 +85,13 @@ compose.desktop {
                 shortcut = true
                 appCategory = "Education"
                 menuGroup = "Utility"
-                iconFile.set(project.file("src/jvmMain/resources/icon.png"))
+                iconFile.set(project.file("src/jvmMain/resources/bereiaverse.png"))
                 debMaintainer = "IRSE"
             }
             
             macOS {
                 bundleID = "br.com.irse.verse"
-                iconFile.set(project.file("src/jvmMain/resources/icon.icns"))
+                iconFile.set(project.file("src/jvmMain/resources/bereiaverse.icns"))
             }
 
             windows {
@@ -100,7 +99,7 @@ compose.desktop {
                 menu = true
                 menuGroup = "IRSE"
                 upgradeUuid = "550e8400-e29b-41d4-a716-446655440000" 
-                iconFile.set(project.file("src/jvmMain/resources/icon.ico"))
+                iconFile.set(project.file("src/jvmMain/resources/bereiaverse.ico"))
             }
         }
     }
@@ -121,7 +120,7 @@ msix {
 }
 
 afterEvaluate {
-    val folderName = "Bereia Versiculos" // Pasta sem acento
+    val folderName = "bereiaverse" // Pasta sem acento
     val appDir = project.layout.buildDirectory.dir("compose/binaries/main-release/app/$folderName").get().asFile
     
     tasks.named("createAppxManifest", de.stefan_oltmann.msix.CreateAppxManifestTask::class) {
