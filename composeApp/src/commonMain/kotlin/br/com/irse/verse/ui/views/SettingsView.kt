@@ -51,6 +51,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
     val showFireAnimation by viewModel.showFireAnimation.collectAsState()
     val animatedWindow by viewModel.animatedWindow.collectAsState()
     val signature by viewModel.signature.collectAsState()
+    val isTransparencySupported by viewModel.isTransparencySupported.collectAsState()
 
     // TextFieldValue para evitar o bug do cursor
     var signatureValue by remember(signature) { 
@@ -168,8 +169,9 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             val isTransparent by viewModel.isTransparent.collectAsState()
             SettingsToggle(
                 title = stringResource(Res.string.settings_transparency_title), 
-                desc = stringResource(Res.string.settings_transparency_desc), 
-                checked = isTransparent, 
+                desc = if (isTransparencySupported) stringResource(Res.string.settings_transparency_desc) else stringResource(Res.string.settings_transparency_desc) + " (Não suportado)", 
+                checked = isTransparent && isTransparencySupported, 
+                enabled = isTransparencySupported,
                 textColor = textColor
             ) { viewModel.updateIsTransparent(it) }
         }
@@ -276,15 +278,16 @@ fun SettingsSlider(label: String, value: Float, range: ClosedFloatingPointRange<
 }
 
 @Composable
-fun SettingsToggle(title: String, desc: String, checked: Boolean, textColor: Color, onCheckedChange: (Boolean) -> Unit) {
+fun SettingsToggle(title: String, desc: String, checked: Boolean, textColor: Color, enabled: Boolean = true, onCheckedChange: (Boolean) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = textColor)
-            Text(desc, style = MaterialTheme.typography.bodySmall, color = textColor.copy(alpha = 0.6f))
+            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (enabled) textColor else textColor.copy(alpha = 0.5f))
+            Text(desc, style = MaterialTheme.typography.bodySmall, color = if (enabled) textColor.copy(alpha = 0.6f) else textColor.copy(alpha = 0.3f))
         }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             colors = SwitchDefaults.colors(checkedThumbColor = VerseColors.PrimaryAmber, checkedTrackColor = VerseColors.PrimaryAmber.copy(alpha = 0.5f))
         )
     }

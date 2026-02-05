@@ -11,11 +11,12 @@ data class UserSettings(
     val fontSize: Int = 16,
     val fontFamily: String = "sans-serif",
     val lineHeight: Float = 1.4f,
-    val showFireAnimation: Boolean = true,
+    val showFireAnimation: Boolean = false,
     val animatedWindow: Boolean = true,
     val signature: String = "",
     val showSnapshotAction: Boolean = false,
     val isTransparent: Boolean = false, // Padrão desabilitado no Windows
+    val isTransparencySupported: Boolean = true, // Detected at runtime
     val windowWidth: Int = 400,
     val windowHeight: Int = 400,
     val windowX: Int? = null,  // Posição X salva (null = usar padrão)

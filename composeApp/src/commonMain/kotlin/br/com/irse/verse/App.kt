@@ -115,7 +115,7 @@ fun App(
     val borderColor = if (isDark) VerseColors.DarkBorder else VerseColors.LightBorder
     
     // Se sem transparência, usa cantos retos para evitar fundo preto ou orelhas
-    val windowShape = if (!isTransparent) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(16.dp)
+    val windowShape = if (!isTransparent) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(12.dp)
 
     val globalFontFamily = when (fontFamily) {
         "serif" -> androidx.compose.ui.text.font.FontFamily.Serif
@@ -149,7 +149,6 @@ fun App(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessLow))
                 .onPreviewKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
                         val isCtrl = event.isCtrlPressed
@@ -176,7 +175,7 @@ fun App(
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     // Header
-                    val headerShape = if (!isTransparent) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                    val headerShape = if (!isTransparent) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
                     Row(
                         modifier = Modifier.fillMaxWidth()
                             .clip(headerShape)
@@ -190,10 +189,13 @@ fun App(
                             verticalAlignment = Alignment.CenterVertically, 
                             modifier = Modifier.weight(1f)
                                 .pointerHoverIconHand()
-                                .clickable { currentTab = AppTab.ABOUT }
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) { currentTab = AppTab.ABOUT }
                         ) {
                             Image(
-                                painter = painterResource(Res.drawable.logo), 
+                                painter = painterResource(Res.drawable.logo),  
                                 contentDescription = null, 
                                 modifier = Modifier.size(48.dp).clip(CircleShape)
                             )

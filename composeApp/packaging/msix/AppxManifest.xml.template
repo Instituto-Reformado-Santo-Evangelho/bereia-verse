@@ -12,10 +12,10 @@
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>Bereia Versículos</DisplayName>
+    <DisplayName>Bereia Versículos | IRSE</DisplayName>
     <PublisherDisplayName>Organização IRSE</PublisherDisplayName>
     <Logo>resources\StoreLogo.png</Logo>
-    <Description>IRSE | Bereia Verse - Leitor Bíblico Automático</Description>
+    <Description>Leitor Bíblico Automático</Description>
   </Properties>
 
   <Resources>
@@ -39,8 +39,8 @@
       Executable="bereiaverse.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Bereia Versículos"
-        Description="IRSE | Bereia Verse - Leitor Bíblico Automático"
+        DisplayName="Bereia Versículos | IRSE"
+        Description="Leitor Bíblico Automático"
         BackgroundColor="transparent"
         Square150x150Logo="resources\Square150x150Logo.png"
         Square44x44Logo="resources\Square44x44Logo.png">

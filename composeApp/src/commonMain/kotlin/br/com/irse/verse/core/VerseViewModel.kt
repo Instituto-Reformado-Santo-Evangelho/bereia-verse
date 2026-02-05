@@ -89,6 +89,7 @@ class VerseViewModel(
     val signature = settingsRepository.settings.map { it.signature }.stateIn(viewModelScope, SharingStarted.Lazily, "")
     val showSnapshotAction = settingsRepository.settings.map { it.showSnapshotAction }.stateIn(viewModelScope, SharingStarted.Lazily, false)
     val isTransparent = settingsRepository.settings.map { it.isTransparent }.stateIn(viewModelScope, SharingStarted.Lazily, true)
+    val isTransparencySupported = settingsRepository.settings.map { it.isTransparencySupported }.stateIn(viewModelScope, SharingStarted.Lazily, true)
 
     private val _textColor = MutableStateFlow(androidx.compose.ui.graphics.Color(0xFF333333))
     val textColor = _textColor.asStateFlow()
@@ -360,10 +361,14 @@ class VerseViewModel(
     fun loginToDrive() {
         viewModelScope.launch {
             try {
-                showToast("Abrindo navegador para login...", ToastType.INFO)
+                showToast("Iniciando autorização... Aguarde o navegador abrir.", ToastType.INFO)
+                delay(300) // Garante que o toast apareça antes do navegador
                 syncManager.authorize()
+                showToast("Login realizado com sucesso!", ToastType.SUCCESS)
             } catch (e: Exception) {
-                showToast("Falha no login: ${e.message}", ToastType.ERROR)
+                val errorMsg = e.message ?: "Erro desconhecido"
+                showToast("Falha no login: $errorMsg", ToastType.ERROR)
+                e.printStackTrace()
             }
         }
     }
@@ -717,9 +722,24 @@ class VerseViewModel(
     fun updateShowSnapshotAction(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateShowSnapshotAction(enabled) } }
     fun updateIsTransparent(enabled: Boolean) {
         viewModelScope.launch {
+            // Valida suporte a transparência ANTES de qualquer ação
+            if (enabled) {
+                val isWine = System.getProperty("verse.isWine") == "true"
+                val forceNoTransparent = System.getProperty("verse.noTransparent") == "true"
+                
+                // Bloqueia ativação em ambientes não suportados
+                if (isWine || forceNoTransparent) {
+                    showToast("Transparência não suportada neste ambiente. Configuração não foi salva.", ToastType.ERROR)
+                    return@launch // Sai SEM salvar, SEM reiniciar
+                }
+            }
+            
+            // Salva a configuração (só chega aqui se validação passou ou se está desativando)
             settingsRepository.updateIsTransparent(enabled)
-            val os = System.getProperty("os.name")?.lowercase() ?: ""
-            if (os.contains("win") || os.contains("linux") || os.contains("mac")) { delay(500); restartApp() }
+            
+            // Tenta reiniciar o app para aplicar mudanças
+            delay(500)
+            restartApp()
         }
     }
 
@@ -732,7 +752,10 @@ class VerseViewModel(
             if (jarFile.extension == "jar") ProcessBuilder(javaBin, "-jar", jarFile.absolutePath).start()
             else { val cp = System.getProperty("java.class.path"); ProcessBuilder(javaBin, "-cp", cp, "br.com.irse.verse.MainKt").start() }
             System.exit(0)
-        } catch (e: Exception) { _errorState.value = UiError(Res.string.error_restart) }
+        } catch (e: Exception) {
+            // Falha no reinício automático - usuário pode fechar e abrir manualmente
+            e.printStackTrace()
+        }
     }
 
     fun captureSnapshot() {

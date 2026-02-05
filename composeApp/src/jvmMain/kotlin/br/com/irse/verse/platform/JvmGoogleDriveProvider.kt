@@ -18,6 +18,8 @@ import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -56,15 +58,17 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
 
     init {
         // Tenta re-autorizar silenciosamente se já tiver token
-        try {
-             if (dataStoreDir.exists() && dataStoreDir.listFiles()?.isNotEmpty() == true) {
-                 // Inicializa o serviço em background se houver tokens
-                 // Não podemos chamar authorize() aqui pois ele abre o browser se o token estiver inválido/expirado
-                 // Mas podemos tentar reconstruir o serviço
-                 restoreSession()
-             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                 if (dataStoreDir.exists() && dataStoreDir.listFiles()?.isNotEmpty() == true) {
+                     // Inicializa o serviço em background se houver tokens
+                     // Não podemos chamar authorize() aqui pois ele abre o browser se o token estiver inválido/expirado
+                     // Mas podemos tentar reconstruir o serviço
+                     restoreSession()
+                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -72,7 +76,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         try {
             val secretsStream = getClientSecretsStream() ?: return
             val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
-            val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(secretsStream))
+            val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(secretsStream, Charsets.UTF_8))
 
             val flow = GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES
@@ -98,18 +102,50 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
     }
     
     private fun getClientSecretsStream(): java.io.InputStream? {
-        // 1. Tenta carregar do recurso embutido (JAR) - Ideal para Produção
-        val resourceStream = object {}.javaClass.getResourceAsStream("/client_secrets.json")
-        if (resourceStream != null) return resourceStream
+        // 1. Tenta carregar da variável de ambiente GOOGLE_CLIENT_SECRETS
+        val envSecrets = System.getenv("GOOGLE_CLIENT_SECRETS")
+        if (!envSecrets.isNullOrBlank()) {
+            logError("Loading credentials from GOOGLE_CLIENT_SECRETS environment variable")
+            return envSecrets.byteInputStream(Charsets.UTF_8)
+        }
+        
+        // 2. Tenta carregar do recurso embutido - PRIORIDADE (composeResources/files/)
+        val resourcePaths = listOf(
+            "/composeResources/verse.composeapp.generated.resources/files/client_secrets.json",
+            "/files/client_secrets.json",  // Compose Resources
+            "/client_secrets.json"          // Resources raiz (fallback)
+        )
+        
+        for (path in resourcePaths) {
+            val resourceStream = object {}.javaClass.getResourceAsStream(path)
+            if (resourceStream != null) {
+                logError("Loading credentials from embedded resources: $path")
+                return resourceStream
+            }
+        }
+        
+        // 3. Tenta carregar do arquivo especificado em GOOGLE_CLIENT_SECRETS_PATH
+        val envPath = System.getenv("GOOGLE_CLIENT_SECRETS_PATH")
+        if (!envPath.isNullOrBlank()) {
+            val envFile = File(envPath)
+            if (envFile.exists()) {
+                logError("Loading credentials from GOOGLE_CLIENT_SECRETS_PATH: ${envFile.absolutePath}")
+                return envFile.inputStream()
+            }
+        }
 
-        // 2. Fallback para arquivos externos (Desenvolvimento/Override)
+        // 4. Fallback para arquivos externos (Desenvolvimento/Override)
         val possibilities = listOf(
             File(appConfigDir, "client_secrets.json"),
             File(System.getProperty("user.dir"), "client_secrets.json"),
             File("client_secrets.json")
         )
         
-        return possibilities.find { it.exists() }?.inputStream()
+        val foundFile = possibilities.find { it.exists() }
+        if (foundFile != null) {
+            logError("Loading credentials from file: ${foundFile.absolutePath}")
+        }
+        return foundFile?.inputStream()
     }
 
     private fun logError(message: String, error: Throwable? = null) {
@@ -136,7 +172,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             }
 
             logError("Secrets file found. Loading...")
-            val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(secretsStream))
+            val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(secretsStream, Charsets.UTF_8))
             
             val flow = GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES
@@ -145,20 +181,97 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             .setAccessType("offline")
             .build()
 
-            logError("Flow built. Attempting to authorize...")
-            
-            // Custom receiver that logs the URL if browser fails
+            logError("Flow built. Starting local server...")
             val receiver = LocalServerReceiver.Builder().setPort(8888).build()
             
-            val authApp = AuthorizationCodeInstalledApp(flow, receiver)
-            
             val credential = try {
-                // Tenta abrir o navegador padrão de forma customizada se necessário
-                authApp.authorize("user")
+                // Verifica se já existe credencial válida
+                val storedCredential = flow.loadCredential("user")
+                if (storedCredential != null && storedCredential.refreshToken != null) {
+                    logError("Found existing credential, using it")
+                    storedCredential
+                } else {
+                    // Precisa autorizar - gera URL e FORÇA abertura do navegador
+                    val redirectUri = receiver.redirectUri
+                    val authorizationUrl = flow.newAuthorizationUrl().setRedirectUri(redirectUri).build()
+                    
+                    logError("Authorization URL: $authorizationUrl")
+                    logError("Attempting to open browser...")
+                    
+                    // Tenta abrir navegador com múltiplos métodos
+                    var browserOpened = false
+                    
+                    // Método 1: Java Desktop API (Recomendado - Resolve problemas de aspas/espaços)
+                    try {
+                        if (java.awt.Desktop.isDesktopSupported()) {
+                            val desktop = java.awt.Desktop.getDesktop()
+                            if (desktop.isSupported(java.awt.Desktop.Action.BROWSE)) {
+                                logError("Trying Desktop.browse()...")
+                                desktop.browse(java.net.URI(authorizationUrl))
+                                browserOpened = true
+                                logError("Browser opened via Desktop.browse()")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        logError("Desktop.browse() failed: ${e.message}")
+                    }
+                    
+                    // Método 2: Runtime.exec com comandos específicos de OS (Fallback)
+                    if (!browserOpened) {
+                        try {
+                            val os = System.getProperty("os.name").lowercase()
+                            if (os.contains("win")) {
+                                logError("Trying Windows rundll32...")
+                                // rundll32 é mais seguro que cmd start para URLs com &
+                                Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler $authorizationUrl")
+                                browserOpened = true
+                                logError("Browser attempted via rundll32")
+                            } else if (os.contains("mac")) {
+                                logError("Trying macOS open...")
+                                Runtime.getRuntime().exec(arrayOf("open", authorizationUrl))
+                                browserOpened = true
+                                logError("Browser opened via open")
+                            } else {
+                                logError("Trying Linux xdg-open/alternatives...")
+                                val commands = listOf("xdg-open", "gnome-open", "kde-open")
+                                for (cmd in commands) {
+                                    try {
+                                        Runtime.getRuntime().exec(arrayOf(cmd, authorizationUrl))
+                                        browserOpened = true
+                                        logError("Browser opened via $cmd")
+                                        break
+                                    } catch (_: Exception) { }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            logError("Runtime.exec failed: ${e.message}")
+                            e.printStackTrace()
+                        }
+                    }
+                    
+                    if (!browserOpened) {
+                        logError("ALL BROWSER OPENING METHODS FAILED!")
+                        logError("User MUST manually open: $authorizationUrl")
+                        throw Exception("Não foi possível abrir o navegador automaticamente.\n\nCopie e abra esta URL manualmente no seu navegador:\n\n$authorizationUrl\n\nDepois volte ao aplicativo e aguarde.")
+                    }
+                    
+                    // Aguarda callback do navegador
+                    logError("Waiting for user authorization...")
+                    val code = receiver.waitForCode()
+                    logError("Authorization code received")
+                    
+                    // Troca código por token
+                    val tokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectUri).execute()
+                    logError("Token obtained successfully")
+                    
+                    flow.createAndStoreCredential(tokenResponse, "user")
+                }
             } catch (e: Exception) {
-                logError("AuthorizationCodeInstalledApp failed. Try manual fallback.", e)
-                // Se o erro for relacionado à abertura do browser, tentamos notificar melhor
-                throw Exception("Não foi possível abrir o seu navegador para o login.\nVerifique se você tem um navegador padrão configurado ou tente novamente.")
+                receiver.stop()
+                logError("Authorization failed", e)
+                throw e
+            } finally {
+                receiver.stop()
             }
             
             logError("Authorization successful. Building Drive service...")
@@ -171,13 +284,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         } catch (e: Exception) {
             logError("CRITICAL AUTHORIZATION ERROR", e)
             _isAuthorized.value = false
-            
-            val userMsg = when {
-                e.message?.contains("browse") == true -> "Falha ao abrir navegador. Certifique-se de que há um navegador padrão configurado."
-                e.message?.contains("access_denied") == true -> "Acesso negado. Você precisa autorizar o aplicativo para sincronizar."
-                else -> "Erro na autenticação: ${e.localizedMessage ?: "Falha desconhecida"}"
-            }
-            throw Exception(userMsg)
+            throw e
         }
     }
 

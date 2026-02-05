@@ -9,13 +9,17 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 object ClipboardMonitor {
-    fun textFlow(pollingIntervalMs: Long = 400): Flow<String> = flow {
+    fun textFlow(pollingIntervalMs: Long = 1000): Flow<String> = flow {
         var lastText = ""
         while (true) {
-            val currentText = getClipboardText()
-            if (currentText.isNotBlank() && currentText != lastText) {
-                lastText = currentText
-                emit(currentText)
+            try {
+                val currentText = getClipboardText()
+                if (currentText.isNotBlank() && currentText != lastText) {
+                    lastText = currentText
+                    emit(currentText)
+                }
+            } catch (e: Exception) {
+                // Ignore errors to prevent crash loop affecting main thread
             }
             delay(pollingIntervalMs)
         }

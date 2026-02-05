@@ -108,10 +108,10 @@ compose.desktop {
 // Configuração do Plugin MSIX
 msix {
     manifest {
-        displayName.set("Bereia Versículos") // O nome visual pode ter acento
+        displayName.set("Bereia Versículos") // DisplayName pode ter acento
         publisher.set("CN=B41FD2FB-AD80-4515-8823-5F91386585CC")
-        publisherDisplayName.set("Organização IRSE")
-        identityName.set("OrganizaoIRSE.BereiaVersculos")
+        publisherDisplayName.set("Organização IRSE") // Fornecido pela Microsoft
+        identityName.set("OrganizaoIRSE.BereiaVersculos") // Normalizado pela Microsoft
         version.set("1.1.0.0")
         appId.set("BereiaVerse")
         processorArchitecture.set("x64")
@@ -126,6 +126,7 @@ afterEvaluate {
     tasks.named("createAppxManifest", de.stefan_oltmann.msix.CreateAppxManifestTask::class) {
         appExecutable.set("$folderName.exe")
         templateFile.set(project.file("packaging/msix/AppxManifest.xml.template"))
+        outputFile.set(appDir.resolve("AppxManifest.xml"))
     }
 
     val copyMsixResources = tasks.register<Copy>("copyMsixResources") {

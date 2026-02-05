@@ -70,26 +70,52 @@ fun getActiveMonitorBounds(): Rectangle? {
 }
 
 fun main(args: Array<String>) {
-    // 1. Detecção de Crash Anterior (Safe Mode)
-    val settings = SettingsManager.getSettingsSync()
-    val crashDetected = SettingsManager.lockFile.exists()
-    
-    if (crashDetected && settings.isTransparent) {
-        // Se crasheou e estava com transparência, desativa para a próxima tentativa
-        SettingsManager.saveSettingsSync(settings.copy(isTransparent = false))
-        System.setProperty("verse.transparencyWarning", "true")
-    }
-    
-    // Cria o lock para esta sessão
-    try { SettingsManager.lockFile.createNewFile() } catch (e: Exception) {}
-
-    // Detecta argumento manual de desativação de transparência
-    if (args.contains("--no-transparent")) {
-        System.setProperty("verse.noTransparent", "true")
-    }
-
     // Configuração de Log de Erro (Essencial para diagnósticos em Linux/Mac/Win)
     try {
+        // 1. Detecção de Crash Anterior (Safe Mode) & Verificação de Suporte
+        try {
+            var settings = SettingsManager.getSettingsSync()
+            
+            // Verificação de Suporte a Transparência
+            val transparencySupported = try {
+                val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                ge.defaultScreenDevice.isWindowTranslucencySupported(java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT)
+            } catch (e: Exception) { 
+                // Fallback conservador se falhar a detecção
+                false 
+            }
+
+            // Atualiza configurações se o suporte mudou ou não estava gravado
+            if (settings.isTransparencySupported != transparencySupported) {
+                settings = settings.copy(isTransparencySupported = transparencySupported)
+                SettingsManager.saveSettingsSync(settings)
+            }
+
+            // Desativa transparência se não suportado, forçando a configuração correta
+            if (!transparencySupported && settings.isTransparent) {
+                settings = settings.copy(isTransparent = false) // Mantém isTransparencySupported=false do passo anterior
+                SettingsManager.saveSettingsSync(settings)
+            }
+
+            val crashDetected = SettingsManager.lockFile.exists()
+            
+            if (crashDetected && settings.isTransparent) {
+                // Se crasheou e estava com transparência, desativa para a próxima tentativa
+                SettingsManager.saveSettingsSync(settings.copy(isTransparent = false))
+                System.setProperty("verse.transparencyWarning", "true")
+            }
+            // Cria o lock para esta sessão
+            SettingsManager.lockFile.createNewFile()
+        } catch (e: Exception) {
+            // Ignora erro ao acessar arquivo de lock/config para não impedir inicialização
+            e.printStackTrace()
+        }
+
+        // Detecta argumento manual de desativação de transparência
+        if (args.contains("--no-transparent")) {
+            System.setProperty("verse.noTransparent", "true")
+        }
+
         runApplication()
     } catch (e: Throwable) {
         // Se houve erro no Kotlin, remove o lock para não disparar safe mode falso (opcional)
@@ -154,7 +180,7 @@ fun runApplication() {
 
     application {
     val defaultWidth = 400.dp
-    val defaultHeight = 400.dp
+    val defaultHeight = 350.dp
     val miniSize = 64.dp
     val screenPadding = 20
     
@@ -168,8 +194,18 @@ fun runApplication() {
     val forceNoTransparent = remember { System.getProperty("verse.noTransparent") == "true" }
     
     // Windows: transparência agora respeita a configuração do usuário
+    // MAS valida suporte antes de aplicar
     val defaultTransparency = savedSettings.isTransparent
     val shouldBeTransparent = !isWine && !forceNoTransparent && defaultTransparency
+    
+    // Se transparência estava ativada mas não há suporte, desativa automaticamente
+    LaunchedEffect(Unit) {
+        if (defaultTransparency && (isWine || forceNoTransparent)) {
+            // Corrige configuração salva incorretamente
+            val correctedSettings = savedSettings.copy(isTransparent = false)
+            SettingsManager.saveSettingsSync(correctedSettings)
+        }
+    }
 
     // SEMPRE inicia com dimensões padrão (não carrega dimensões salvas)
     // Mas CARREGA a posição salva se existir
@@ -182,7 +218,8 @@ fun runApplication() {
     val state = rememberWindowState(
         width = defaultWidth, 
         height = defaultHeight,
-        position = initialPosition
+        position = initialPosition,
+        isMinimized = false // SEMPRE inicia maximizada/normal
     )
     
     var isVisible by remember { mutableStateOf(true) }
