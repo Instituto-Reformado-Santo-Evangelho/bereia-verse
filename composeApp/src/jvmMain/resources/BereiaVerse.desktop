@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=IRSE | Bereia Verse
-Comment=Leitor e Ferramenta de Estudo Bíblico
+Name=Bereia Versículos | IRSE
+Comment=Leitor Bíblico automático
 Exec=/opt/bereia-verse/bin/bereia-verse
 Icon=bereia-verse
 Terminal=false

@@ -460,7 +460,7 @@ fun runApplication() {
             }
         }
 
-        Tray(icon = icon, tooltip = "IRSE | Bereia Verse", onAction = toggleAction, menu = {
+        Tray(icon = icon, tooltip = "Bereia Versículos | IRSE", onAction = toggleAction, menu = {
             Item("Exibir/Ocultar", onClick = toggleAction)
             Separator()
             Item("Sair", onClick = { exitApplication() })
@@ -475,7 +475,7 @@ fun runApplication() {
                 exitApplication() 
             }
         },
-        title = "IRSE | Bereia Verse",
+        title = "Bereia Versículos | IRSE",
         state = state,
         icon = icon,
         visible = isVisible,
@@ -581,7 +581,7 @@ fun MiniWidget(onClick: () -> Unit, isTransparent: Boolean = true) {
                     Image(
                         painter = painterResource(Res.drawable.logo), 
                         contentDescription = null, 
-                        modifier = Modifier.size(40.dp).align(Alignment.Center)
+                        modifier = Modifier.size(35.dp).align(Alignment.Center)
                     )
                 }
             }

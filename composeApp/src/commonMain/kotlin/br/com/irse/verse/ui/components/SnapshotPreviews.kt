@@ -88,7 +88,7 @@ fun NoteSnapshotLayout(
     // Ajuste de escala para preview
     val scaleFactor = if (isPreview) 0.5f else 1.0f
     
-    // Cálculo de fonte base (mesma lógica do SnapshotHandler, mas adaptada se necessário)
+    // Cálculo de fonte base (mesma lógica do SnapshotHandler)
     val baseFontSize = calculateNoteFontSize(content.length)
     val fontSize = baseFontSize * scaleFactor
     

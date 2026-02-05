@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Bereia Versículos</string>
-    <string name="app_title">IRSE | Bereia Verse</string>
+    <string name="app_title">Bereia Versículos | IRSE</string>
     <string name="tab_search">Pesquisa</string>
     <string name="tab_history">Histórico</string>
     <string name="tab_verses">Versículos</string>
@@ -18,7 +18,7 @@ ou por palavras-chave (Ex: amor, fé)</string>
     <string name="text_not_available">Texto não disponível.</string>
     <string name="books_detected">Livros</string>
     <string name="app_version">Versão 1.1.0</string>
-    <string name="copyright">© 2025 Instituto Reformado Santo Evangelho - IRSE</string>
+    <string name="copyright">© 2026 Instituto Reformado Santo Evangelho - IRSE</string>
     <string name="font_size">Tamanho da Fonte</string>
     <string name="line_height">Espaçamento entre linhas</string>
     <string name="fire_animation">Animação de Fogo</string>
@@ -30,7 +30,7 @@ ou por palavras-chave (Ex: amor, fé)</string>
     <string name="font_serif">Clássica (Serif)</string>
     <string name="font_monospace">Máquina (Mono)</string>
     <string name="font_cursive">Manuscrita (Script)</string>
-    <string name="about_desc_1">Bereia Verse é um popup simples que exibe referências bíblicas detectadas na área de transferência do seu computador.</string>
+    <string name="about_desc_1">Bereia Versículos é um popup simples que exibe referências bíblicas detectadas na área de transferência do seu computador.</string>
     <string name="about_desc_2">Quando você copiar uma referência como João 1:1 via botão direito do mouse ou atalho Ctrl+C, o popup com o texto bíblico será exibido imediatamente.</string>
     <string name="about_acf_title">SOBRE A VERSÃO ACF</string>
     <string name="about_acf_desc">Usamos a versão da Bíblia Almeida Corrigida Fiel pela fidelidade ao texto original e pelo pressuposto inalienável de que Deus, pela divina providência, tem preservado o texto sagrado e que nenhuma parte dele se perdeu ou se encontra de maneira duvidosa.</string>

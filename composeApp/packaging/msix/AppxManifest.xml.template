@@ -15,7 +15,7 @@
     <DisplayName>Bereia Versículos</DisplayName>
     <PublisherDisplayName>Organização IRSE</PublisherDisplayName>
     <Logo>resources\StoreLogo.png</Logo>
-    <Description>Leitor Bíblico Automático</Description>
+    <Description>Leitor Bíblico Automático — Popup quando uma referência Bíblica é copiada.</Description>
   </Properties>
 
   <Resources>
@@ -40,7 +40,7 @@
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
         DisplayName="Bereia Versículos | IRSE"
-        Description="Leitor Bíblico Automático — Popup quando uma referência bíblica é copiada."
+        Description="Leitor Bíblico Automático — Popup quando uma referência Bíblica é copiada."
         BackgroundColor="transparent"
         Square150x150Logo="resources\Square150x150Logo.png"
         Square44x44Logo="resources\Square44x44Logo.png">
