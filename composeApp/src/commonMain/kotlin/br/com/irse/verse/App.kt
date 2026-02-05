@@ -268,7 +268,7 @@ fun App(
                                         fontFamily = globalFontFamily, 
                                         lineHeight = lineHeight, 
                                         onLoadContext = viewModel::loadContext, 
-                                        onRemoveContext = viewModel::removeContext
+                                        onRemoveContext = viewModel::tryRemoveContext
                                     )
                                 }
                             }

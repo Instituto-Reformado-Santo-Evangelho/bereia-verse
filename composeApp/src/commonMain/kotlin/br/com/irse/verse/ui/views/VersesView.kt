@@ -32,6 +32,7 @@ import br.com.irse.verse.ui.theme.VerseColors
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.ChevronUp
+import compose.icons.feathericons.ChevronRight
 import compose.icons.feathericons.Minus
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
@@ -47,7 +48,7 @@ fun VersesView(
     fontFamily: FontFamily = FontFamily.SansSerif,
     lineHeight: Float = 1.4f,
     onLoadContext: (Int) -> Unit = {},
-    onRemoveContext: (Int) -> Unit = {}
+    onRemoveContext: (Int) -> Boolean = { false }
 ) {
     val listState = rememberLazyListState()
     val notes by viewModel.notes.collectAsState()
@@ -56,46 +57,82 @@ fun VersesView(
     val editingNote by viewModel.editingNote.collectAsState()
     
     var previousLastId by remember { mutableStateOf<Int?>(null) }
+    var lastScrollEvent by remember { mutableStateOf(0L) }
 
     LaunchedEffect(detectedVerses) {
         val currentLastId = detectedVerses.lastOrNull()?.first?.id
-        // Auto-scroll suave apenas se o fim mudou (expansão inferior)
-        if (previousLastId != null && currentLastId != previousLastId) {
-            delay(100) // Pequeno delay para o Compose processar os novos itens no layout
-            listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+        // Auto-scroll apenas se foi expansão incremental (size +1)
+        // Se mudou muito (Navegação/Troca de livro), não rola p/ baixo, o LazyColumn já trata o reset p/ top
+        if (previousLastId != null && currentLastId != previousLastId && 
+            detectedVerses.size == (listState.layoutInfo.totalItemsCount - 2)) { // -2 accounts for top/bottom controls if present? No, layoutInfo is old state.
+            // Better heuristic: if previous was not null and lastID > prevID and size increased slightly
+             if (currentLastId!! > previousLastId!!) {
+                 delay(100) 
+                 listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+             }
         }
         previousLastId = currentLastId
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().pointerInput(uniqueBooks) {
+        awaitPointerEventScope {
+            while (true) {
+                val event = awaitPointerEvent()
+                if (event.type == PointerEventType.Scroll && uniqueBooks.size <= 1) {
+                    val delta = event.changes.first().scrollDelta
+                    val now = System.currentTimeMillis()
+                    if (now - lastScrollEvent > 200) { // Debounce 200ms
+                         val isAtTop = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+                         val isAtBottom = !listState.canScrollForward
+                         
+                         if (isAtTop && isAtBottom) { // Conteúdo cabe na tela (Pequeno)
+                             if (delta.y < 0) { // Scroll Up (Pull Down)
+                                 // Try collapse bottom (1) -> If fails (protected), expand top (-1)
+                                 if (!onRemoveContext(1)) onLoadContext(-1)
+                                 lastScrollEvent = now
+                             } else if (delta.y > 0) { // Scroll Down (Push Up)
+                                 // Try collapse top (-1) -> If fails (protected), expand bottom (1)
+                                 if (!onRemoveContext(-1)) onLoadContext(1)
+                                 lastScrollEvent = now
+                             }
+                         } else { // Lista longa (Scroll normal até bater na borda)
+                             if (isAtTop && delta.y < 0) {
+                                 if (!onRemoveContext(1)) onLoadContext(-1)
+                                 lastScrollEvent = now
+                             } else if (isAtBottom && delta.y > 0) {
+                                 if (!onRemoveContext(-1)) onLoadContext(1)
+                                 lastScrollEvent = now
+                             }
+                         }
+                    }
+                }
+            }
+        }
+    }) {
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp), 
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp), 
             verticalArrangement = Arrangement.spacedBy(16.dp), 
             modifier = Modifier.fillMaxSize()
         ) {
-            // Zona Superior (Anterior)
-            item(key = "top_control") {
-                ContextControlZone(
-                    isTop = true, 
-                    canRemove = detectedVerses.size > 1, 
-                    onExpand = { onLoadContext(-1) }, 
-                    onRemove = { onRemoveContext(-1) }, 
-                    iconColor = VerseColors.PrimaryAmber
-                )
-            }
-
             var lastBook = ""
             detectedVerses.forEach { (req, content) ->
-                if (uniqueBooks.size > 1 && req.book != lastBook) {
-                    item(key = "header_${req.book}_${req.id}") {
-                        Column {
-                            Text(text = req.book.uppercase(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, color = VerseColors.PrimaryAmber)
-                            HorizontalDivider(modifier = Modifier.padding(top = 4.dp), thickness = 1.dp, color = VerseColors.PrimaryAmber.copy(alpha = 0.3f))
+                if (uniqueBooks.size > 1) {
+                    if (req.book != lastBook) {
+                        item(key = "header_${req.book}_${req.id}") {
+                            Column(modifier = Modifier.pointerHoverIconHand().clickable { viewModel.focusOnBook(req.book) }) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = req.book.uppercase(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, color = VerseColors.PrimaryAmber)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(FeatherIcons.ChevronRight, contentDescription = null, tint = VerseColors.PrimaryAmber, modifier = Modifier.size(16.dp).offset(y = 1.dp))
+                                }
+                                HorizontalDivider(modifier = Modifier.padding(top = 4.dp), thickness = 1.dp, color = VerseColors.PrimaryAmber.copy(alpha = 0.3f))
+                            }
                         }
+                        lastBook = req.book
                     }
-                    lastBook = req.book
                 }
+                
                 item(key = "verse_${req.id}") {
                     val note = notes.find { it.verseId == req.id }
                     ContinuousVerseItem(
@@ -106,17 +143,6 @@ fun VersesView(
                         }
                     )
                 }
-            }
-
-            // Zona Inferior (Próximo)
-            item(key = "bottom_control") {
-                 ContextControlZone(
-                    isTop = false, 
-                    canRemove = detectedVerses.size > 1, 
-                    onExpand = { onLoadContext(1) }, 
-                    onRemove = { onRemoveContext(1) }, 
-                    iconColor = VerseColors.PrimaryAmber
-                )
             }
         }
 
@@ -139,84 +165,6 @@ fun VersesView(
                     },
                     onDismiss = { viewModel.closeNoteEditor() }
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun ContextControlZone(
-    isTop: Boolean,
-    canRemove: Boolean,
-    onExpand: () -> Unit,
-    onRemove: () -> Unit,
-    iconColor: Color
-) {
-    var isHovered by remember { mutableStateOf(false) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Zona de detecção restrita ao centro
-        Box(
-            modifier = Modifier
-                .width(160.dp) // Apenas a área central detecta o mouse
-                .fillMaxHeight()
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            when (event.type) {
-                                PointerEventType.Enter -> isHovered = true
-                                PointerEventType.Exit -> isHovered = false
-                            }
-                        }
-                    }
-                }
-                .pointerHoverIconHand(),
-            contentAlignment = Alignment.Center
-        ) {
-            // Controles Ativos (Hover)
-            AnimatedVisibility(
-                visible = isHovered,
-                enter = fadeIn() + androidx.compose.animation.scaleIn(initialScale = 0.8f),
-                exit = fadeOut() + androidx.compose.animation.scaleOut(targetScale = 0.8f)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Botão Expandir
-                    IconButton(
-                        onClick = onExpand,
-                        modifier = Modifier.size(42.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isTop) FeatherIcons.ChevronUp else FeatherIcons.ChevronDown,
-                            contentDescription = stringResource(Res.string.expand),
-                            tint = iconColor,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-
-                    // Botão Recolher (se aplicável)
-                    if (canRemove) {
-                        IconButton(
-                            onClick = onRemove,
-                            modifier = Modifier.size(42.dp)
-                        ) {
-                            Icon(
-                                imageVector = FeatherIcons.Minus,
-                                contentDescription = stringResource(Res.string.collapse),
-                                tint = iconColor,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-                    }
-                }
             }
         }
     }

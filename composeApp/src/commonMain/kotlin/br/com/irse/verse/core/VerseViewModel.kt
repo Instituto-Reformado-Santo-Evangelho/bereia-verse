@@ -573,6 +573,11 @@ class VerseViewModel(
     fun loadContext(direction: Int) {
         val currentList = _detectedVerses.value
         if (currentList.isEmpty()) return
+        
+        // Single book check: if we are strictly in one book, prevent crossing boundary
+        val currentBook = currentList.first().first.book
+        val isSingleBook = currentList.all { it.first.book == currentBook }
+        
         viewModelScope.launch {
             try {
                 val newVerses = currentList.toMutableList()
@@ -580,38 +585,68 @@ class VerseViewModel(
                     val firstId = currentList.first().first.id
                     val prevId = firstId - 1
                     if (prevId > 0) {
-                        val content = withContext(dispatchers.io) { database.getText(prevId) }
-                        if (content != null) {
-                            val req = parser.repository.getVerseRequest(prevId)
-                            if (req != null) newVerses.add(0, req to content)
+                        val req = parser.repository.getVerseRequest(prevId)
+                        if (req != null && (!isSingleBook || req.book == currentBook)) { // Stop if simple mode and book changes
+                            val content = withContext(dispatchers.io) { database.getText(prevId) }
+                            if (content != null) {
+                                newVerses.add(0, req to content)
+                            }
                         }
                     }
                 } else {
                     val lastId = currentList.last().first.id
                     val nextId = lastId + 1
                     if (nextId < 32000) { 
-                        val content = withContext(dispatchers.io) { database.getText(nextId) }
-                        if (content != null) {
-                            val req = parser.repository.getVerseRequest(nextId)
-                            if (req != null) newVerses.add(req to content)
+                        val req = parser.repository.getVerseRequest(nextId)
+                        if (req != null && (!isSingleBook || req.book == currentBook)) { // Stop if simple mode and book changes
+                            val content = withContext(dispatchers.io) { database.getText(nextId) }
+                            if (content != null) {
+                                newVerses.add(req to content)
+                            }
                         }
                     }
                 }
-                _detectedVerses.value = newVerses
-                _isInternalUpdate.value = true
+                if (newVerses.size != currentList.size) { // Only update if changed
+                    _detectedVerses.value = newVerses
+                    currentOriginalVerses = newVerses
+                    _isInternalUpdate.value = true
+                }
             } catch (e: Exception) {
                 _errorState.value = UiError(Res.string.error_load_context, listOf(e.message ?: ""))
             }
         }
     }
 
-    fun removeContext(direction: Int) {
+    fun focusOnBook(book: String) {
+        pushToBackStack()
         val currentList = _detectedVerses.value
-        if (currentList.size <= 1) return
+        // Filters only the verses of the selected book to create a unique context
+        val newVerses = currentList.filter { it.first.book == book }
+        if (newVerses.isNotEmpty()) {
+            _detectedVerses.value = newVerses
+            currentOriginalVerses = newVerses
+            _isInternalUpdate.value = true
+        }
+    }
+
+    fun removeContext(direction: Int) {
+        tryRemoveContext(direction)
+    }
+
+    fun tryRemoveContext(direction: Int): Boolean {
+        val currentList = _detectedVerses.value
+        if (currentList.size <= 1) return false
+        
+        val itemToRemove = if (direction < 0) currentList.first() else currentList.last()
+        val isOriginal = currentOriginalVerses.any { it.first.id == itemToRemove.first.id }
+        
+        if (isOriginal) return false
+
         val newVerses = currentList.toMutableList()
         if (direction < 0) newVerses.removeAt(0) else newVerses.removeAt(newVerses.lastIndex)
         _detectedVerses.value = newVerses
         _isInternalUpdate.value = true
+        return true
     }
     
     fun refreshHistory() {
