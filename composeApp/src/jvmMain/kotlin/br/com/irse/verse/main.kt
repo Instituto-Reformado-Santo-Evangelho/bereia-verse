@@ -52,6 +52,7 @@ import org.koin.java.KoinJavaComponent.get
 import org.koin.dsl.module
 import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
+import verse.composeapp.generated.resources.sys_icon
 import java.awt.GraphicsEnvironment
 import java.awt.MouseInfo
 import java.awt.Rectangle
@@ -92,19 +93,25 @@ fun main(args: Array<String>) {
                 val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
                 ge.defaultScreenDevice.isWindowTranslucencySupported(java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT)
             } catch (e: Exception) { 
-                // Fallback conservador se falhar a detecção
                 false 
             }
 
-            // Atualiza configurações se o suporte mudou ou não estava gravado
-            if (settings.isTransparencySupported != transparencySupported) {
-                settings = settings.copy(isTransparencySupported = transparencySupported)
+            // Lógica de "Power User Override":
+            // Se o usuário já ativou a transparência nas configurações, respeitamos essa escolha incondicionalmente.
+            // Isso evita que falhas na detecção do AWT (comuns em Linux/Hyprland e alguns drivers Windows)
+            // desativem o recurso automaticamente. Se for a primeira vez (padrão), respeitamos a detecção do sistema.
+            val finalSupportFlag = if (settings.isTransparent) true else transparencySupported
+
+            // Atualiza configurações se o flag de suporte mudou
+            if (settings.isTransparencySupported != finalSupportFlag) {
+                settings = settings.copy(isTransparencySupported = finalSupportFlag)
                 SettingsManager.saveSettingsSync(settings)
             }
 
-            // Desativa transparência se não suportado, forçando a configuração correta
-            if (!transparencySupported && settings.isTransparent) {
-                settings = settings.copy(isTransparent = false) // Mantém isTransparencySupported=false do passo anterior
+            // Apenas desativa se REALMENTE não houver suporte E o usuário não tiver forçado (lógica acima já cobre)
+            // Mantemos este bloco para casos extremos onde o override não se aplica
+            if (!finalSupportFlag && settings.isTransparent) {
+                settings = settings.copy(isTransparent = false)
                 SettingsManager.saveSettingsSync(settings)
             }
 
@@ -198,7 +205,7 @@ fun runApplication() {
     // Carrega configuração salva
     val savedSettings = remember { SettingsManager.getSettingsSync() }
     
-    val icon = painterResource(Res.drawable.logo)
+    val icon = painterResource(Res.drawable.sys_icon)
     val isLinux = remember { System.getProperty("os.name").lowercase().contains("linux") }
     val isWindows = remember { System.getProperty("os.name").lowercase().contains("win") }
     val isWine = remember { System.getProperty("verse.isWine") == "true" }
@@ -297,6 +304,20 @@ fun runApplication() {
             val bounds = getActiveMonitorBounds() ?: currentScreenBounds
             
             if (bounds != null) {
+                // SAFETY CHECK: Validação de posição inicial
+                // Se a janela estiver muito fora da área visível (ex: presa na barra de tarefas ou fora da tela)
+                // forçamos um reposicionamento seguro.
+                // Isso corrige o bug onde janelas transparentes (undecorated) restauram coordenadas erradas no Windows.
+                val safeYMin = bounds.y
+                val safeYMax = bounds.y + bounds.height - 20 // Pelo menos 20px visíveis
+                
+                if (win.y < safeYMin || win.y > safeYMax) {
+                     // Reposiciona para o padrão (canto superior direito)
+                     val newX = bounds.x + bounds.width - with(density) { screenPadding.dp.roundToPx() } - win.width
+                     val newY = bounds.y + with(density) { screenPadding.dp.roundToPx() }
+                     win.setLocation(newX, newY)
+                }
+
                 // Converte a altura alvo (DP) para Pixels Inteiros usando a densidade correta
                 val targetHeightPx = with(density) { finalHeight.roundToPx() }
                 
@@ -612,7 +633,7 @@ fun MiniWidget(onClick: () -> Unit, isTransparent: Boolean = true) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(4.dp)) {
                 Box(modifier = Modifier.size(64.dp).clip(CircleShape).background(VerseColors.PrimaryAmber.copy(alpha = 0.8f)).clickable { onClick() }) {
                     Image(
-                        painter = painterResource(Res.drawable.logo), 
+                        painter = painterResource(Res.drawable.sys_icon), 
                         contentDescription = null, 
                         modifier = Modifier.size(35.dp).align(Alignment.Center)
                     )

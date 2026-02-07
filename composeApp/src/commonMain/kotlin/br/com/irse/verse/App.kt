@@ -207,13 +207,28 @@ fun App(
                             }
                         }
                         Box(
-                            modifier = Modifier.size(32.dp).clip(CircleShape).background(VerseColors.HeaderContentColor.copy(alpha = 0.1f))
+                            modifier = Modifier
+                                .size(48.dp) // Área de clique aumentada (padrão de acessibilidade)
                                 .pointerHoverIconHand()
-                                .clickable { if (currentTab != AppTab.VERSES) currentTab = AppTab.VERSES else onClose() },
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null 
+                                ) { 
+                                    if (currentTab != AppTab.VERSES) currentTab = AppTab.VERSES else onClose() 
+                                },
                             contentAlignment = Alignment.Center
                         ) {
-                            val icon = if (currentTab != AppTab.VERSES) Icons.Default.ArrowCircleLeft else Icons.Default.Close
-                            Icon(icon, contentDescription = null, tint = VerseColors.HeaderContentColor, modifier = Modifier.size(20.dp))
+                            // Círculo visual mantido em 32dp
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(VerseColors.HeaderContentColor.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val icon = if (currentTab != AppTab.VERSES) Icons.Default.ArrowCircleLeft else Icons.Default.Close
+                                Icon(icon, contentDescription = null, tint = VerseColors.HeaderContentColor, modifier = Modifier.size(20.dp))
+                            }
                         }
                     }
 
