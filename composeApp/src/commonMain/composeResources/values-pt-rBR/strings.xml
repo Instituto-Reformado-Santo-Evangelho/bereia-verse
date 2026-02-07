@@ -92,6 +92,15 @@ ou por palavras-chave (Ex: amor, fé)</string>
                 <string name="error_snapshot_capture">Erro ao capturar imagem: %s</string>
                 <string name="error_note_too_long_editor">Ainda muito longo (%d/%d). Resuma mais.</string>
                 <string name="error_note_too_long_general">Nota muito longa para imagem. Reduza o conteúdo.</string>
+                <string name="dialog_transparency_title">Ativar Bordas Arredondadas?</string>
+                <string name="dialog_transparency_message">O modo de Bordas Arredondadas (Transparência) requer um driver de vídeo compatível com DirectX 12. Se o seu sistema não for totalmente compatível, a janela pode ficar presa na barra de tarefas. Caso isso aconteça, utilize a opção 'Alternar Transparência' no menu da Bandeja do sistema para redefinir a configuração.</string>
+                <string name="dialog_yes">Sim, Ativar</string>
+                <string name="dialog_no">Não</string>
+                <string name="dialog_restart_title">Reinicialização Necessária</string>
+                <string name="dialog_restart_message">As alterações foram salvas. Por favor, feche e abra o aplicativo novamente para que tenham efeito.</string>
+                <string name="dialog_ok">OK</string>
+                <string name="tray_toggle_transparency">Alternar Transparência</string>
+            
                 <string name="error_note_capture">Erro ao capturar nota: %s</string>
             
                 <string name="search_scope_verses">Versículos</string>

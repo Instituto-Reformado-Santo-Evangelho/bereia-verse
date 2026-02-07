@@ -167,13 +167,65 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
             
             val isTransparent by viewModel.isTransparent.collectAsState()
+                var showTransparencyDialog by remember { mutableStateOf(false) }
+                val restartRequired by viewModel.restartRequired.collectAsState()
+                val scope = rememberCoroutineScope()
+            // Diálogo 1: Confirmação para ativar a transparência
+            if (showTransparencyDialog) {
+                AlertDialog(
+                    onDismissRequest = { showTransparencyDialog = false },
+                    title = { Text(stringResource(Res.string.dialog_transparency_title), fontWeight = FontWeight.Bold) },
+                    text = { Text(stringResource(Res.string.dialog_transparency_message), style = MaterialTheme.typography.bodyMedium) },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    viewModel.updateIsTransparent(true)
+                                    showTransparencyDialog = false
+                                    viewModel.signalRestartRequired() // Use public function
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = VerseColors.PrimaryAmber)
+                        ) {
+                            Text(stringResource(Res.string.dialog_ok)) // Changed from dialog_yes to dialog_ok
+                        }
+                    }
+                )
+            }
+
+            // Diálogo 2: Aviso de reinicialização necessária
+            if (restartRequired) {
+                AlertDialog(
+                    onDismissRequest = { /* Não pode ser dispensado */ },
+                    title = { Text(stringResource(Res.string.dialog_restart_title), fontWeight = FontWeight.Bold) },
+                    text = { Text(stringResource(Res.string.dialog_restart_message), style = MaterialTheme.typography.bodyMedium) },
+                    confirmButton = {
+                        Button(
+                            onClick = { System.exit(0) },
+                            colors = ButtonDefaults.buttonColors(containerColor = VerseColors.PrimaryAmber)
+                        ) {
+                            Text(stringResource(Res.string.dialog_ok))
+                        }
+                    }
+                )
+            }
+
             SettingsToggle(
-                title = stringResource(Res.string.settings_transparency_title), 
-                desc = if (isTransparencySupported) stringResource(Res.string.settings_transparency_desc) else stringResource(Res.string.settings_transparency_desc) + " (Não suportado)", 
-                checked = isTransparent && isTransparencySupported, 
+                title = stringResource(Res.string.settings_transparency_title),
+                desc = if (isTransparencySupported) stringResource(Res.string.settings_transparency_desc) else stringResource(Res.string.settings_transparency_desc) + " (Não suportado)",
+                checked = isTransparent && isTransparencySupported,
                 enabled = isTransparencySupported,
                 textColor = textColor
-            ) { viewModel.updateIsTransparent(it) }
+            ) { enabled ->
+                scope.launch {
+                    if (enabled) {
+                        showTransparencyDialog = true
+                    } else {
+                        viewModel.updateIsTransparent(false)
+                        viewModel.signalRestartRequired() // Use public function
+                    }
+                }
+            }
         }
         
         // --- SEÇÃO: SINCRONIZAÇÃO ---

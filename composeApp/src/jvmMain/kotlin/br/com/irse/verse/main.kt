@@ -46,6 +46,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.java.KoinJavaComponent.get
@@ -441,6 +442,12 @@ fun runApplication() {
         }
     }
 
+    LaunchedEffect(state.isMinimized) {
+        if (!state.isMinimized) { // Se a janela não estiver mais minimizada (SO a restaurou)
+            isVisible = true      // Garante que nosso estado de visibilidade também reflita isso
+        }
+    }
+
     if (viewModel.value != null) {
         val detectedVerses by viewModel.value!!.detectedVerses.collectAsState()
         val isInternalUpdate by viewModel.value!!.isInternalUpdate.collectAsState()
@@ -499,6 +506,14 @@ fun runApplication() {
 
         Tray(icon = icon, tooltip = "Bereia Versículos | IRSE", onAction = toggleAction, menu = {
             Item("Exibir/Ocultar", onClick = toggleAction)
+            Item("Alternar Transparência", onClick = {
+                scope.launch {
+                    val currentTransparency = viewModel.value?.isTransparent?.value ?: false
+                    viewModel.value?.updateIsTransparent(!currentTransparency)
+                    delay(500) // Garante que a configuração seja salva antes de sair
+                    System.exit(0) // Fecha o app para aplicar a mudança
+                }
+            })
             Separator()
             Item("Sair", onClick = { exitApplication() })
         })
@@ -518,26 +533,14 @@ fun runApplication() {
         visible = isVisible,
         undecorated = true, 
         transparent = shouldBeTransparent, 
-        alwaysOnTop = true, 
+        alwaysOnTop = false, 
         resizable = true // Permite redimensionamento
     ) {
-        SideEffect { 
+        // O SideEffect que definia o tipo da janela foi removido para corrigir um crash
+        // na inicialização (IllegalComponentStateException). A consequência é que
+        // a janela pode aparecer na barra de tarefas em alguns cenários.
+        SideEffect {
             currentWindow = window
-            // No Windows, define como janela utilitária para não aparecer na barra de tarefas
-            if (isWindows && window is java.awt.Window) {
-                try {
-                    // Detecção de Windows 11 baseada em build (>= 22000)
-                    val osVersion = System.getProperty("os.version") ?: ""
-                    val buildNumber = osVersion.split(".").lastOrNull()?.toIntOrNull() ?: 0
-                    val isWin11 = buildNumber >= 22000
-                    
-                    // No Windows 11, o modo UTILITY entra em conflito com transparência no Skia
-                    // Só aplicamos UTILITY se não for transparente OU se for uma versão mais antiga
-                    if (!shouldBeTransparent || !isWin11) {
-                        window.type = java.awt.Window.Type.UTILITY
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-            }
         }
         
         AnimatedContent(

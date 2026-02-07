@@ -335,6 +335,13 @@ class VerseViewModel(
     private val _toastState = MutableStateFlow<ToastState?>(null)
     val toastState = _toastState.asStateFlow()
 
+    private val _restartRequired = MutableStateFlow(false)
+    val restartRequired = _restartRequired.asStateFlow()
+
+    fun signalRestartRequired() {
+        _restartRequired.value = true
+    }
+
     private val _tabRequest = MutableSharedFlow<AppTab>()
     val tabRequest = _tabRequest.asSharedFlow()
 
@@ -755,42 +762,21 @@ class VerseViewModel(
     fun updateAnimatedWindow(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateAnimatedWindow(enabled) } }
     fun updateSignature(text: String) { viewModelScope.launch { settingsRepository.updateSignature(text) } }
     fun updateShowSnapshotAction(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateShowSnapshotAction(enabled) } }
-    fun updateIsTransparent(enabled: Boolean) {
-        viewModelScope.launch {
-            // Valida suporte a transparência ANTES de qualquer ação
-            if (enabled) {
-                val isWine = System.getProperty("verse.isWine") == "true"
-                val forceNoTransparent = System.getProperty("verse.noTransparent") == "true"
-                
-                // Bloqueia ativação em ambientes não suportados
-                if (isWine || forceNoTransparent) {
-                    showToast("Transparência não suportada neste ambiente. Configuração não foi salva.", ToastType.ERROR)
-                    return@launch // Sai SEM salvar, SEM reiniciar
-                }
+    suspend fun updateIsTransparent(enabled: Boolean) {
+        // Valida suporte a transparência ANTES de qualquer ação
+        if (enabled) {
+            val isWine = System.getProperty("verse.isWine") == "true"
+            val forceNoTransparent = System.getProperty("verse.noTransparent") == "true"
+            
+            // Bloqueia ativação em ambientes não suportados
+            if (isWine || forceNoTransparent) {
+                showToast("Transparência não suportada neste ambiente. Configuração não foi salva.", ToastType.ERROR)
+                return // Sai SEM salvar, SEM reiniciar
             }
-            
-            // Salva a configuração (só chega aqui se validação passou ou se está desativando)
-            settingsRepository.updateIsTransparent(enabled)
-            
-            // Tenta reiniciar o app para aplicar mudanças
-            delay(500)
-            restartApp()
         }
-    }
-
-    private fun restartApp() {
-        try {
-            val os = System.getProperty("os.name")?.lowercase() ?: ""
-            if (os.contains("android")) return
-            val javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
-            val jarFile = File(VerseViewModel::class.java.protectionDomain?.codeSource?.location?.toURI() ?: return)
-            if (jarFile.extension == "jar") ProcessBuilder(javaBin, "-jar", jarFile.absolutePath).start()
-            else { val cp = System.getProperty("java.class.path"); ProcessBuilder(javaBin, "-cp", cp, "br.com.irse.verse.MainKt").start() }
-            System.exit(0)
-        } catch (e: Exception) {
-            // Falha no reinício automático - usuário pode fechar e abrir manualmente
-            e.printStackTrace()
-        }
+        
+        // Salva a configuração (só chega aqui se validação passou ou se está desativando)
+        settingsRepository.updateIsTransparent(enabled)
     }
 
     fun captureSnapshot() {

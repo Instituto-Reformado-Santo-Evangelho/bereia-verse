@@ -93,6 +93,14 @@ or by keywords (Ex: love, faith)</string>
                 <string name="error_note_too_long_editor">Still too long (%d/%d). Summarize more.</string>
                 <string name="error_note_too_long_general">Note too long for image. Reduce content.</string>
                 <string name="error_note_capture">Error capturing note: %s</string>
+                <string name="dialog_transparency_title">Enable Rounded Corners?</string>
+                <string name="dialog_transparency_message">This feature requires a compatible graphics driver (DirectX 12). If your system is not fully compatible, the window may get stuck on the taskbar. If this happens, use the 'Toggle Transparency' option in the system tray menu to reset the setting.</string>
+                <string name="dialog_yes">Yes, Enable</string>
+                <string name="dialog_no">No</string>
+                <string name="dialog_restart_title">Restart Required</string>
+                <string name="dialog_restart_message">Changes have been saved. Please close and reopen the application for them to take effect.</string>
+                <string name="dialog_ok">OK</string>
+                <string name="tray_toggle_transparency">Toggle Transparency</string>
             
                 <string name="search_scope_verses">Verses</string>
             
