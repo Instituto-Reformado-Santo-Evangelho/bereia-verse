@@ -64,8 +64,19 @@ fun getActiveMonitorBounds(): Rectangle? {
         val pointerInfo = MouseInfo.getPointerInfo()
         val mousePoint = pointerInfo.location
         val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-        ge.screenDevices.firstOrNull { it.defaultConfiguration.bounds.contains(mousePoint) }?.defaultConfiguration?.bounds
-        ?: ge.defaultScreenDevice.defaultConfiguration.bounds
+        val device = ge.screenDevices.firstOrNull { it.defaultConfiguration.bounds.contains(mousePoint) }
+        ?: ge.defaultScreenDevice
+        
+        val config = device.defaultConfiguration
+        val bounds = config.bounds
+        val insets = java.awt.Toolkit.getDefaultToolkit().getScreenInsets(config)
+        
+        Rectangle(
+            bounds.x + insets.left,
+            bounds.y + insets.top,
+            bounds.width - insets.left - insets.right,
+            bounds.height - insets.top - insets.bottom
+        )
     } catch (e: Exception) { e.printStackTrace(); null }
 }
 
@@ -282,36 +293,44 @@ fun runApplication() {
     LaunchedEffect(finalHeight, isMiniMode) {
         if (!isMiniMode && isReady && currentWindow != null) {
             val win = currentWindow!!
-            // Usa os bounds do monitor em pixels
-            val bounds = currentScreenBounds ?: getActiveMonitorBounds()
+            // Usa os bounds do monitor em pixels (agora respeitando insets/barra de tarefas)
+            val bounds = getActiveMonitorBounds() ?: currentScreenBounds
             
             if (bounds != null) {
                 // Converte a altura alvo (DP) para Pixels Inteiros usando a densidade correta
                 val targetHeightPx = with(density) { finalHeight.roundToPx() }
                 
-                // Obtém a largura nativa atual em Pixels (EVITA O CONFLITO COM O COMPOSE STATE)
+                // Garante que a altura não ultrapasse o monitor
+                val maxAllowedHeight = bounds.height - (with(density) { screenPadding.dp.roundToPx() } * 2)
+                val safeHeightPx = if (targetHeightPx > maxAllowedHeight) maxAllowedHeight else targetHeightPx
+
+                // Obtém a largura nativa atual em Pixels
                 val currentWidthPx = win.width
                 
                 val currentYPx = win.y
                 var newYPx = currentYPx
                 val screenPaddingPx = with(density) { screenPadding.dp.roundToPx() }
                 
-                // Lógica de ancoragem no fundo (em Pixels)
-                if (currentYPx + targetHeightPx > bounds.y + bounds.height - screenPaddingPx) {
-                    newYPx = bounds.y + bounds.height - screenPaddingPx - targetHeightPx
+                // Lógica de ancoragem no fundo (em Pixels) - Se a expansão for para baixo da tela, move para cima
+                if (currentYPx + safeHeightPx > bounds.y + bounds.height - screenPaddingPx) {
+                    newYPx = bounds.y + bounds.height - screenPaddingPx - safeHeightPx
+                }
+
+                // Garante que o topo também não saia da tela
+                if (newYPx < bounds.y + screenPaddingPx) {
+                    newYPx = bounds.y + screenPaddingPx
                 }
                 
-                // Aplica a atualização via AWT apenas se a altura mudou (tolerância de 1px)
-                // Isso permite que o usuário redimensione a largura livremente, pois repassamos o currentWidthPx
-                if (abs(win.height - targetHeightPx) > 1) {
-                    win.setBounds(win.x, newYPx, currentWidthPx, targetHeightPx)
+                // Aplica a atualização via AWT apenas se necessário
+                if (abs(win.height - safeHeightPx) > 1 || abs(win.y - newYPx) > 1) {
+                    win.setBounds(win.x, newYPx, currentWidthPx, safeHeightPx)
                 }
             }
         }
     }
     
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
-        val bounds = currentScreenBounds ?: getActiveMonitorBounds() ?: return
+        val bounds = getActiveMonitorBounds() ?: currentScreenBounds ?: return
         
         if (mini) {
             // Salva posição atual antes de ir para mini mode
@@ -328,7 +347,7 @@ fun runApplication() {
                 state.position = lastNormalPosition
                 state.size = DpSize(lastNormalSize.width, height ?: lastNormalSize.height)
             } else {
-                // Primeira vez - usa posição padrão
+                // Primeira vez - usa posição padrão (canto superior direito do monitor ativo)
                 val newX = bounds.x + bounds.width - screenPadding - defaultWidth.value.toInt()
                 val newY = bounds.y + screenPadding
                 state.position = WindowPosition(newX.dp, newY.dp)
@@ -414,12 +433,9 @@ fun runApplication() {
                 
                 val newBounds = getActiveMonitorBounds()
                 
-                if (currentScreenBounds != null && newBounds != currentScreenBounds) {
+                if (newBounds != null && (currentScreenBounds == null || newBounds != currentScreenBounds)) {
                     currentScreenBounds = newBounds
                     applyAnchorPosition(mini = false)
-                } else if (currentScreenBounds == null) {
-                    currentScreenBounds = newBounds
-                    hasSetInitialPosition = true
                 }
                 
                 isVisible = true
@@ -489,9 +505,16 @@ fun runApplication() {
             // No Windows, define como janela utilitária para não aparecer na barra de tarefas
             if (isWindows && window is java.awt.Window) {
                 try {
-                    val frame = window as? java.awt.Frame
-                    // Em janelas undecorated, isso ajuda a ocultar da barra de tarefas
-                    window.type = java.awt.Window.Type.UTILITY
+                    // Detecção de Windows 11 baseada em build (>= 22000)
+                    val osVersion = System.getProperty("os.version") ?: ""
+                    val buildNumber = osVersion.split(".").lastOrNull()?.toIntOrNull() ?: 0
+                    val isWin11 = buildNumber >= 22000
+                    
+                    // No Windows 11, o modo UTILITY entra em conflito com transparência no Skia
+                    // Só aplicamos UTILITY se não for transparente OU se for uma versão mais antiga
+                    if (!shouldBeTransparent || !isWin11) {
+                        window.type = java.awt.Window.Type.UTILITY
+                    }
                 } catch (e: Exception) { e.printStackTrace() }
             }
         }
@@ -554,7 +577,17 @@ fun runApplication() {
                                 val deltaX = currentMousePos.x - startMouseX
                                 val deltaY = currentMousePos.y - startMouseY
                                 
-                                window.setLocation(startWindowX + deltaX, startWindowY + deltaY)
+                                val newX = startWindowX + deltaX
+                                val newY = startWindowY + deltaY
+                                
+                                window.setLocation(newX, newY)
+                                
+                                // Sincroniza o estado do Compose em tempo real para evitar conflitos com a ancoragem automática
+                                val density = this.density
+                                state.position = WindowPosition(
+                                    (newX / density).dp,
+                                    (newY / density).dp
+                                )
                             }
                         }
                     )

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +30,9 @@ import java.net.URI
 fun AboutView(textColor: Color) {
     val scrollState = rememberScrollState()
     
+    val isDark = isSystemInDarkTheme()
+    val logoResource = if (isDark) Res.drawable.logo_dark else Res.drawable.logo
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -38,7 +42,7 @@ fun AboutView(textColor: Color) {
     ) {
         // Cabeçalho Principal
         Image(
-            painter = painterResource(Res.drawable.logo),
+            painter = painterResource(logoResource),
             contentDescription = null,
             modifier = Modifier.size(64.dp)
         )

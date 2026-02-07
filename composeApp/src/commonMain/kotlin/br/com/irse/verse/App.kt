@@ -194,8 +194,9 @@ fun App(
                                     indication = null
                                 ) { currentTab = AppTab.ABOUT }
                         ) {
+                            val logoResource = if (isDark) Res.drawable.logo_dark else Res.drawable.logo
                             Image(
-                                painter = painterResource(Res.drawable.logo),  
+                                painter = painterResource(logoResource),  
                                 contentDescription = null, 
                                 modifier = Modifier.size(48.dp).clip(CircleShape)
                             )

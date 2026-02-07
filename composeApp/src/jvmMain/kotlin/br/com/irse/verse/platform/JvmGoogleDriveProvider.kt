@@ -182,20 +182,53 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             .build()
 
             logError("Flow built. Starting local server...")
-            val receiver = LocalServerReceiver.Builder().setPort(8888).build()
+            // Usa porta dinâmica padrão para evitar conflitos
+            val receiver = LocalServerReceiver.Builder().build() 
             
             val credential = try {
                 // Verifica se já existe credencial válida
-                val storedCredential = flow.loadCredential("user")
+                val storedCredential = try { 
+                    flow.loadCredential("user") 
+                } catch (e: Exception) {
+                    logError("Error loading stored credential, clearing dataStoreDir", e)
+                    if (dataStoreDir.exists()) dataStoreDir.deleteRecursively()
+                    null
+                }
+
                 if (storedCredential != null && storedCredential.refreshToken != null) {
                     logError("Found existing credential, using it")
                     storedCredential
                 } else {
                     // Precisa autorizar - gera URL e FORÇA abertura do navegador
                     val redirectUri = receiver.redirectUri
-                    val authorizationUrl = flow.newAuthorizationUrl().setRedirectUri(redirectUri).build()
                     
-                    logError("Authorization URL: $authorizationUrl")
+                    // 1. Gerar State para prevenir CSRF (Cross-Site Request Forgery)
+                    val state = java.util.UUID.randomUUID().toString()
+                    
+                    // 2. Gerar PKCE (Proof Key for Code Exchange)
+                    // Verifier: Segredo aleatório de alta entropia
+                    val secureRandom = java.security.SecureRandom()
+                    val verifierBytes = ByteArray(32)
+                    secureRandom.nextBytes(verifierBytes)
+                    val verifier = com.google.api.client.util.Base64.encodeBase64URLSafeString(verifierBytes)
+                    
+                    // Challenge: Hash SHA-256 do verifier
+                    val messageDigest = java.security.MessageDigest.getInstance("SHA-256")
+                    val hash = messageDigest.digest(verifier.toByteArray(Charsets.US_ASCII))
+                    val challenge = com.google.api.client.util.Base64.encodeBase64URLSafeString(hash)
+
+                    val authorizationUrl = com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl(
+                        clientSecrets.details.authUri,
+                        clientSecrets.details.clientId,
+                        redirectUri,
+                        SCOPES
+                    ).apply {
+                        this.state = state // Usa 'this' para diferenciar da val local
+                        set("code_challenge", challenge)
+                        set("code_challenge_method", "S256")
+                    }.build()
+                    
+                    logError("Authorization URL generated with PKCE and State")
                     logError("Attempting to open browser...")
                     
                     // Tenta abrir navegador com múltiplos métodos
@@ -221,11 +254,19 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                         try {
                             val os = System.getProperty("os.name").lowercase()
                             if (os.contains("win")) {
-                                logError("Trying Windows rundll32...")
-                                // rundll32 é mais seguro que cmd start para URLs com &
-                                Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler $authorizationUrl")
-                                browserOpened = true
-                                logError("Browser attempted via rundll32")
+                                logError("Trying Windows cmd /c start...")
+                                // Tenta primeiro cmd /c start que resolve melhor URLs no Win
+                                try {
+                                    val escapedUrl = authorizationUrl.replace("&", "^&")
+                                    Runtime.getRuntime().exec("cmd /c start $escapedUrl")
+                                    browserOpened = true
+                                    logError("Browser attempted via cmd /c start")
+                                } catch (e: Exception) {
+                                    logError("cmd /c start failed, trying rundll32...")
+                                    Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler $authorizationUrl")
+                                    browserOpened = true
+                                    logError("Browser attempted via rundll32")
+                                }
                             } else if (os.contains("mac")) {
                                 logError("Trying macOS open...")
                                 Runtime.getRuntime().exec(arrayOf("open", authorizationUrl))
@@ -260,9 +301,20 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                     val code = receiver.waitForCode()
                     logError("Authorization code received")
                     
-                    // Troca código por token
-                    val tokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectUri).execute()
-                    logError("Token obtained successfully")
+                    // Troca código por token, enviando o Verifier do PKCE
+                    val tokenResponse = com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest(
+                        HTTP_TRANSPORT,
+                        JSON_FACTORY,
+                        clientSecrets.details.tokenUri,
+                        clientSecrets.details.clientId,
+                        clientSecrets.details.clientSecret,
+                        code,
+                        redirectUri
+                    ).apply {
+                        set("code_verifier", verifier)
+                    }.execute()
+                    
+                    logError("Token obtained successfully with PKCE verification")
                     
                     flow.createAndStoreCredential(tokenResponse, "user")
                 }
