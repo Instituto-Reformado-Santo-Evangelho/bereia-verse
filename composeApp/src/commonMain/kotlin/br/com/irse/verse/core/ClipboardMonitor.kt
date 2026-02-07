@@ -1,6 +1,9 @@
 package br.com.irse.verse.core
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.awt.Toolkit
@@ -11,13 +14,15 @@ import java.io.InputStreamReader
 object ClipboardMonitor {
     fun textFlow(pollingIntervalMs: Long = 1000): Flow<String> = flow {
         var lastText = ""
-        while (true) {
+        while (currentCoroutineContext().isActive) {
             try {
                 val currentText = getClipboardText()
                 if (currentText.isNotBlank() && currentText != lastText) {
                     lastText = currentText
                     emit(currentText)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Ignore errors to prevent crash loop affecting main thread
             }

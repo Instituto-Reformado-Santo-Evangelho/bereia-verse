@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -48,6 +49,7 @@ import org.jetbrains.compose.resources.stringResource
 import verse.composeapp.generated.resources.*
 import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
+
 
 // App tabs imported from core
 
@@ -149,6 +151,7 @@ fun App(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
+                .graphicsLayer() // ADD THIS LINE
                 .onPreviewKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
                         val isCtrl = event.isCtrlPressed
@@ -178,6 +181,7 @@ fun App(
                     val headerShape = if (!isTransparent) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
                     Row(
                         modifier = Modifier.fillMaxWidth()
+                            .height(72.dp)
                             .clip(headerShape)
                             .background(VerseColors.PrimaryAmber)
                             .then(headerModifier) // Aplica o modificador de arrasto aqui

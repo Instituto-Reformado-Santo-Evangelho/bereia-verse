@@ -439,7 +439,6 @@ fun InlineNoteEditor(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .animateContentSize()
                 .background(MaterialTheme.colorScheme.surface)
                 .pointerInput(Unit) { detectTapGestures { } } 
         ) {

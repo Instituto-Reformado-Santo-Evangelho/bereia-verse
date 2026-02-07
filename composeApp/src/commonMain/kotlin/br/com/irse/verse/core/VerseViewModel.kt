@@ -85,7 +85,7 @@ class VerseViewModel(
     val fontFamily = settingsRepository.settings.map { it.fontFamily }.stateIn(viewModelScope, SharingStarted.Lazily, "sans-serif")
     val lineHeight = settingsRepository.settings.map { it.lineHeight }.stateIn(viewModelScope, SharingStarted.Lazily, 1.4f)
     val showFireAnimation = settingsRepository.settings.map { it.showFireAnimation }.stateIn(viewModelScope, SharingStarted.Lazily, true)
-    val animatedWindow = settingsRepository.settings.map { it.animatedWindow }.stateIn(viewModelScope, SharingStarted.Lazily, true)
+
     val signature = settingsRepository.settings.map { it.signature }.stateIn(viewModelScope, SharingStarted.Lazily, "")
     val showSnapshotAction = settingsRepository.settings.map { it.showSnapshotAction }.stateIn(viewModelScope, SharingStarted.Lazily, false)
     val isTransparent = settingsRepository.settings.map { it.isTransparent }.stateIn(viewModelScope, SharingStarted.Lazily, true)
@@ -426,7 +426,16 @@ class VerseViewModel(
             }
         }
         viewModelScope.launch {
-            _searchQuery.debounce(300).distinctUntilChanged().filter { it.length >= 2 }.collect { query -> performSearch(query) }
+            var lastQuery = ""
+            _searchQuery
+                .debounce(300)
+                .filter { it.length >= 2 }
+                .collect { query ->
+                    if (query != lastQuery) {
+                        lastQuery = query
+                        performSearch(query)
+                    }
+                }
         }
     }
 
@@ -437,9 +446,11 @@ class VerseViewModel(
 
     private fun pushToBackStack() {
         if (currentOriginalVerses.isNotEmpty()) {
-            backStack.push(currentOriginalVerses)
-            forwardStack.clear()
-            updateNavigationState()
+            if (backStack.isEmpty() || backStack.peek() != currentOriginalVerses) {
+                backStack.push(currentOriginalVerses)
+                forwardStack.clear()
+                updateNavigationState()
+            }
         }
     }
 
@@ -491,7 +502,7 @@ class VerseViewModel(
     private suspend fun performSearch(query: String) {
         try {
             if (_searchScope.value == SearchScope.NOTES) {
-                _noteSearchResults.value = notesRepository.searchNotes(query)
+                _noteSearchResults.value = withContext(dispatchers.default) { notesRepository.searchNotes(query) }
                 _searchResults.value = emptyList()
             } else {
                 _searchResults.value = searchUseCase.execute(query)
@@ -759,7 +770,7 @@ class VerseViewModel(
     fun updateFontFamily(family: String) { viewModelScope.launch { settingsRepository.updateFontFamily(family) } }
     fun updateLineHeight(height: Float) { viewModelScope.launch { settingsRepository.updateLineHeight(height) } }
     fun updateShowFireAnimation(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateShowFireAnimation(enabled) } }
-    fun updateAnimatedWindow(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateAnimatedWindow(enabled) } }
+
     fun updateSignature(text: String) { viewModelScope.launch { settingsRepository.updateSignature(text) } }
     fun updateShowSnapshotAction(enabled: Boolean) { viewModelScope.launch { settingsRepository.updateShowSnapshotAction(enabled) } }
     suspend fun updateIsTransparent(enabled: Boolean) {
@@ -814,5 +825,10 @@ class VerseViewModel(
             _isProcessing.value = true
             try { snapshotHandler.captureNoteAndSave(content, ref, sign, template) } catch (e: Exception) { _errorState.value = UiError(Res.string.error_note_capture, listOf(e.message ?: "")); e.printStackTrace() } finally { _isProcessing.value = false }
         }
+    }
+
+    fun dispose() {
+        syncManager.dispose()
+        viewModelScope.cancel()
     }
 }

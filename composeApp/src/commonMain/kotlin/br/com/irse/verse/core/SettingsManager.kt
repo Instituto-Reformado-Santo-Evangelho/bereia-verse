@@ -12,7 +12,7 @@ data class UserSettings(
     val fontFamily: String = "sans-serif",
     val lineHeight: Float = 1.4f,
     val showFireAnimation: Boolean = false,
-    val animatedWindow: Boolean = true,
+
     val signature: String = "",
     val showSnapshotAction: Boolean = false,
     val isTransparent: Boolean = false, // Padrão desabilitado no Windows

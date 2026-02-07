@@ -49,7 +49,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
     val lineHeight by viewModel.lineHeight.collectAsState()
     val selectedTemplate by viewModel.selectedTemplate.collectAsState()
     val showFireAnimation by viewModel.showFireAnimation.collectAsState()
-    val animatedWindow by viewModel.animatedWindow.collectAsState()
+
     val signature by viewModel.signature.collectAsState()
     val isTransparencySupported by viewModel.isTransparencySupported.collectAsState()
 
@@ -153,8 +153,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
         SettingsSection(title = stringResource(Res.string.settings_system)) {
             SettingsToggle(title = stringResource(Res.string.fire_animation), desc = stringResource(Res.string.fire_animation_desc), checked = showFireAnimation, textColor = textColor) { viewModel.updateShowFireAnimation(it) }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
-            SettingsToggle(title = stringResource(Res.string.window_animation), desc = stringResource(Res.string.window_animation_desc), checked = animatedWindow, textColor = textColor) { viewModel.updateAnimatedWindow(it) }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = textColor.copy(alpha = 0.05f))
+
             
             val showSnapshotAction by viewModel.showSnapshotAction.collectAsState()
             SettingsToggle(

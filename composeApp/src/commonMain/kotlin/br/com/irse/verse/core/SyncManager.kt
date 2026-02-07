@@ -2,6 +2,9 @@ package br.com.irse.verse.core
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.math.min
 
 class SyncManager(
     private val notesRepository: NotesRepository,
@@ -9,6 +12,11 @@ class SyncManager(
     private val dispatchers: CoroutineDispatchers
 ) {
     private val scope = CoroutineScope(dispatchers.io + SupervisorJob())
+    private val syncMutex = Mutex()
+    private var authSyncJob: Job? = null
+    private var periodicSyncJob: Job? = null
+    private val autoSyncIntervalMs = 5 * 60 * 1000L
+    private val maxBackoffMs = 30 * 60 * 1000L
     
     val syncState: StateFlow<CloudSyncState> = cloudProvider?.syncState ?: MutableStateFlow(CloudSyncState.IDLE).asStateFlow()
     val isAuthorized: StateFlow<Boolean> = cloudProvider?.isAuthorized ?: MutableStateFlow(false).asStateFlow()
@@ -19,51 +27,87 @@ class SyncManager(
     fun startAutoSync() {
         if (cloudProvider == null) return
         
-        scope.launch {
+        if (authSyncJob?.isActive != true) {
+            authSyncJob = scope.launch {
             // Monitora autorização e dispara sync inicial
             cloudProvider.isAuthorized.collect { authorized ->
-                if (authorized) {
-                    performFullSync()
+                    if (authorized) {
+                        performFullSync()
+                    }
                 }
             }
         }
 
         // Sync periódico a cada 5 minutos
-        scope.launch {
-            while (isActive) {
-                delay(5 * 60 * 1000)
-                if (cloudProvider.isAuthorized.value) {
-                    performFullSync()
+        if (periodicSyncJob?.isActive != true) {
+            periodicSyncJob = scope.launch {
+                var delayMs = autoSyncIntervalMs
+                while (isActive) {
+                    delay(delayMs)
+                    if (cloudProvider.isAuthorized.value) {
+                        performFullSync()
+                        delayMs = if (syncState.value == CloudSyncState.ERROR) {
+                            min(delayMs * 2, maxBackoffMs)
+                        } else {
+                            autoSyncIntervalMs
+                        }
+                    } else {
+                        delayMs = autoSyncIntervalMs
+                    }
                 }
             }
         }
     }
 
+    fun stopAutoSync() {
+        authSyncJob?.cancel()
+        periodicSyncJob?.cancel()
+        authSyncJob = null
+        periodicSyncJob = null
+    }
+
+    fun dispose() {
+        stopAutoSync()
+        scope.cancel()
+    }
+
     suspend fun performFullSync() = withContext(dispatchers.io) {
         if (cloudProvider == null || !cloudProvider.isAuthorized.value) return@withContext
-        
-        try {
+
+        syncMutex.withLock {
             // 1. Download das notas da nuvem
             val cloudNotes = cloudProvider.downloadNotes()
             val localNotes = notesRepository.notes.value
+            val localNotesById = localNotes.associateBy { it.id }
             
             // 2. Mesclar mudanças
-            // Lógica simples: updatedAt mais recente vence
             cloudNotes.forEach { cloudNote ->
-                val localNote = localNotes.find { it.id == cloudNote.id }
-                if (localNote == null || cloudNote.updatedAt > localNote.updatedAt) {
-                    notesRepository.saveNote(cloudNote.copy(syncStatus = SyncStatus.SYNCED))
+                val localNote = localNotesById[cloudNote.id]
+                when {
+                    localNote == null -> {
+                        notesRepository.saveNote(cloudNote.copy(syncStatus = SyncStatus.SYNCED))
+                    }
+                    localNote.syncStatus == SyncStatus.CONFLICT -> { }
+                    localNote.syncStatus == SyncStatus.PENDING -> {
+                        if (cloudNote.updatedAt > localNote.updatedAt && cloudNote.content != localNote.content) {
+                            notesRepository.saveNote(localNote.copy(syncStatus = SyncStatus.CONFLICT))
+                        } else if (cloudNote.updatedAt > localNote.updatedAt) {
+                            notesRepository.saveNote(cloudNote.copy(syncStatus = SyncStatus.SYNCED))
+                        }
+                    }
+                    cloudNote.updatedAt > localNote.updatedAt -> {
+                        notesRepository.saveNote(cloudNote.copy(syncStatus = SyncStatus.SYNCED))
+                    }
                 }
             }
             
             // 3. Upload de notas locais pendentes
             notesRepository.notes.value.filter { it.syncStatus == SyncStatus.PENDING }.forEach { localNote ->
                 cloudProvider.uploadNote(localNote)
-                notesRepository.saveNote(localNote.copy(syncStatus = SyncStatus.SYNCED))
+                if (syncState.value != CloudSyncState.ERROR) {
+                    notesRepository.saveNote(localNote.copy(syncStatus = SyncStatus.SYNCED))
+                }
             }
-            
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 }

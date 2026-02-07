@@ -2,9 +2,6 @@ package br.com.irse.verse
 
 import br.com.irse.verse.ui.theme.VerseColors
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -54,6 +51,7 @@ import org.koin.dsl.module
 import verse.composeapp.generated.resources.Res
 import verse.composeapp.generated.resources.logo
 import verse.composeapp.generated.resources.sys_icon
+import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 import java.awt.MouseInfo
 import java.awt.Rectangle
@@ -200,6 +198,7 @@ fun runApplication() {
     application {
     val defaultWidth = 400.dp
     val defaultHeight = 350.dp
+    val minWindowSize = DpSize(300.dp, 260.dp)
     val miniSize = 64.dp
     val screenPadding = 20
     
@@ -254,26 +253,15 @@ fun runApplication() {
 
     // Gerenciamento de altura - largura é FIXA exceto se usuário redimensionar manualmente
     var targetHeight by remember { mutableStateOf(defaultHeight) }
-    
     var currentWindow by remember { mutableStateOf<java.awt.Window?>(null) }
     
     // Dependencies via Koin
     val viewModel = remember { mutableStateOf<VerseViewModel?>(null) }
     
     // Coletar a preferência do ViewModel
-    val isAnimatedWindow by if (viewModel.value != null) {
-        viewModel.value!!.animatedWindow.collectAsState()
-    } else {
-        remember { mutableStateOf(true) }
-    }
+    val finalHeight = targetHeight
+    
 
-    val animatedHeight by animateDpAsState(
-        targetValue = targetHeight,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "WindowHeightAnimation"
-    )
-
-    val finalHeight = if (isAnimatedWindow) animatedHeight else targetHeight
     
     // Salva a posição sempre que mudar (modo normal)
     LaunchedEffect(state.position, state.size, isMiniMode) {
@@ -301,52 +289,11 @@ fun runApplication() {
     LaunchedEffect(finalHeight, isMiniMode) {
         if (!isMiniMode && isReady && currentWindow != null) {
             val win = currentWindow!!
-            // Usa os bounds do monitor em pixels (agora respeitando insets/barra de tarefas)
-            val bounds = getActiveMonitorBounds() ?: currentScreenBounds
-            
-            if (bounds != null) {
-                // SAFETY CHECK: Validação de posição inicial
-                // Se a janela estiver muito fora da área visível (ex: presa na barra de tarefas ou fora da tela)
-                // forçamos um reposicionamento seguro.
-                // Isso corrige o bug onde janelas transparentes (undecorated) restauram coordenadas erradas no Windows.
-                val safeYMin = bounds.y
-                val safeYMax = bounds.y + bounds.height - 20 // Pelo menos 20px visíveis
-                
-                if (win.y < safeYMin || win.y > safeYMax) {
-                     // Reposiciona para o padrão (canto superior direito)
-                     val newX = bounds.x + bounds.width - with(density) { screenPadding.dp.roundToPx() } - win.width
-                     val newY = bounds.y + with(density) { screenPadding.dp.roundToPx() }
-                     win.setLocation(newX, newY)
-                }
+            val targetHeightPx = with(density) { finalHeight.roundToPx() }
 
-                // Converte a altura alvo (DP) para Pixels Inteiros usando a densidade correta
-                val targetHeightPx = with(density) { finalHeight.roundToPx() }
-                
-                // Garante que a altura não ultrapasse o monitor
-                val maxAllowedHeight = bounds.height - (with(density) { screenPadding.dp.roundToPx() } * 2)
-                val safeHeightPx = if (targetHeightPx > maxAllowedHeight) maxAllowedHeight else targetHeightPx
-
-                // Obtém a largura nativa atual em Pixels
-                val currentWidthPx = win.width
-                
-                val currentYPx = win.y
-                var newYPx = currentYPx
-                val screenPaddingPx = with(density) { screenPadding.dp.roundToPx() }
-                
-                // Lógica de ancoragem no fundo (em Pixels) - Se a expansão for para baixo da tela, move para cima
-                if (currentYPx + safeHeightPx > bounds.y + bounds.height - screenPaddingPx) {
-                    newYPx = bounds.y + bounds.height - screenPaddingPx - safeHeightPx
-                }
-
-                // Garante que o topo também não saia da tela
-                if (newYPx < bounds.y + screenPaddingPx) {
-                    newYPx = bounds.y + screenPaddingPx
-                }
-                
-                // Aplica a atualização via AWT apenas se necessário
-                if (abs(win.height - safeHeightPx) > 1 || abs(win.y - newYPx) > 1) {
-                    win.setBounds(win.x, newYPx, currentWidthPx, safeHeightPx)
-                }
+            // Only set height if it's significantly different from the programmatic target
+            if (abs(win.height - targetHeightPx) > 1) {
+                win.setBounds(win.x, win.y, win.width, targetHeightPx)
             }
         }
     }
@@ -461,10 +408,7 @@ fun runApplication() {
                 
                 val newBounds = getActiveMonitorBounds()
                 
-                if (newBounds != null && (currentScreenBounds == null || newBounds != currentScreenBounds)) {
-                    currentScreenBounds = newBounds
-                    applyAnchorPosition(mini = false)
-                }
+
                 
                 isVisible = true
                 isMiniMode = false
@@ -483,7 +427,18 @@ fun runApplication() {
         }
     }
 
-    LaunchedEffect(isMiniMode) { if (isReady) applyAnchorPosition(mini = isMiniMode) }
+    LaunchedEffect(isMiniMode, currentWindow) {
+        currentWindow?.let { win ->
+            val minSize = if (isMiniMode) DpSize(miniSize, miniSize) else minWindowSize
+            val minWidthPx = with(density) { minSize.width.roundToPx() }
+            val minHeightPx = with(density) { minSize.height.roundToPx() }
+            win.minimumSize = Dimension(minWidthPx, minHeightPx)
+        }
+
+        if (isReady) {
+            applyAnchorPosition(mini = isMiniMode)
+        }
+    }
 
     DisposableEffect(Unit) { onDispose { stopKoin() } }
 
