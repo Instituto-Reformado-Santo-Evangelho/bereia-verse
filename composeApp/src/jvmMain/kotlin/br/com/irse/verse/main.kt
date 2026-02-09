@@ -198,7 +198,7 @@ fun runApplication() {
     application {
     val defaultWidth = 400.dp
     val defaultHeight = 350.dp
-    val minWindowSize = DpSize(300.dp, 260.dp)
+    val minWindowSize = DpSize(280.dp, 300.dp)
     val miniSize = 64.dp
     val screenPadding = 20
     
@@ -240,7 +240,7 @@ fun runApplication() {
         isMinimized = false // SEMPRE inicia maximizada/normal
     )
     
-    var isVisible by remember { mutableStateOf(true) }
+    var isVisible by remember { mutableStateOf(false) }
     var isMiniMode by remember { mutableStateOf(false) }
     var isReady by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -286,28 +286,35 @@ fun runApplication() {
     val density = androidx.compose.ui.platform.LocalDensity.current
 
     // Efeito de redimensionamento: Mantém largura estável, ajusta apenas altura
-    LaunchedEffect(finalHeight, isMiniMode) {
+    LaunchedEffect(finalHeight) {
         if (!isMiniMode && isReady && currentWindow != null) {
             val win = currentWindow!!
             val targetHeightPx = with(density) { finalHeight.roundToPx() }
 
             // Only set height if it's significantly different from the programmatic target
             if (abs(win.height - targetHeightPx) > 1) {
-                win.setBounds(win.x, win.y, win.width, targetHeightPx)
+                win.setSize(win.width, targetHeightPx)
             }
         }
     }
     
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
         val bounds = getActiveMonitorBounds() ?: currentScreenBounds ?: return
+        val densityVal = density.density
         
         if (mini) {
             // Salva posição atual antes de ir para mini mode
             lastNormalPosition = state.position
             lastNormalSize = state.size
             
-            val newX = bounds.x + bounds.width - screenPadding - miniSize.value.toInt()
-            val newY = bounds.y + (bounds.height / 2) - (miniSize.value.toInt() / 2)
+            // Converte pixels do monitor para Dp para posicionamento correto
+            val boundsX = bounds.x / densityVal
+            val boundsWidth = bounds.width / densityVal
+            val boundsY = bounds.y / densityVal
+            val boundsHeight = bounds.height / densityVal
+            
+            val newX = boundsX + boundsWidth - screenPadding - miniSize.value
+            val newY = boundsY + (boundsHeight / 2) - (miniSize.value / 2)
             state.position = WindowPosition(newX.dp, newY.dp)
             state.size = DpSize(miniSize, miniSize)
         } else {
@@ -317,8 +324,12 @@ fun runApplication() {
                 state.size = DpSize(lastNormalSize.width, height ?: lastNormalSize.height)
             } else {
                 // Primeira vez - usa posição padrão (canto superior direito do monitor ativo)
-                val newX = bounds.x + bounds.width - screenPadding - defaultWidth.value.toInt()
-                val newY = bounds.y + screenPadding
+                val boundsX = bounds.x / densityVal
+                val boundsWidth = bounds.width / densityVal
+                val boundsY = bounds.y / densityVal
+                
+                val newX = boundsX + boundsWidth - screenPadding - defaultWidth.value
+                val newY = boundsY + screenPadding
                 state.position = WindowPosition(newX.dp, newY.dp)
                 state.size = DpSize(defaultWidth, height ?: defaultHeight)
                 hasSetInitialPosition = true
@@ -364,6 +375,7 @@ fun runApplication() {
 
     LaunchedEffect(isReady) {
         if (isReady && viewModel.value != null) {
+            isVisible = true
             withContext(Dispatchers.IO) {
                 var lastText = ""
                 ClipboardMonitor.textFlow().collect { text ->
@@ -401,15 +413,6 @@ fun runApplication() {
         
         LaunchedEffect(detectedVerses) {
             if (detectedVerses.isNotEmpty()) {
-                if (isLinux && isVisible && !isInternalUpdate) {
-                    isVisible = false
-                    delay(150) 
-                }
-                
-                val newBounds = getActiveMonitorBounds()
-                
-
-                
                 isVisible = true
                 isMiniMode = false
                 
@@ -488,7 +491,7 @@ fun runApplication() {
         visible = isVisible,
         undecorated = true, 
         transparent = shouldBeTransparent, 
-        alwaysOnTop = false, 
+        alwaysOnTop = isLinux, 
         resizable = true // Permite redimensionamento
     ) {
         // O SideEffect que definia o tipo da janela foi removido para corrigir um crash
