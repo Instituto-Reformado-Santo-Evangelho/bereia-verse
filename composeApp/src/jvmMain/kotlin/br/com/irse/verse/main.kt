@@ -491,7 +491,7 @@ fun runApplication() {
         visible = isVisible,
         undecorated = true, 
         transparent = shouldBeTransparent, 
-        alwaysOnTop = isLinux, 
+        alwaysOnTop = isLinux || isWindows || isMac, 
         resizable = true // Permite redimensionamento
     ) {
         // O SideEffect que definia o tipo da janela foi removido para corrigir um crash
