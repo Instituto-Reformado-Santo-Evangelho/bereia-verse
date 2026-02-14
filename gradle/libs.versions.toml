@@ -29,11 +29,11 @@ compose-material3 = { module = "org.jetbrains.compose.material3:material3", vers
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-components-uiToolingPreview = { module = "org.jetbrains.compose.components:components-ui-tooling-preview", version.ref = "composeMultiplatform" }
-compose-desktop-currentOs = { module = "org.jetbrains.compose.desktop:desktop-jvm", version.ref = "composeMultiplatform" }
-compose-desktop-linux-x64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-linux-x64", version.ref = "composeMultiplatform" }
-compose-desktop-windows-x64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-windows-x64", version.ref = "composeMultiplatform" }
-compose-desktop-macos-x64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-macos-x64", version.ref = "composeMultiplatform" }
-compose-desktop-macos-arm64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-macos-arm64", version.ref = "composeMultiplatform" }
+# Nota: para compose desktop, usar compose.desktop.currentOs no build.gradle.kts
+skiko-linux-x64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", version = "0.9.7" }
+skiko-windows-x64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-windows-x64", version = "0.9.7" }
+skiko-macos-x64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-x64", version = "0.9.7" }
+skiko-macos-arm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64", version = "0.9.7" }
 
 [plugins]
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }

@@ -1,12 +1,11 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    // alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.shadow)
     alias(libs.plugins.msix)
@@ -25,7 +24,6 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
-            implementation(libs.compose.materialIconsExtended)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
@@ -42,15 +40,8 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
         }
         jvmMain.dependencies {
-            if (project.hasProperty("universal")) {
-                implementation(libs.compose.desktop.linux.x64)
-                implementation(libs.compose.desktop.windows.x64)
-                implementation(libs.compose.desktop.macos.x64)
-                implementation(libs.compose.desktop.macos.arm64)
-            } else {
-                implementation(libs.compose.desktop.currentOs)
-            }
-            
+            implementation(compose.desktop.currentOs)
+
             implementation(libs.kotlinx.coroutinesSwing)
             implementation("org.xerial:sqlite-jdbc:3.51.1.0")
             implementation("com.google.api-client:google-api-client:2.2.0")
