@@ -322,7 +322,7 @@ fun SnapshotLayout(
                      )
                      Spacer(modifier = Modifier.height(if (isPreview) 4.dp else 12.dp))
                      Text(
-                         text = "IRSE | Bereia Verse",
+                         text = "IRSE | Bereia Versículos",
                          style = MaterialTheme.typography.labelSmall.copy(
                              fontWeight = FontWeight.ExtraLight, 
                              fontSize = 10.sp * scaleFactor,

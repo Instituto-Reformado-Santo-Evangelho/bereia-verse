@@ -13,8 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +32,7 @@ import br.com.irse.verse.core.CloudSyncState
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Cloud
 import compose.icons.feathericons.CloudOff
+import compose.icons.feathericons.Check
 import br.com.irse.verse.ui.pointerHoverIconHand
 import kotlinx.coroutines.launch
 
@@ -86,7 +85,7 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
                         ) {
                             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(text = label, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = getFontFamily(key)), color = if (isSelected) VerseColors.PrimaryAmber else textColor)
-                                if (isSelected) Icon(Icons.Default.Check, null, tint = VerseColors.PrimaryAmber, modifier = Modifier.size(16.dp))
+                                if (isSelected) Icon(FeatherIcons.Check, null, tint = VerseColors.PrimaryAmber, modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -401,7 +400,7 @@ fun TemplateSelector(viewModel: VerseViewModel, selectedTemplate: VerseViewModel
                                 contentAlignment = Alignment.Center
                             ) { 
                                 Icon(
-                                    imageVector = Icons.Default.Check, 
+                                    imageVector = FeatherIcons.Check, 
                                     contentDescription = "Selecionado", 
                                     tint = VerseColors.PrimaryAmber, 
                                     modifier = Modifier
@@ -485,7 +484,7 @@ fun NoteTemplateSelector(viewModel: VerseViewModel, selectedTemplate: VerseViewM
                                 contentAlignment = Alignment.Center
                             ) { 
                                 Icon(
-                                    imageVector = Icons.Default.Check, 
+                                    imageVector = FeatherIcons.Check, 
                                     contentDescription = "Selecionado", 
                                     tint = VerseColors.PrimaryAmber, 
                                     modifier = Modifier

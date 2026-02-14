@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddComment
-import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +31,8 @@ import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.ChevronUp
 import compose.icons.feathericons.ChevronRight
 import compose.icons.feathericons.Minus
+import compose.icons.feathericons.FileText
+import compose.icons.feathericons.MessageSquare
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 import verse.composeapp.generated.resources.*
@@ -182,7 +181,7 @@ fun ContinuousVerseItem(request: VerseRequest, content: String?, textColor: Colo
             Text(text = annotatedString, style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize.sp, fontFamily = fontFamily), lineHeight = (fontSize * lineHeight).sp, color = textColor)
         }
         IconButton(onClick = onNoteClick, modifier = Modifier.size(32.dp).pointerHoverIconHand()) {
-            Icon(imageVector = if (hasNote) Icons.Default.EditNote else Icons.Default.AddComment, contentDescription = null, tint = if (hasNote) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.2f), modifier = Modifier.size(20.dp))
+            Icon(imageVector = if (hasNote) FeatherIcons.FileText else FeatherIcons.MessageSquare, contentDescription = null, tint = if (hasNote) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.2f), modifier = Modifier.size(20.dp))
         }
     }
 }

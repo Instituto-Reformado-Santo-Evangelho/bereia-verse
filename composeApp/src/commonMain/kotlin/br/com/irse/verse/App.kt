@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowCircleLeft
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,13 +23,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import br.com.irse.verse.ui.copyToClipboard
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.irse.verse.core.AppTab
+import kotlinx.coroutines.launch
 import br.com.irse.verse.core.VerseViewModel
 import br.com.irse.verse.ui.components.*
 import br.com.irse.verse.ui.onHover
@@ -43,6 +42,8 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
 import compose.icons.feathericons.ArrowRight
 import compose.icons.feathericons.Camera
+import compose.icons.feathericons.X
+import compose.icons.feathericons.Edit3
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -76,7 +77,8 @@ fun App(
     val isNoteEditorOpen by viewModel.isNoteEditorOpen.collectAsState()
     val showSnapshotAction by viewModel.showSnapshotAction.collectAsState()
 
-    val clipboard = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
+    val clipboard = LocalClipboard.current
     var currentTab by remember { mutableStateOf(AppTab.VERSES) }
 
     // Navigation Request Listener (e.g. from Smart Links)
@@ -230,7 +232,7 @@ fun App(
                                     .background(VerseColors.HeaderContentColor.copy(alpha = 0.1f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                val icon = if (currentTab != AppTab.VERSES) Icons.Default.ArrowCircleLeft else Icons.Default.Close
+                                val icon = if (currentTab != AppTab.VERSES) FeatherIcons.ArrowLeft else FeatherIcons.X
                                 Icon(icon, contentDescription = null, tint = VerseColors.HeaderContentColor, modifier = Modifier.size(20.dp))
                             }
                         }
@@ -320,7 +322,7 @@ fun App(
                             // 4. Notas
                             var isNotesHovered by remember { mutableStateOf(false) }
                             Surface(color = if (currentTab == AppTab.NOTES || isNotesHovered) VerseColors.PrimaryAmber.copy(alpha = 0.2f) else Color.Transparent, shape = RoundedCornerShape(8.dp), modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isNotesHovered = true }, onExit = { isNotesHovered = false }).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { currentTab = AppTab.NOTES }) {
-                                Box(modifier = Modifier.padding(8.dp)) { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = if (currentTab == AppTab.NOTES || isNotesHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) }
+                                Box(modifier = Modifier.padding(8.dp)) { Icon(imageVector = FeatherIcons.Edit3, contentDescription = null, tint = if (currentTab == AppTab.NOTES || isNotesHovered) VerseColors.PrimaryAmber else textColor.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) }
                             }
 
                             // 5. Pesquisa
@@ -359,7 +361,7 @@ fun App(
                                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).pointerHoverIconHand().onHover(onEnter = { isCopyHovered = true }, onExit = { isCopyHovered = false })
                                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { 
                                             val text = viewModel.formatVersesForClipboard(detectedVerses)
-                                            clipboard.setText(AnnotatedString(text))
+                                            scope.launch { copyToClipboard(clipboard, text) }
                                             viewModel.showToast("$copiedLabel ${viewModel.getConsolidatedReference(detectedVerses)}")
                                         }
                                 ) {
@@ -407,7 +409,7 @@ fun App(
                     Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)).clickable { viewModel.clearError() }, contentAlignment = Alignment.Center) {
                         Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(12.dp), tonalElevation = 4.dp, modifier = Modifier.padding(32.dp).clickable(enabled = false) { }) {
                             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Icon(imageVector = Icons.Default.Close, contentDescription = null, tint = VerseColors.ErrorRed, modifier = Modifier.size(32.dp))
+                                Icon(imageVector = FeatherIcons.X, contentDescription = null, tint = VerseColors.ErrorRed, modifier = Modifier.size(32.dp))
                                 Text(text = stringResource(Res.string.error_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 
                                 val errorMessage = stringResource(uiError.resource, *uiError.args.toTypedArray())

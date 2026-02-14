@@ -9,10 +9,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +30,10 @@ import br.com.irse.verse.core.VerseViewModel
 import br.com.irse.verse.ui.components.FireAnimation
 import br.com.irse.verse.ui.pointerHoverIconHand
 import br.com.irse.verse.ui.theme.VerseColors
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.X
+import compose.icons.feathericons.Search
+import compose.icons.feathericons.Edit3
 import org.jetbrains.compose.resources.stringResource
 import verse.composeapp.generated.resources.*
 
@@ -121,10 +121,10 @@ fun SearchView(
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
-                            Icon(Icons.Default.Close, contentDescription = null, tint = textColor.copy(alpha = 0.4f))
+                            Icon(FeatherIcons.X, contentDescription = null, tint = textColor.copy(alpha = 0.4f))
                         }
                     } else {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = VerseColors.PrimaryAmber)
+                        Icon(FeatherIcons.Search, contentDescription = null, tint = VerseColors.PrimaryAmber)
                     }
                 }
             )
@@ -301,7 +301,7 @@ fun NoteResultItem(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Edit, null, tint = VerseColors.PrimaryAmber.copy(alpha = 0.7f), modifier = Modifier.size(12.dp))
+                Icon(FeatherIcons.Edit3, null, tint = VerseColors.PrimaryAmber.copy(alpha = 0.7f), modifier = Modifier.size(12.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = ref, 

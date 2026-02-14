@@ -6,26 +6,30 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.composeHotReload)
+    // alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.shadow)
     alias(libs.plugins.msix)
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
     
-    jvm()
+    jvm {
+        compilerOptions {
+            freeCompilerArgs.add("-Xexpect-actual-classes")
+        }
+    }
     
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.materialIconsExtended)
-            implementation(compose.material3)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.materialIconsExtended)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.components.resources)
+            implementation(libs.compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.serialization.json)
@@ -39,12 +43,12 @@ kotlin {
         }
         jvmMain.dependencies {
             if (project.hasProperty("universal")) {
-                implementation(compose.desktop.linux_x64)
-                implementation(compose.desktop.windows_x64)
-                implementation(compose.desktop.macos_x64)
-                implementation(compose.desktop.macos_arm64)
+                implementation(libs.compose.desktop.linux.x64)
+                implementation(libs.compose.desktop.windows.x64)
+                implementation(libs.compose.desktop.macos.x64)
+                implementation(libs.compose.desktop.macos.arm64)
             } else {
-                implementation(compose.desktop.currentOs)
+                implementation(libs.compose.desktop.currentOs)
             }
             
             implementation(libs.kotlinx.coroutinesSwing)

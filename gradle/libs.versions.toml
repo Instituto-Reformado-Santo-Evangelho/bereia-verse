@@ -1,15 +1,14 @@
 [versions]
-agp = "8.13.2"
 androidx-lifecycle = "2.8.4"
-composeHotReload = "1.0.0"
-composeMultiplatform = "1.9.3"
-kotlin = "2.3.0"
-kotlinx-coroutines = "1.10.2"
-kotlinx-serialization = "1.9.0"
+composeHotReload = "1.0.0-alpha01"
+composeMultiplatform = "1.11.0-alpha02"
+kotlin = "2.3.10"
+kotlinx-coroutines = "1.10.1"
+kotlinx-serialization = "1.8.0"
 shadow = "8.1.1"
-koin = "3.5.3"
-koin-compose = "1.1.2"
-msix = "0.2.0"
+koin = "4.0.0"
+koin-compose = "4.0.0"
+msix = "0.1.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -22,9 +21,21 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 feather-icons = { module = "br.com.devsrsouza.compose.icons:feather", version = "1.1.1" }
 
+# Compose Multiplatform
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+compose-materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeMultiplatform" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+compose-components-uiToolingPreview = { module = "org.jetbrains.compose.components:components-ui-tooling-preview", version.ref = "composeMultiplatform" }
+compose-desktop-currentOs = { module = "org.jetbrains.compose.desktop:desktop-jvm", version.ref = "composeMultiplatform" }
+compose-desktop-linux-x64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-linux-x64", version.ref = "composeMultiplatform" }
+compose-desktop-windows-x64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-windows-x64", version.ref = "composeMultiplatform" }
+compose-desktop-macos-x64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-macos-x64", version.ref = "composeMultiplatform" }
+compose-desktop-macos-arm64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-macos-arm64", version.ref = "composeMultiplatform" }
+
 [plugins]
-androidApplication = { id = "com.android.application", version.ref = "agp" }
-androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

@@ -17,6 +17,7 @@ actual fun Modifier.onHover(onEnter: () -> Unit, onExit: () -> Unit): Modifier =
     .onPointerEvent(PointerEventType.Enter) { onEnter() }
     .onPointerEvent(PointerEventType.Exit) { onExit() }
 
+@OptIn(ExperimentalComposeUiApi::class)
 actual suspend fun copyToClipboard(clipboard: Clipboard, text: String) {
     clipboard.setClipEntry(ClipEntry(AnnotatedString(text)))
 }

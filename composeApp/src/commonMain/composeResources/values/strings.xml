@@ -30,7 +30,7 @@ or by keywords (Ex: love, faith)</string>
     <string name="font_serif">Classic (Serif)</string>
     <string name="font_monospace">Machine (Mono)</string>
     <string name="font_cursive">Handwritten (Script)</string>
-    <string name="about_desc_1">Bereia Verse is a simple popup that displays biblical references detected in your computer's clipboard.</string>
+    <string name="about_desc_1">Bereia Versículos is a simple popup that displays biblical references detected in your computer's clipboard.</string>
     <string name="about_desc_2">When you copy a reference like John 1:1 via right-click or Ctrl+C shortcut, the popup with the biblical text will be displayed immediately.</string>
     <string name="about_acf_title">ABOUT THE ACF VERSION</string>
     <string name="about_acf_desc">We use the Almeida Corrigida Fiel Bible version for its fidelity to the original text and the inalienable assumption that God, by divine providence, has preserved the sacred text and that no part of it is lost or in doubt.</string>

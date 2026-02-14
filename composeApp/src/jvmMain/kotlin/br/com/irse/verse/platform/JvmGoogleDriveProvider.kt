@@ -27,10 +27,11 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.InputStreamReader
+import verse.composeapp.generated.resources.Res
 
 class JvmGoogleDriveProvider : CloudSyncProvider {
     private val json = Json { ignoreUnknownKeys = true }
-    private val APPLICATION_NAME = "Bereia Verse"
+    private val APPLICATION_NAME = "Bereia Versículos"
     private val JSON_FACTORY = GsonFactory.getDefaultInstance()
     private val SCOPES = listOf(DriveScopes.DRIVE_APPDATA)
     
@@ -72,7 +73,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         }
     }
 
-    private fun restoreSession() {
+    private suspend fun restoreSession() {
         try {
             val secretsStream = getClientSecretsStream() ?: return
             val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
@@ -101,7 +102,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         }
     }
     
-    private fun getClientSecretsStream(): java.io.InputStream? {
+    private suspend fun getClientSecretsStream(): java.io.InputStream? {
         // 1. Tenta carregar da variável de ambiente GOOGLE_CLIENT_SECRETS
         val envSecrets = System.getenv("GOOGLE_CLIENT_SECRETS")
         if (!envSecrets.isNullOrBlank()) {
@@ -109,22 +110,32 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             return envSecrets.byteInputStream(Charsets.UTF_8)
         }
         
-        // 2. Tenta carregar do recurso embutido - PRIORIDADE (composeResources/files/)
+        // 2. Tenta carregar do recurso embutido via Res (Compose Resources 1.6+)
+        try {
+            logError("Trying to load client_secrets.json from Res.readBytes...")
+            val bytes = Res.readBytes("files/client_secrets.json")
+            logError("Credentials loaded successfully from Res.readBytes(files/client_secrets.json)")
+            return bytes.inputStream()
+        } catch (e: Exception) {
+            logError("Res.readBytes failed: ${e.message}")
+        }
+
+        // 3. Fallback para getResourceAsStream (Legacy/Alternative paths)
         val resourcePaths = listOf(
             "/composeResources/verse.composeapp.generated.resources/files/client_secrets.json",
-            "/files/client_secrets.json",  // Compose Resources
-            "/client_secrets.json"          // Resources raiz (fallback)
+            "/files/client_secrets.json",
+            "/client_secrets.json"
         )
         
         for (path in resourcePaths) {
             val resourceStream = object {}.javaClass.getResourceAsStream(path)
             if (resourceStream != null) {
-                logError("Loading credentials from embedded resources: $path")
+                logError("Loading credentials from getResourceAsStream: $path")
                 return resourceStream
             }
         }
         
-        // 3. Tenta carregar do arquivo especificado em GOOGLE_CLIENT_SECRETS_PATH
+        // 4. Tenta carregar do arquivo especificado em GOOGLE_CLIENT_SECRETS_PATH
         val envPath = System.getenv("GOOGLE_CLIENT_SECRETS_PATH")
         if (!envPath.isNullOrBlank()) {
             val envFile = File(envPath)
@@ -134,7 +145,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             }
         }
 
-        // 4. Fallback para arquivos externos (Desenvolvimento/Override)
+        // 5. Fallback para arquivos externos (Desenvolvimento/Override)
         val possibilities = listOf(
             File(appConfigDir, "client_secrets.json"),
             File(System.getProperty("user.dir"), "client_secrets.json"),
@@ -144,16 +155,19 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         val foundFile = possibilities.find { it.exists() }
         if (foundFile != null) {
             logError("Loading credentials from file: ${foundFile.absolutePath}")
+        } else {
+            logError("NO client_secrets.json FOUND in any location!")
         }
         return foundFile?.inputStream()
     }
 
     private fun logError(message: String, error: Throwable? = null) {
         try {
+            if (!appConfigDir.exists()) appConfigDir.mkdirs()
             val logFile = File(appConfigDir, "auth_debug.txt")
             val timestamp = java.time.LocalDateTime.now()
             val stackTrace = error?.stackTraceToString() ?: ""
-            logFile.appendText("[$timestamp] $message\n$stackTrace\n\n")
+            logFile.appendText("[$timestamp] $message\n$stackTrace\n")
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -161,14 +175,14 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
 
     override suspend fun authorize() = withContext(Dispatchers.IO) {
         try {
-            logError("Starting authorization process...")
+            logError("--- Starting authorization process ---")
             val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
             
             val secretsStream = getClientSecretsStream()
             if (secretsStream == null) {
-                val msg = "client_secrets.json NOT FOUND. Searched in: Resources, ${appConfigDir.absolutePath}, ${System.getProperty("user.dir")}"
+                val msg = "CRITICAL: client_secrets.json NOT FOUND. Searched in: Res (Compose Resources), Resources, ${appConfigDir.absolutePath}, ${System.getProperty("user.dir")}"
                 logError(msg)
-                throw Exception("Arquivo de credenciais (client_secrets.json) não encontrado.\nVerifique o arquivo auth_debug.txt na pasta do aplicativo.")
+                throw Exception("Arquivo de credenciais (client_secrets.json) não encontrado.\nVerifique o arquivo auth_debug.txt na pasta do aplicativo (%APPDATA%\\BereiaVerse).")
             }
 
             logError("Secrets file found. Loading...")
@@ -210,12 +224,12 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                     val secureRandom = java.security.SecureRandom()
                     val verifierBytes = ByteArray(32)
                     secureRandom.nextBytes(verifierBytes)
-                    val verifier = com.google.api.client.util.Base64.encodeBase64URLSafeString(verifierBytes)
+                    val verifier = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(verifierBytes)
                     
                     // Challenge: Hash SHA-256 do verifier
                     val messageDigest = java.security.MessageDigest.getInstance("SHA-256")
                     val hash = messageDigest.digest(verifier.toByteArray(Charsets.US_ASCII))
-                    val challenge = com.google.api.client.util.Base64.encodeBase64URLSafeString(hash)
+                    val challenge = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(hash)
 
                     val authorizationUrl = com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl(
                         clientSecrets.details.authUri,
@@ -249,7 +263,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                         logError("Desktop.browse() failed: ${e.message}")
                     }
                     
-                    // Método 2: Runtime.exec com comandos específicos de OS (Fallback)
+                    // Método 2: ProcessBuilder com comandos específicos de OS (Fallback)
                     if (!browserOpened) {
                         try {
                             val os = System.getProperty("os.name").lowercase()
@@ -258,18 +272,18 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                                 // Tenta primeiro cmd /c start que resolve melhor URLs no Win
                                 try {
                                     val escapedUrl = authorizationUrl.replace("&", "^&")
-                                    Runtime.getRuntime().exec("cmd /c start $escapedUrl")
+                                    ProcessBuilder("cmd", "/c", "start", escapedUrl).start()
                                     browserOpened = true
                                     logError("Browser attempted via cmd /c start")
                                 } catch (e: Exception) {
                                     logError("cmd /c start failed, trying rundll32...")
-                                    Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler $authorizationUrl")
+                                    ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", authorizationUrl).start()
                                     browserOpened = true
                                     logError("Browser attempted via rundll32")
                                 }
                             } else if (os.contains("mac")) {
                                 logError("Trying macOS open...")
-                                Runtime.getRuntime().exec(arrayOf("open", authorizationUrl))
+                                ProcessBuilder("open", authorizationUrl).start()
                                 browserOpened = true
                                 logError("Browser opened via open")
                             } else {
@@ -277,7 +291,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                                 val commands = listOf("xdg-open", "gnome-open", "kde-open")
                                 for (cmd in commands) {
                                     try {
-                                        Runtime.getRuntime().exec(arrayOf(cmd, authorizationUrl))
+                                        ProcessBuilder(cmd, authorizationUrl).start()
                                         browserOpened = true
                                         logError("Browser opened via $cmd")
                                         break
@@ -285,7 +299,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                                 }
                             }
                         } catch (e: Exception) {
-                            logError("Runtime.exec failed: ${e.message}")
+                            logError("ProcessBuilder failed: ${e.message}")
                             e.printStackTrace()
                         }
                     }

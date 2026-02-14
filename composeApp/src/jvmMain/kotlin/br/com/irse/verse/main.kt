@@ -187,12 +187,11 @@ fun runApplication() {
         }
     }
 
-    if (isWineDetected) {
-        System.setProperty("verse.isWine", "true")
-        // Força renderização via software para evitar crashes (X_CopyArea)
-        System.setProperty("sun.java2d.xrender", "false")
-        System.setProperty("sun.java2d.d3d", "false")
-        System.setProperty("skiko.renderApi", "SOFTWARE")
+    if (isWindows && !isWineDetected) {
+        // Estabiliza renderização em Windows 11/10
+        System.setProperty("skiko.renderApi", "DIRECT3D")
+        // Melhora a performance de janelas transparentes
+        System.setProperty("sun.java2d.d3d", "true")
     }
 
     application {
@@ -546,11 +545,10 @@ fun runApplication() {
                                 },
                                 onDragEnd = {
                                     val awtWindow = window
-                                    val density = this.density
-                                    state.position = WindowPosition(
-                                        (awtWindow.x / density).dp,
-                                        (awtWindow.y / density).dp
-                                    )
+                                    val currentDensity = this.density
+                                    state.position = with(currentDensity) {
+                                        WindowPosition(awtWindow.x.toDp(), awtWindow.y.toDp())
+                                    }
                                 }
                             ) { change, _ ->
                                 change.consume()
@@ -563,13 +561,6 @@ fun runApplication() {
                                 val newY = startWindowY + deltaY
                                 
                                 window.setLocation(newX, newY)
-                                
-                                // Sincroniza o estado do Compose em tempo real para evitar conflitos com a ancoragem automática
-                                val density = this.density
-                                state.position = WindowPosition(
-                                    (newX / density).dp,
-                                    (newY / density).dp
-                                )
                             }
                         }
                     )
