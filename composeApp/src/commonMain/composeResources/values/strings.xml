@@ -17,8 +17,8 @@
 or by keywords (Ex: love, faith)</string>
     <string name="text_not_available">Text not available.</string>
     <string name="books_detected">Books</string>
-    <string name="app_version">Version 1.1.0</string>
-    <string name="copyright">© 2025 Reformed Holy Gospel Institute - IRSE</string>
+    <string name="app_version">Version 1.2.0</string>
+    <string name="copyright">© 2026 Reformed Holy Gospel Institute - IRSE</string>
     <string name="font_size">Font Size</string>
     <string name="line_height">Line Height</string>
     <string name="fire_animation">Fire Animation</string>
@@ -42,7 +42,7 @@ or by keywords (Ex: love, faith)</string>
     <string name="shortcut_minimize">Ctrl + M / Esc : Hide</string>
     <string name="shortcut_search">Ctrl + F : Search</string>
     <string name="shortcut_history">Ctrl + H : History</string>
-    <string name="shortcut_verses">Ctrl + V : Verses</string>
+    <string name="shortcut_verses">Ctrl + B : Verses</string>
     <string name="shortcut_settings">Ctrl + S : Settings</string>
     <string name="shortcut_about">Ctrl + I : About</string>
         <string name="back">Back</string>

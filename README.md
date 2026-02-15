@@ -1,4 +1,4 @@
-# IRSE | Bereia Verse
+# IRSE | Bereia Versículos
 
 Um leitor de versículos bíblicos (Almeida Corrigida Fiel) moderno e flutuante, construído com Kotlin Multiplatform (Compose Desktop + Android). Detecta automaticamente referências bíblicas na área de transferência (ex: `Jo 3:16`) e exibe o texto instantaneamente.
 

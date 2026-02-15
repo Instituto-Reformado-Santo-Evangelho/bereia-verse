@@ -219,7 +219,7 @@ fun App(
                             Key.F -> if (isCtrl) { currentTab = AppTab.SEARCH; true } else false
                             Key.H -> if (isCtrl) { currentTab = AppTab.HISTORY; true } else false
                             Key.N -> if (isCtrl) { currentTab = AppTab.NOTES; true } else false
-                            Key.V -> if (isCtrl) { currentTab = AppTab.VERSES; true } else false
+                            Key.B -> if (isCtrl) { currentTab = AppTab.VERSES; true } else false
                             Key.S -> if (isCtrl) { currentTab = AppTab.SETTINGS; true } else false
                             Key.I -> if (isCtrl) { currentTab = AppTab.ABOUT; true } else false
                             Key.DirectionLeft -> if (isCtrl && canGoBack) { viewModel.navigateBack(); true } else false

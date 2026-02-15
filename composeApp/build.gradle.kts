@@ -67,7 +67,7 @@ compose.desktop {
             // Usamos nome padronizado bereiaverse para todas as plataformas
             packageName = "bereiaverse"
             
-            packageVersion = "1.1.0"
+            packageVersion = "1.2.0"
             description = "Bereia Versículos | IRSE - Leitor Bíblico Automático com anotações"
             vendor = "IRSE"
             copyright = "© 2026 Instituto Reformado Santo Evangelho - IRSE"
@@ -109,7 +109,7 @@ msix {
         publisher.set("CN=B41FD2FB-AD80-4515-8823-5F91386585CC")
         publisherDisplayName.set("Organização IRSE") // Fornecido pela Microsoft
         identityName.set("OrganizaoIRSE.BereiaVersculos") // Normalizado pela Microsoft
-        version.set("1.1.1.0")
+        version.set("1.2.0.0")
         appId.set("BereiaVerse")
         processorArchitecture.set("x64")
         description.set("Bereia Versículos | IRSE - Leitor Bíblico Automático com anotações")

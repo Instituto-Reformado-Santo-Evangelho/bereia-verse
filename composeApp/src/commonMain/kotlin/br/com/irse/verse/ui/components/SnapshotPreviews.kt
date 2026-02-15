@@ -129,7 +129,7 @@ fun NoteSnapshotLayout(
         // Conteúdo
         Column(
             modifier = Modifier.fillMaxSize().padding(padding),
-            horizontalAlignment = Alignment.Start,
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             if (!reference.isNullOrBlank()) {
@@ -142,7 +142,7 @@ fun NoteSnapshotLayout(
                         letterSpacing = 2.sp * scaleFactor
                     ),
                     color = template.contentColor.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(spacingRef))
             }
@@ -156,31 +156,29 @@ fun NoteSnapshotLayout(
                     fontWeight = FontWeight.Medium
                 ),
                 color = template.contentColor,
-                textAlign = TextAlign.Start
+                textAlign = TextAlign.Center
             )
 
             if (!signature.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(spacingSig))
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    Column(horizontalAlignment = Alignment.End, modifier = Modifier.fillMaxWidth()) {
-                        HorizontalDivider(
-                            modifier = Modifier.fillMaxWidth(0.6f),
-                            thickness = 1.dp * scaleFactor,
-                            color = template.contentColor.copy(alpha = 0.3f)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp * scaleFactor))
-                        Text(
-                            text = signature,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontSize = 18.sp * scaleFactor,
-                                fontFamily = fontFamily,
-                                fontStyle = FontStyle.Italic,
-                                fontWeight = FontWeight.Normal
-                            ),
-                            color = template.contentColor.copy(alpha = 0.85f),
-                            textAlign = TextAlign.End
-                        )
-                    }
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(0.3f),
+                        thickness = 1.dp * scaleFactor,
+                        color = template.contentColor.copy(alpha = 0.3f)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp * scaleFactor))
+                    Text(
+                        text = signature,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontSize = 18.sp * scaleFactor,
+                            fontFamily = fontFamily,
+                            fontStyle = FontStyle.Italic,
+                            fontWeight = FontWeight.Normal
+                        ),
+                        color = template.contentColor.copy(alpha = 0.85f),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
@@ -258,7 +256,7 @@ fun SnapshotLayout(
             // Conteúdo
             Column(
                 modifier = Modifier.align(Alignment.Center).padding(vertical = contentPaddingV),
-                horizontalAlignment = if (template.textAlignment == TextAlign.Start) Alignment.Start else Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 // Texto dos Versículos
@@ -277,7 +275,7 @@ fun SnapshotLayout(
                             letterSpacing = 0.5.sp * scaleFactor
                         ),
                         color = template.contentColor,
-                        textAlign = template.textAlignment,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -304,7 +302,7 @@ fun SnapshotLayout(
                             letterSpacing = 2.sp * scaleFactor
                         ),
                         color = template.contentColor.copy(alpha = 0.75f),
-                        textAlign = template.textAlignment
+                        textAlign = TextAlign.Center
                     )
                 }
             }

@@ -8,7 +8,7 @@
   <Identity
     Name="OrganizaoIRSE.BereiaVersculos"
     Publisher="CN=B41FD2FB-AD80-4515-8823-5F91386585CC"
-    Version="1.1.1.0"
+    Version="1.2.0.0"
     ProcessorArchitecture="x64" />
 
   <Properties>

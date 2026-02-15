@@ -5,7 +5,7 @@ package br.com.irse.verse.core
  * Mensagens visuais foram movidas para strings.xml
  */
 object Strings {
-    const val APP_VERSION = "Versão 1.1.0"
+    const val APP_VERSION = "Versão 1.2.0"
     
     // Links Externos
     const val ABOUT_ACF_URL = "https://biblias.com.br/artigo/introducao-a-edicao-almeida-corrigida-fiel-acf"

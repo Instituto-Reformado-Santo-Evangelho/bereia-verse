@@ -273,7 +273,7 @@ fun runApplication(args: Array<String>, deepLinkHandler: br.com.irse.verse.core.
     val defaultHeight = 350.dp
     val minWindowSize = DpSize(280.dp, 300.dp)
     val miniSize = 64.dp
-    val screenPadding = 20
+    val screenPadding = 4
     
     // Carrega configuração salva
     val savedSettings = remember { SettingsManager.getSettingsSync() }
@@ -351,8 +351,6 @@ fun runApplication(args: Array<String>, deepLinkHandler: br.com.irse.verse.core.
         }
     }
 
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    
     // Animação da altura
     val animatedHeight by androidx.compose.animation.core.animateDpAsState(
         targetValue = targetHeight,
@@ -367,29 +365,52 @@ fun runApplication(args: Array<String>, deepLinkHandler: br.com.irse.verse.core.
     LaunchedEffect(animatedHeight) {
         if (!isMiniMode && isReady && currentWindow != null) {
             val win = currentWindow!!
-            val targetHeightPx = with(density) { animatedHeight.roundToPx() }
+            val targetHeightPx = animatedHeight.value.toInt()
 
             // Só ajusta se houver diferença relevante para evitar jitter
             if (abs(win.height - targetHeightPx) > 1) {
-                win.setSize(win.width, targetHeightPx)
+                // Pega os limites do monitor atual para garantir que não saia da tela
+                val bounds = getActiveMonitorBounds() ?: currentScreenBounds
+                
+                if (bounds != null) {
+                    val screenTop = bounds.y + screenPadding
+                    val screenBottom = bounds.y + bounds.height - screenPadding
+                    
+                    // Garante que a altura não seja maior que o próprio monitor
+                    val maxHeight = bounds.height - (screenPadding * 2)
+                    val finalHeightPx = targetHeightPx.coerceAtMost(maxHeight)
+
+                    // Se a nova altura fizer a janela passar do fundo da tela, move ela para cima
+                    if (win.y + finalHeightPx > screenBottom) {
+                        val newY = screenBottom - finalHeightPx
+                        val adjustedY = newY.coerceAtLeast(screenTop)
+                        
+                        // Atualiza posição no estado do Compose (Dp) para manter sincronia
+                        state.position = WindowPosition(state.position.x, adjustedY.dp)
+                        win.setLocation(win.x, adjustedY)
+                    }
+                    
+                    win.setSize(win.width, finalHeightPx)
+                } else {
+                    win.setSize(win.width, targetHeightPx)
+                }
             }
         }
     }
     
     fun applyAnchorPosition(mini: Boolean, height: Dp? = null) {
         val bounds = getActiveMonitorBounds() ?: currentScreenBounds ?: return
-        val densityVal = density.density
         
         if (mini) {
             // Salva posição atual antes de ir para mini mode
             lastNormalPosition = state.position
             lastNormalSize = state.size
             
-            // Converte pixels do monitor para Dp para posicionamento correto
-            val boundsX = bounds.x / densityVal
-            val boundsWidth = bounds.width / densityVal
-            val boundsY = bounds.y / densityVal
-            val boundsHeight = bounds.height / densityVal
+            // Pixels do monitor já são lógicos no Windows/Compose
+            val boundsX = bounds.x
+            val boundsWidth = bounds.width
+            val boundsY = bounds.y
+            val boundsHeight = bounds.height
             
             val newX = boundsX + boundsWidth - screenPadding - miniSize.value
             val newY = boundsY + (boundsHeight / 2) - (miniSize.value / 2)
@@ -402,9 +423,9 @@ fun runApplication(args: Array<String>, deepLinkHandler: br.com.irse.verse.core.
                 state.size = DpSize(lastNormalSize.width, height ?: lastNormalSize.height)
             } else {
                 // Primeira vez - usa posição padrão (canto superior direito do monitor ativo)
-                val boundsX = bounds.x / densityVal
-                val boundsWidth = bounds.width / densityVal
-                val boundsY = bounds.y / densityVal
+                val boundsX = bounds.x
+                val boundsWidth = bounds.width
+                val boundsY = bounds.y
                 
                 val newX = boundsX + boundsWidth - screenPadding - defaultWidth.value
                 val newY = boundsY + screenPadding
@@ -527,9 +548,7 @@ fun runApplication(args: Array<String>, deepLinkHandler: br.com.irse.verse.core.
     LaunchedEffect(isMiniMode, currentWindow) {
         currentWindow?.let { win ->
             val minSize = if (isMiniMode) DpSize(miniSize, miniSize) else minWindowSize
-            val minWidthPx = with(density) { minSize.width.roundToPx() }
-            val minHeightPx = with(density) { minSize.height.roundToPx() }
-            win.minimumSize = Dimension(minWidthPx, minHeightPx)
+            win.minimumSize = Dimension(minSize.width.value.toInt(), minSize.height.value.toInt())
         }
 
         if (isReady) {
@@ -641,11 +660,20 @@ fun runApplication(args: Array<String>, deepLinkHandler: br.com.irse.verse.core.
                                 val deltaX = currentMousePos.x - startMousePos.x
                                 val deltaY = currentMousePos.y - startMousePos.y
                                 
-                                // Aplica a nova posição convertendo pixels para Dp (respeitando escala do Windows)
-                                val newX = (startWindowPos.x + deltaX).toDp()
-                                val newY = (startWindowPos.y + deltaY).toDp()
+                                // Nova posição sugerida em pixels
+                                var newXPx = startWindowPos.x + deltaX
+                                var newYPx = startWindowPos.y + deltaY
+
+                                // Confinamento aos limites do monitor
+                                val bounds = getActiveMonitorBounds() ?: currentScreenBounds
+                                if (bounds != null) {
+                                    val paddingPx = screenPadding
+                                    newXPx = newXPx.coerceIn(bounds.x + paddingPx, bounds.x + bounds.width - window.width - paddingPx)
+                                    newYPx = newYPx.coerceIn(bounds.y + paddingPx, bounds.y + bounds.height - window.height - paddingPx)
+                                }
                                 
-                                state.position = WindowPosition(newX, newY)
+                                // Aplica a nova posição (1 logical pixel = 1 Dp no Windows/Compose)
+                                state.position = WindowPosition(newXPx.dp, newYPx.dp)
                             }
                         }
                     )

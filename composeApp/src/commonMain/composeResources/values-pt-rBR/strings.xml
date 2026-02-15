@@ -17,7 +17,7 @@
 ou por palavras-chave (Ex: amor, fé)</string>
     <string name="text_not_available">Texto não disponível.</string>
     <string name="books_detected">Livros</string>
-    <string name="app_version">Versão 1.1.0</string>
+    <string name="app_version">Versão 1.2.0</string>
     <string name="copyright">© 2026 Instituto Reformado Santo Evangelho - IRSE</string>
     <string name="font_size">Tamanho da Fonte</string>
     <string name="line_height">Espaçamento entre linhas</string>
@@ -42,7 +42,7 @@ ou por palavras-chave (Ex: amor, fé)</string>
     <string name="shortcut_minimize">Ctrl + M / Esc : Ocultar</string>
     <string name="shortcut_search">Ctrl + F : Pesquisar</string>
     <string name="shortcut_history">Ctrl + H : Histórico</string>
-    <string name="shortcut_verses">Ctrl + V : Versículos</string>
+    <string name="shortcut_verses">Ctrl + B : Versículos</string>
     <string name="shortcut_settings">Ctrl + S : Ajustes</string>
     <string name="shortcut_about">Ctrl + I : Sobre</string>
         <string name="back">Voltar</string>

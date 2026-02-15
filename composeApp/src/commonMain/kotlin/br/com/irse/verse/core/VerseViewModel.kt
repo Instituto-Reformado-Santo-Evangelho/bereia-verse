@@ -123,7 +123,6 @@ class VerseViewModel(
         val logoAlpha: Float = 1.0f,
         val showFooter: Boolean = true,
         val useLogoBackground: Boolean = false,
-        val textAlignment: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Justify,
         val backgroundImage: String? = null,
         val imageAlpha: Float = 0.6f
     )
@@ -136,8 +135,7 @@ class VerseViewModel(
             backgroundImage = "note_bg_5.png",
             imageAlpha = 1.0f,
             showLogo = false,
-            fontFamilyName = "Serif",
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            fontFamilyName = "Serif"
         ),
         SnapshotTemplate(
             id = "note_papiro", displayName = "Papiro Antigo",
@@ -146,8 +144,7 @@ class VerseViewModel(
             backgroundImage = "note_bg_6.png",
             imageAlpha = 1.0f,
             showLogo = false,
-            fontFamilyName = "Serif",
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            fontFamilyName = "Serif"
         ),
         SnapshotTemplate(
             id = "note_pedra", displayName = "Pedra Angular",
@@ -155,8 +152,7 @@ class VerseViewModel(
             contentColor = androidx.compose.ui.graphics.Color.White,
             backgroundImage = "note_bg_8.png",
             imageAlpha = 0.9f,
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "note_manuscrito", displayName = "Manuscrito",
@@ -165,8 +161,7 @@ class VerseViewModel(
             backgroundImage = "note_bg_9.png",
             imageAlpha = 0.85f,
             showLogo = false,
-            fontFamilyName = "Serif",
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            fontFamilyName = "Serif"
         ),
         SnapshotTemplate(
             id = "note_oliva", displayName = "Oliva",
@@ -174,8 +169,7 @@ class VerseViewModel(
             contentColor = androidx.compose.ui.graphics.Color.White,
             backgroundImage = "note_bg_10.png",
             imageAlpha = 0.9f,
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "note_terra", displayName = "Terra Prometida",
@@ -183,8 +177,7 @@ class VerseViewModel(
             contentColor = androidx.compose.ui.graphics.Color.White,
             backgroundImage = "note_bg_11.png",
             imageAlpha = 0.9f,
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "note_vinho", displayName = "Vinho Novo",
@@ -193,8 +186,7 @@ class VerseViewModel(
             backgroundImage = "note_bg_12.png",
             imageAlpha = 0.9f,
             showLogo = false,
-            fontFamilyName = "Serif",
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            fontFamilyName = "Serif"
         ),
         SnapshotTemplate(
             id = "note_noite", displayName = "Noite Estrelada",
@@ -202,8 +194,7 @@ class VerseViewModel(
             contentColor = androidx.compose.ui.graphics.Color.White,
             backgroundImage = "note_bg_13.png",
             imageAlpha = 0.9f,
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "note_deserto", displayName = "Deserto",
@@ -211,8 +202,7 @@ class VerseViewModel(
             contentColor = androidx.compose.ui.graphics.Color.White,
             backgroundImage = "note_bg_14.png",
             imageAlpha = 0.9f,
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "note_sinai", displayName = "Monte Sinai",
@@ -220,8 +210,7 @@ class VerseViewModel(
             contentColor = androidx.compose.ui.graphics.Color.White,
             backgroundImage = "note_bg_15.png",
             imageAlpha = 0.9f,
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "note_cedro", displayName = "Cedro",
@@ -229,8 +218,7 @@ class VerseViewModel(
             contentColor = androidx.compose.ui.graphics.Color.White,
             backgroundImage = "note_bg_16.png",
             imageAlpha = 0.9f,
-            showLogo = false,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "note_marmore", displayName = "Mármore",
@@ -239,32 +227,31 @@ class VerseViewModel(
             backgroundImage = "note_bg_17.png",
             imageAlpha = 1.0f,
             showLogo = false,
-            fontFamilyName = "Serif",
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            fontFamilyName = "Serif"
         ),
         SnapshotTemplate(
             id = "grad_aurora", displayName = "Aurora",
             backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF00c6ff), androidx.compose.ui.graphics.Color(0xFF0072ff))),
             contentColor = androidx.compose.ui.graphics.Color.White,
-            showLogo = false, textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "grad_crepusculo", displayName = "Crepúsculo",
             backgroundBrush = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF141E30), androidx.compose.ui.graphics.Color(0xFF243B55))),
             contentColor = androidx.compose.ui.graphics.Color.White,
-            showLogo = false, fontFamilyName = "Serif", textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false, fontFamilyName = "Serif"
         ),
         SnapshotTemplate(
             id = "grad_meianoite", displayName = "Meia-noite",
             backgroundBrush = androidx.compose.ui.graphics.Brush.radialGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF232526), androidx.compose.ui.graphics.Color(0xFF414345))),
             contentColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0),
-            showLogo = false, textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "grad_real", displayName = "Realeza",
             backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF5f2c82), androidx.compose.ui.graphics.Color(0xFF49a09d))),
             contentColor = androidx.compose.ui.graphics.Color.White,
-            showLogo = false, textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false
         ),
         SnapshotTemplate(
             id = "nature_1", displayName = "Natureza 1",
@@ -312,8 +299,7 @@ class VerseViewModel(
             id = "exclusive", displayName = "Exclusivo", 
             backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xD9000000), androidx.compose.ui.graphics.Color(0x66000000))), 
             contentColor = androidx.compose.ui.graphics.Color(0xFFFFFFFF),
-            showLogo = false, showFooter = false, useLogoBackground = true,
-            textAlignment = androidx.compose.ui.text.style.TextAlign.Start
+            showLogo = false, showFooter = false, useLogoBackground = true
         ),
         SnapshotTemplate(
             id = "clean", displayName = "Limpo",
@@ -325,7 +311,7 @@ class VerseViewModel(
             id = "note_solid_1", displayName = "Nota Solene", 
             backgroundBrush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(androidx.compose.ui.graphics.Color(0xFF232526), androidx.compose.ui.graphics.Color(0xFF414345))), 
             contentColor = androidx.compose.ui.graphics.Color(0xFFE0E0E0), 
-            fontFamilyName = "Serif", textAlignment = androidx.compose.ui.text.style.TextAlign.Start, showLogo = false, logoAlpha = 0.3f
+            fontFamilyName = "Serif", showLogo = false, logoAlpha = 0.3f
         )
     )
 

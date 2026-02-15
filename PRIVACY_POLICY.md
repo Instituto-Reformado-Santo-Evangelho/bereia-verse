@@ -1,20 +1,20 @@
-# Política de Privacidade - Bereia Verse
+# Política de Privacidade - Bereia Versículos
 
 **Última atualização:** 1 de fevereiro de 2026
 
-O **Bereia Verse**, desenvolvido pelo **Instituto Reformado Santo Evangelho (IRSE)**, valoriza a sua privacidade. Esta política descreve como lidamos com as informações ao utilizar nosso aplicativo em todas as plataformas (Windows, Linux, Android e iOS).
+O **Bereia Versículos**, desenvolvido pelo **Instituto Reformado Santo Evangelho (IRSE)**, valoriza a sua privacidade. Esta política descreve como lidamos com as informações ao utilizar nosso aplicativo em todas as plataformas (Windows, Linux, Android e iOS).
 
 ## 1. Coleta de Dados Pessoais
-O Bereia Verse **não coleta, não armazena e não transmite** nenhum dado pessoal identificável para servidores próprios. Não solicitamos criação de conta, nome, e-mail ou qualquer outra informação pessoal para o funcionamento básico do aplicativo.
+O Bereia Versículos **não coleta, não armazena e não transmite** nenhum dado pessoal identificável para servidores próprios. Não solicitamos criação de conta, nome, e-mail ou qualquer outra informação pessoal para o funcionamento básico do aplicativo.
 
 ## 2. Integração com o Google Drive
 O aplicativo oferece uma funcionalidade opcional de sincronização de notas via Google Drive. 
 *   **Finalidade:** Armazenar e sincronizar as suas anotações entre diferentes dispositivos de sua propriedade.
-*   **Escopo de Acesso:** O Bereia Verse solicita acesso apenas ao seu próprio diretório de dados no Google Drive (App Data Folder) ou aos arquivos especificamente criados por ele. Não temos acesso aos seus outros arquivos pessoais, fotos ou documentos no seu Google Drive.
+*   **Escopo de Acesso:** O Bereia Versículos solicita acesso apenas ao seu próprio diretório de dados no Google Drive (App Data Folder) ou aos arquivos especificamente criados por ele. Não temos acesso aos seus outros arquivos pessoais, fotos ou documentos no seu Google Drive.
 *   **Autenticação:** O processo de login é realizado diretamente através dos serviços de autenticação do Google. O aplicativo nunca tem acesso à sua senha.
 
 ## 3. Monitoramento da Área de Transferência (Clipboard)
-O Bereia Verse monitora a área de transferência do seu sistema operacional para detectar referências bíblicas (ex: João 3:16).
+O Bereia Versículos monitora a área de transferência do seu sistema operacional para detectar referências bíblicas (ex: João 3:16).
 *   **Processamento Local:** Todo o processamento de texto capturado é feito de forma **estritamente local** no seu dispositivo.
 *   **Privacidade:** O conteúdo da sua área de transferência **nunca** é enviado para a internet ou para os nossos servidores. O app apenas "lê" o texto para verificar se ele corresponde a um padrão bíblico e, em seguida, descarta qualquer informação que não seja uma referência bíblica.
 
