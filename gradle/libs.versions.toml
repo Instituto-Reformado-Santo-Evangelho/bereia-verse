@@ -9,8 +9,10 @@ shadow = "8.1.1"
 koin = "4.0.0"
 koin-compose = "4.0.0"
 msix = "0.1.0"
+appdirs = "2.0.0"
 
 [libraries]
+appdirs = { module = "ca.gosyer:kotlin-multiplatform-appdirs", version.ref = "appdirs" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin-compose" }

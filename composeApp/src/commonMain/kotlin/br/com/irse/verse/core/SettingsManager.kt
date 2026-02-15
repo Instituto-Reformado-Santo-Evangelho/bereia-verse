@@ -1,5 +1,6 @@
 package br.com.irse.verse.core
 
+import ca.gosyer.appdirs.AppDirs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -26,13 +27,12 @@ data class UserSettings(
 object SettingsManager {
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
     
+    private val appDirs = AppDirs(appName = "BereiaVerse", appAuthor = "IRSE")
+
     val dataDir: File by lazy {
-        val os = System.getProperty("os.name")?.lowercase() ?: ""
-        val dir = if (os.contains("win")) {
-            File(System.getenv("APPDATA") ?: "", "BereiaVerse")
-        } else {
-            File(System.getProperty("user.home") ?: "", ".local/share/bereia-verse")
-        }
+        // getUserConfigDir(roaming = true) é o local ideal para configurações e banco de dados que devem persistir
+        val path = appDirs.getUserConfigDir(roaming = true)
+        val dir = File(path)
         if (!dir.exists()) dir.mkdirs()
         dir
     }

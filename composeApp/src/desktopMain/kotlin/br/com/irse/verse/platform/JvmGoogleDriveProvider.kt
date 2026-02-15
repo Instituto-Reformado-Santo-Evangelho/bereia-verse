@@ -28,6 +28,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.InputStreamReader
 import verse.composeapp.generated.resources.Res
+import br.com.irse.verse.core.SettingsManager
 
 class JvmGoogleDriveProvider : CloudSyncProvider {
     private val json = Json { ignoreUnknownKeys = true }
@@ -43,17 +44,8 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
 
     private var driveService: Drive? = null
 
-    // Diretório de configuração padrão do app
-    private val appConfigDir: File by lazy {
-        val os = System.getProperty("os.name").lowercase()
-        val baseDir = if (os.contains("win")) {
-            File(System.getenv("APPDATA"), "BereiaVerse")
-        } else {
-            File(System.getProperty("user.home"), ".local/share/bereia-verse")
-        }
-        if (!baseDir.exists()) baseDir.mkdirs()
-        baseDir
-    }
+    // Sincronizado com o diretório central do app
+    private val appConfigDir: File get() = SettingsManager.dataDir
 
     private val dataStoreDir by lazy { File(appConfigDir, "tokens") }
 
@@ -106,21 +98,20 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         // 1. Tenta carregar da variável de ambiente GOOGLE_CLIENT_SECRETS
         val envSecrets = System.getenv("GOOGLE_CLIENT_SECRETS")
         if (!envSecrets.isNullOrBlank()) {
-            logError("Loading credentials from GOOGLE_CLIENT_SECRETS environment variable")
+            logError("Loading credentials from GOOGLE_CLIENT_SECRETS env var")
             return envSecrets.byteInputStream(Charsets.UTF_8)
         }
         
-        // 2. Tenta carregar do recurso embutido via Res (Compose Resources 1.6+)
+        // 2. Tenta carregar do recurso embutido via Res (Compose Resources)
         try {
-            logError("Trying to load client_secrets.json from Res.readBytes...")
             val bytes = Res.readBytes("files/client_secrets.json")
-            logError("Credentials loaded successfully from Res.readBytes(files/client_secrets.json)")
+            logError("Credentials found in Compose Resources (files/client_secrets.json)")
             return bytes.inputStream()
         } catch (e: Exception) {
             logError("Res.readBytes failed: ${e.message}")
         }
 
-        // 3. Fallback para getResourceAsStream (Legacy/Alternative paths)
+        // 3. Fallback para getResourceAsStream (Legacy paths)
         val resourcePaths = listOf(
             "/composeResources/verse.composeapp.generated.resources/files/client_secrets.json",
             "/files/client_secrets.json",
@@ -130,7 +121,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         for (path in resourcePaths) {
             val resourceStream = object {}.javaClass.getResourceAsStream(path)
             if (resourceStream != null) {
-                logError("Loading credentials from getResourceAsStream: $path")
+                logError("Credentials found via getResourceAsStream: $path")
                 return resourceStream
             }
         }
@@ -140,25 +131,33 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         if (!envPath.isNullOrBlank()) {
             val envFile = File(envPath)
             if (envFile.exists()) {
-                logError("Loading credentials from GOOGLE_CLIENT_SECRETS_PATH: ${envFile.absolutePath}")
+                logError("Credentials found via GOOGLE_CLIENT_SECRETS_PATH: ${envFile.absolutePath}")
                 return envFile.inputStream()
             }
         }
 
-        // 5. Fallback para arquivos externos (Desenvolvimento/Override)
+        // 5. Fallback para arquivos externos (Desenvolvimento/MSIX DataDir)
+        val userDir = System.getProperty("user.dir") ?: "."
         val possibilities = listOf(
-            File(appConfigDir, "client_secrets.json"),
-            File(System.getProperty("user.dir"), "client_secrets.json"),
+            File(appConfigDir, "client_secrets.json"), // Pasta de dados Roaming (BereiaVerse)
+            File(userDir, "client_secrets.json"),      // Pasta de execução
+            File(userDir, "composeApp/src/desktopMain/resources/client_secrets.json"), // Dev path
             File("client_secrets.json")
         )
         
-        val foundFile = possibilities.find { it.exists() }
-        if (foundFile != null) {
-            logError("Loading credentials from file: ${foundFile.absolutePath}")
-        } else {
-            logError("NO client_secrets.json FOUND in any location!")
+        logError("Searching for client_secrets.json in file system...")
+        val foundFile = possibilities.find { 
+            logError("Checking: ${it.absolutePath}")
+            it.exists() 
         }
-        return foundFile?.inputStream()
+
+        if (foundFile != null) {
+            logError("Credentials found in file: ${foundFile.absolutePath}")
+            return foundFile.inputStream()
+        } else {
+            logError("CRITICAL: client_secrets.json NOT FOUND ANYWHERE!")
+        }
+        return null
     }
 
     private fun logError(message: String, error: Throwable? = null) {

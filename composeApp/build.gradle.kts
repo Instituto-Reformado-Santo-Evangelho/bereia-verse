@@ -33,6 +33,7 @@ kotlin {
             implementation(libs.feather.icons)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation(libs.appdirs)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
