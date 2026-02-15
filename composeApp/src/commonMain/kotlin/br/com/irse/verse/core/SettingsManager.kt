@@ -29,6 +29,13 @@ object SettingsManager {
     
     private val appDirs = AppDirs(appName = "BereiaVerse", appAuthor = "IRSE")
 
+    val dataDir: File by lazy {
+        val path = appDirs.getUserConfigDir(roaming = true)
+        val dir = File(path)
+        if (!dir.exists()) dir.mkdirs()
+        dir
+    }
+
     private val settingsFile: File by lazy { File(dataDir, "settings.json") }
     val lockFile: File by lazy { File(dataDir, "launching.lock") }
 
