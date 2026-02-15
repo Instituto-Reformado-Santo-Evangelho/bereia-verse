@@ -365,19 +365,37 @@ class VerseViewModel(
         }
     }
 
+    private val _isWaitingForAuthCode = MutableStateFlow(false)
+    val isWaitingForAuthCode = _isWaitingForAuthCode.asStateFlow()
+
     fun loginToDrive() {
         viewModelScope.launch {
             try {
-                showToast("Iniciando autorização... Aguarde o navegador abrir.", ToastType.INFO)
-                delay(300) // Garante que o toast apareça antes do navegador
+                showToast("Redirecionando para tech.santoevangelho.com.br...", ToastType.INFO)
+                _isWaitingForAuthCode.value = true
                 syncManager.authorize()
                 showToast("Login realizado com sucesso!", ToastType.SUCCESS)
+                _isWaitingForAuthCode.value = false
             } catch (e: Exception) {
                 val errorMsg = e.message ?: "Erro desconhecido"
-                showToast("Falha no login: $errorMsg", ToastType.ERROR)
+                if (e !is CancellationException) {
+                    showToast("Falha no login: $errorMsg", ToastType.ERROR)
+                }
+                _isWaitingForAuthCode.value = false
                 e.printStackTrace()
             }
         }
+    }
+
+    fun submitAuthCode(code: String) {
+        syncManager.onManualCodeEntered(code)
+    }
+
+    fun cancelAuth() {
+        _isWaitingForAuthCode.value = false
+        // Isso fará o authorize() no provider acordar se estiver esperando, 
+        // mas o first() no flow pode precisar de um código de cancelamento se quisermos ser rigorosos.
+        syncManager.onManualCodeEntered("") 
     }
 
     fun logoutDrive() {

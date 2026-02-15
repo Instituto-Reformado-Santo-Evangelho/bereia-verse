@@ -229,62 +229,116 @@ fun SettingsView(viewModel: VerseViewModel, textColor: Color) {
         // --- SEÇÃO: SINCRONIZAÇÃO ---
         val isSyncAuthorized by viewModel.isSyncAuthorized.collectAsState()
         val syncState by viewModel.syncState.collectAsState()
+        val isWaitingForAuthCode by viewModel.isWaitingForAuthCode.collectAsState()
         
         SettingsSection(title = stringResource(Res.string.settings_sync)) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                // Título e Descrição
-                Text(
-                    text = if (isSyncAuthorized) stringResource(Res.string.settings_sync_connected) else stringResource(Res.string.settings_sync_disconnected),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = textColor
-                )
-                Text(
-                    text = if (isSyncAuthorized) 
-                        stringResource(Res.string.settings_sync_desc_connected) 
-                    else 
-                        stringResource(Res.string.settings_sync_desc_disconnected) + " (Necessita navegador padrão configurado)",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = textColor.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
-                )
+                if (isWaitingForAuthCode) {
+                    // Interface de entrada manual de código
+                    Text(
+                        text = "Autorização em andamento",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = VerseColors.PrimaryAmber
+                    )
+                    Text(
+                        text = "1. Autorize no seu navegador\n2. Copie o código exibido em tech.santoevangelho.com.br\n3. Cole abaixo:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = textColor.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                    )
+                    
+                    var inputCode by remember { mutableStateOf("") }
+                    TextField(
+                        value = inputCode,
+                        onValueChange = { inputCode = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Cole o código aqui...", fontSize = 14.sp) },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = textColor.copy(alpha = 0.05f),
+                            unfocusedContainerColor = textColor.copy(alpha = 0.05f),
+                            focusedIndicatorColor = VerseColors.PrimaryAmber
+                        )
+                    )
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { viewModel.cancelAuth() },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, textColor.copy(alpha = 0.2f))
+                        ) {
+                            Text("Cancelar", color = textColor.copy(alpha = 0.7f))
+                        }
+                        Button(
+                            onClick = { viewModel.submitAuthCode(inputCode) },
+                            enabled = inputCode.isNotBlank(),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = VerseColors.PrimaryAmber)
+                        ) {
+                            Text("Confirmar", color = VerseColors.HeaderContentColor)
+                        }
+                    }
+                } else {
+                    // Título e Descrição (Estado Normal)
+                    Text(
+                        text = if (isSyncAuthorized) stringResource(Res.string.settings_sync_connected) else stringResource(Res.string.settings_sync_disconnected),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor
+                    )
+                    Text(
+                        text = if (isSyncAuthorized) 
+                            stringResource(Res.string.settings_sync_desc_connected) 
+                        else 
+                            stringResource(Res.string.settings_sync_desc_disconnected),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = textColor.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                    )
 
-                // Botão de Ação (Ícone + Texto)
-                Button(
-                    onClick = { if (isSyncAuthorized) viewModel.logoutDrive() else viewModel.loginToDrive() },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSyncAuthorized) VerseColors.ErrorRed.copy(alpha = 0.1f) else VerseColors.PrimaryAmber,
-                        contentColor = if (isSyncAuthorized) VerseColors.ErrorRed else VerseColors.HeaderContentColor
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isSyncAuthorized) FeatherIcons.CloudOff else FeatherIcons.Cloud,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (isSyncAuthorized) stringResource(Res.string.settings_sync_logout) else stringResource(Res.string.settings_sync_login),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                
-                // Status discreto abaixo do botão (apenas quando conectado)
-                if (isSyncAuthorized) {
-                    Text(
-                        text = when(syncState) {
-                            CloudSyncState.SYNCING -> stringResource(Res.string.settings_sync_status_syncing)
-                            CloudSyncState.SUCCESS -> stringResource(Res.string.settings_sync_status_success)
-                            CloudSyncState.ERROR -> stringResource(Res.string.settings_sync_status_error)
-                            else -> ""
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = textColor.copy(alpha = 0.5f),
-                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
-                    )
+                    // Botão de Ação (Ícone + Texto)
+                    Button(
+                        onClick = { if (isSyncAuthorized) viewModel.logoutDrive() else viewModel.loginToDrive() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isSyncAuthorized) VerseColors.ErrorRed.copy(alpha = 0.1f) else VerseColors.PrimaryAmber,
+                            contentColor = if (isSyncAuthorized) VerseColors.ErrorRed else VerseColors.HeaderContentColor
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(vertical = 12.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isSyncAuthorized) FeatherIcons.CloudOff else FeatherIcons.Cloud,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isSyncAuthorized) stringResource(Res.string.settings_sync_logout) else stringResource(Res.string.settings_sync_login),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    
+                    // Status discreto abaixo do botão (apenas quando conectado)
+                    if (isSyncAuthorized) {
+                        Text(
+                            text = when(syncState) {
+                                CloudSyncState.SYNCING -> stringResource(Res.string.settings_sync_status_syncing)
+                                CloudSyncState.SUCCESS -> stringResource(Res.string.settings_sync_status_success)
+                                CloudSyncState.ERROR -> stringResource(Res.string.settings_sync_status_error)
+                                else -> ""
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = textColor.copy(alpha = 0.5f),
+                            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
+                        )
+                    }
                 }
             }
         }

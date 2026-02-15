@@ -3,9 +3,7 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
-  xmlns:desktop11="http://schemas.microsoft.com/appx/manifest/desktop/windows10/11"
-  IgnorableNamespaces="uap rescap desktop6 desktop11">
+  IgnorableNamespaces="uap rescap">
 
   <Identity
     Name="OrganizaoIRSE.BereiaVersculos"
@@ -18,7 +16,6 @@
     <PublisherDisplayName>Organização IRSE</PublisherDisplayName>
     <Logo>resources\StoreLogo.png</Logo>
     <Description>Leitor Bíblico Automático — Popup quando uma referência Bíblica é copiada.</Description>
-    <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
   </Properties>
 
   <Resources>
@@ -35,7 +32,8 @@
 
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
-    <rescap:Capability Name="unvirtualizedResources" />
+    <Capability Name="internetClient" />
+    <Capability Name="privateNetworkClientServer" />
   </Capabilities>
 
   <Applications>
@@ -50,6 +48,13 @@
         Square44x44Logo="resources\Square44x44Logo.png">
         <uap:DefaultTile Wide310x150Logo="resources\Wide310x150Logo.png" />
       </uap:VisualElements>
+      <Extensions>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="bereia-verse">
+            <uap:DisplayName>Bereia Verse Auth</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+      </Extensions>
     </Application>
   </Applications>
 </Package>

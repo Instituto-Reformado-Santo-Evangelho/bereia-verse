@@ -181,6 +181,15 @@ fun runApplication() {
     }
 
     if (isWindows && !isWineDetected) {
+        // 1. Tenta liberar o Loopback de Rede (Exigido para OAuth em MSIX)
+        try {
+            // Nome da Família do Pacote extraído do seu log de instalação
+            val packageFamilyName = "OrganizaoIRSE.BereiaVersculos_c6gk0bqxkzmpt"
+            ProcessBuilder("cmd", "/c", "CheckNetIsolation.exe LoopbackExempt -a -n=$packageFamilyName").start()
+        } catch (e: Exception) {
+            // Ignora se falhar (ex: falta de admin), pois o app ainda deve tentar abrir
+        }
+
         val crashDetected = SettingsManager.lockFile.exists()
         if (crashDetected) {
             // Se houve crash anterior, usa renderização por software para garantir que o app abra
@@ -378,6 +387,15 @@ fun runApplication() {
     LaunchedEffect(isReady) {
         if (isReady && viewModel.value != null) {
             isVisible = true
+            
+            // Verifica se o app foi aberto via protocolo bereia-verse://auth?code=...
+            args.find { it.startsWith("bereia-verse://") }?.let { uri ->
+                val code = uri.substringAfter("code=", "")
+                if (code.isNotBlank()) {
+                    viewModel.value?.submitAuthCode(code)
+                }
+            }
+
             withContext(Dispatchers.IO) {
                 var lastText = ""
                 ClipboardMonitor.textFlow().collect { text ->

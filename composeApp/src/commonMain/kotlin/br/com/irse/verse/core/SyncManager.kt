@@ -23,6 +23,7 @@ class SyncManager(
 
     suspend fun authorize() = cloudProvider?.authorize()
     suspend fun signOut() = cloudProvider?.signOut()
+    fun onManualCodeEntered(code: String) = cloudProvider?.onManualCodeEntered(code)
     
     fun startAutoSync() {
         if (cloudProvider == null) return

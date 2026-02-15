@@ -4,11 +4,10 @@ import br.com.irse.verse.core.CloudSyncProvider
 import br.com.irse.verse.core.CloudSyncState
 import br.com.irse.verse.core.Note
 import br.com.irse.verse.core.SyncStatus
+import br.com.irse.verse.core.SettingsManager
 import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.auth.oauth2.TokenResponseException
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
@@ -17,18 +16,12 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.InputStreamReader
 import verse.composeapp.generated.resources.Res
-import br.com.irse.verse.core.SettingsManager
 
 class JvmGoogleDriveProvider : CloudSyncProvider {
     private val json = Json { ignoreUnknownKeys = true }
@@ -49,14 +42,17 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
 
     private val dataStoreDir by lazy { File(appConfigDir, "tokens") }
 
+    private val _manualCodeFlow = MutableSharedFlow<String>(extraBufferCapacity = 1)
+
+    override fun onManualCodeEntered(code: String) {
+        _manualCodeFlow.tryEmit(code)
+    }
+
     init {
         // Tenta re-autorizar silenciosamente se já tiver token
         CoroutineScope(Dispatchers.IO).launch {
             try {
                  if (dataStoreDir.exists() && dataStoreDir.listFiles()?.isNotEmpty() == true) {
-                     // Inicializa o serviço em background se houver tokens
-                     // Não podemos chamar authorize() aqui pois ele abre o browser se o token estiver inválido/expirado
-                     // Mas podemos tentar reconstruir o serviço
                      restoreSession()
                  }
             } catch (e: Exception) {
@@ -65,11 +61,21 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         }
     }
 
+    private fun getGoogleClientSecrets(): GoogleClientSecrets {
+        val details = GoogleClientSecrets.Details().apply {
+            clientId = "221997659982-kuaq72a18co34kkb88rnamdlt0ablkaj.apps.googleusercontent.com"
+            clientSecret = "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"
+            authUri = "https://accounts.google.com/o/oauth2/auth"
+            tokenUri = "https://oauth2.googleapis.com/token"
+        }
+        return GoogleClientSecrets().setInstalled(details)
+    }
+
     private suspend fun restoreSession() {
+        logError("Restoring session...")
         try {
-            val secretsStream = getClientSecretsStream() ?: return
+            val clientSecrets = getGoogleClientSecrets()
             val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
-            val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(secretsStream, Charsets.UTF_8))
 
             val flow = GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES
@@ -78,114 +84,44 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             .setAccessType("offline")
             .build()
 
-            // Carrega credencial armazenada (userId="user")
+            logError("Flow built for restoration. Checking for stored credentials...")
             val credential = flow.loadCredential("user")
             
             if (credential != null && (credential.refreshToken != null || credential.expiresInSeconds == null || credential.expiresInSeconds > 60)) {
-                // Se tiver refresh token, ele atualiza automaticamente quando precisar
+                logError("Stored credential found and valid.")
                 driveService = Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                     .setApplicationName(APPLICATION_NAME)
                     .build()
                 _isAuthorized.value = true
+                logError("Session restored successfully.")
+            } else {
+                logError("No valid stored credential found.")
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            logError("Failed to restore session: ${e.message}", e)
             _isAuthorized.value = false
         }
     }
-    
-    private suspend fun getClientSecretsStream(): java.io.InputStream? {
-        // 1. Tenta carregar da variável de ambiente GOOGLE_CLIENT_SECRETS
-        val envSecrets = System.getenv("GOOGLE_CLIENT_SECRETS")
-        if (!envSecrets.isNullOrBlank()) {
-            logError("Loading credentials from GOOGLE_CLIENT_SECRETS env var")
-            return envSecrets.byteInputStream(Charsets.UTF_8)
-        }
-        
-        // 2. Tenta carregar do recurso embutido via Res (Compose Resources)
-        try {
-            val bytes = Res.readBytes("files/client_secrets.json")
-            logError("Credentials found in Compose Resources (files/client_secrets.json)")
-            return bytes.inputStream()
-        } catch (e: Exception) {
-            logError("Res.readBytes failed: ${e.message}")
-        }
-
-        // 3. Fallback para getResourceAsStream (Legacy paths)
-        val resourcePaths = listOf(
-            "/composeResources/verse.composeapp.generated.resources/files/client_secrets.json",
-            "/files/client_secrets.json",
-            "/client_secrets.json"
-        )
-        
-        for (path in resourcePaths) {
-            val resourceStream = object {}.javaClass.getResourceAsStream(path)
-            if (resourceStream != null) {
-                logError("Credentials found via getResourceAsStream: $path")
-                return resourceStream
-            }
-        }
-        
-        // 4. Tenta carregar do arquivo especificado em GOOGLE_CLIENT_SECRETS_PATH
-        val envPath = System.getenv("GOOGLE_CLIENT_SECRETS_PATH")
-        if (!envPath.isNullOrBlank()) {
-            val envFile = File(envPath)
-            if (envFile.exists()) {
-                logError("Credentials found via GOOGLE_CLIENT_SECRETS_PATH: ${envFile.absolutePath}")
-                return envFile.inputStream()
-            }
-        }
-
-        // 5. Fallback para arquivos externos (Desenvolvimento/MSIX DataDir)
-        val userDir = System.getProperty("user.dir") ?: "."
-        val possibilities = listOf(
-            File(appConfigDir, "client_secrets.json"), // Pasta de dados Roaming (BereiaVerse)
-            File(userDir, "client_secrets.json"),      // Pasta de execução
-            File(userDir, "composeApp/src/desktopMain/resources/client_secrets.json"), // Dev path
-            File("client_secrets.json")
-        )
-        
-        logError("Searching for client_secrets.json in file system...")
-        val foundFile = possibilities.find { 
-            logError("Checking: ${it.absolutePath}")
-            it.exists() 
-        }
-
-        if (foundFile != null) {
-            logError("Credentials found in file: ${foundFile.absolutePath}")
-            return foundFile.inputStream()
-        } else {
-            logError("CRITICAL: client_secrets.json NOT FOUND ANYWHERE!")
-        }
-        return null
-    }
 
     private fun logError(message: String, error: Throwable? = null) {
+        val timestamp = java.time.LocalDateTime.now()
+        val logMessage = "[$timestamp] DRIVE_LOG: $message"
+        println(logMessage)
         try {
-            if (!appConfigDir.exists()) appConfigDir.mkdirs()
-            val logFile = File(appConfigDir, "auth_debug.txt")
-            val timestamp = java.time.LocalDateTime.now()
+            val logDir = SettingsManager.externalLogDir
+            val logFile = File(logDir, "auth_debug.txt")
             val stackTrace = error?.stackTraceToString() ?: ""
-            logFile.appendText("[$timestamp] $message\n$stackTrace\n")
+            logFile.appendText("$logMessage\n$stackTrace\n")
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     override suspend fun authorize() = withContext(Dispatchers.IO) {
+        logError("Starting manual authorization (Server-Side redirect)...")
         try {
-            logError("--- Starting authorization process ---")
             val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
-            
-            val secretsStream = getClientSecretsStream()
-            if (secretsStream == null) {
-                val msg = "CRITICAL: client_secrets.json NOT FOUND. Searched in: Res (Compose Resources), Resources, ${appConfigDir.absolutePath}, ${System.getProperty("user.dir")}"
-                logError(msg)
-                throw Exception("Arquivo de credenciais (client_secrets.json) não encontrado.\nVerifique o arquivo auth_debug.txt na pasta do aplicativo (%APPDATA%\\BereiaVerse).")
-            }
-
-            logError("Secrets file found. Loading...")
-            val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(secretsStream, Charsets.UTF_8))
+            val clientSecrets = getGoogleClientSecrets()
             
             val flow = GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES
@@ -194,38 +130,29 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             .setAccessType("offline")
             .build()
 
-            logError("Flow built. Starting local server...")
-            // Usa porta dinâmica padrão para evitar conflitos
-            val receiver = LocalServerReceiver.Builder().build() 
+            logError("Flow created. Redirecting to server for code capture...")
+            
+            // Redirect URI agora é o seu servidor Nuxt
+            val redirectUri = "https://tech.santoevangelho.com.br/auth"
             
             val credential = try {
-                // Verifica se já existe credencial válida
                 val storedCredential = try { 
                     flow.loadCredential("user") 
                 } catch (e: Exception) {
-                    logError("Error loading stored credential, clearing dataStoreDir", e)
                     if (dataStoreDir.exists()) dataStoreDir.deleteRecursively()
                     null
                 }
 
                 if (storedCredential != null && storedCredential.refreshToken != null) {
-                    logError("Found existing credential, using it")
+                    logError("Using existing credential.")
                     storedCredential
                 } else {
-                    // Precisa autorizar - gera URL e FORÇA abertura do navegador
-                    val redirectUri = receiver.redirectUri
-                    
-                    // 1. Gerar State para prevenir CSRF (Cross-Site Request Forgery)
                     val state = java.util.UUID.randomUUID().toString()
-                    
-                    // 2. Gerar PKCE (Proof Key for Code Exchange)
-                    // Verifier: Segredo aleatório de alta entropia
                     val secureRandom = java.security.SecureRandom()
                     val verifierBytes = ByteArray(32)
                     secureRandom.nextBytes(verifierBytes)
                     val verifier = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(verifierBytes)
                     
-                    // Challenge: Hash SHA-256 do verifier
                     val messageDigest = java.security.MessageDigest.getInstance("SHA-256")
                     val hash = messageDigest.digest(verifier.toByteArray(Charsets.US_ASCII))
                     val challenge = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(hash)
@@ -236,85 +163,29 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                         redirectUri,
                         SCOPES
                     ).apply {
-                        this.state = state // Usa 'this' para diferenciar da val local
+                        this.state = state
                         set("code_challenge", challenge)
                         set("code_challenge_method", "S256")
                     }.build()
                     
-                    logError("Authorization URL generated with PKCE and State")
-                    logError("Attempting to open browser...")
+                    logError("Authorization URL: $authorizationUrl")
                     
-                    // Tenta abrir navegador com múltiplos métodos
-                    var browserOpened = false
-                    
-                    // Método 1: Java Desktop API (Recomendado - Resolve problemas de aspas/espaços)
                     try {
                         if (java.awt.Desktop.isDesktopSupported()) {
-                            val desktop = java.awt.Desktop.getDesktop()
-                            if (desktop.isSupported(java.awt.Desktop.Action.BROWSE)) {
-                                logError("Trying Desktop.browse()...")
-                                desktop.browse(java.net.URI(authorizationUrl))
-                                browserOpened = true
-                                logError("Browser opened via Desktop.browse()")
-                            }
+                            java.awt.Desktop.getDesktop().browse(java.net.URI(authorizationUrl))
+                        } else {
+                            ProcessBuilder("cmd", "/c", "start", authorizationUrl.replace("&", "^&")).start()
                         }
                     } catch (e: Exception) {
-                        logError("Desktop.browse() failed: ${e.message}")
+                        logError("Browser open failed", e)
                     }
+
+                    logError("Waiting for manual code entry from UI...")
                     
-                    // Método 2: ProcessBuilder com comandos específicos de OS (Fallback)
-                    if (!browserOpened) {
-                        try {
-                            val os = System.getProperty("os.name").lowercase()
-                            if (os.contains("win")) {
-                                logError("Trying Windows cmd /c start...")
-                                // Tenta primeiro cmd /c start que resolve melhor URLs no Win
-                                try {
-                                    val escapedUrl = authorizationUrl.replace("&", "^&")
-                                    ProcessBuilder("cmd", "/c", "start", escapedUrl).start()
-                                    browserOpened = true
-                                    logError("Browser attempted via cmd /c start")
-                                } catch (e: Exception) {
-                                    logError("cmd /c start failed, trying rundll32...")
-                                    ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", authorizationUrl).start()
-                                    browserOpened = true
-                                    logError("Browser attempted via rundll32")
-                                }
-                            } else if (os.contains("mac")) {
-                                logError("Trying macOS open...")
-                                ProcessBuilder("open", authorizationUrl).start()
-                                browserOpened = true
-                                logError("Browser opened via open")
-                            } else {
-                                logError("Trying Linux xdg-open/alternatives...")
-                                val commands = listOf("xdg-open", "gnome-open", "kde-open")
-                                for (cmd in commands) {
-                                    try {
-                                        ProcessBuilder(cmd, authorizationUrl).start()
-                                        browserOpened = true
-                                        logError("Browser opened via $cmd")
-                                        break
-                                    } catch (_: Exception) { }
-                                }
-                            }
-                        } catch (e: Exception) {
-                            logError("ProcessBuilder failed: ${e.message}")
-                            e.printStackTrace()
-                        }
-                    }
+                    // Aguarda o código ser injetado via onManualCodeEntered
+                    val code = _manualCodeFlow.first()
                     
-                    if (!browserOpened) {
-                        logError("ALL BROWSER OPENING METHODS FAILED!")
-                        logError("User MUST manually open: $authorizationUrl")
-                        throw Exception("Não foi possível abrir o navegador automaticamente.\n\nCopie e abra esta URL manualmente no seu navegador:\n\n$authorizationUrl\n\nDepois volte ao aplicativo e aguarde.")
-                    }
-                    
-                    // Aguarda callback do navegador
-                    logError("Waiting for user authorization...")
-                    val code = receiver.waitForCode()
-                    logError("Authorization code received")
-                    
-                    // Troca código por token, enviando o Verifier do PKCE
+                    logError("Code received from UI! Exchanging...")
                     val tokenResponse = com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest(
                         HTTP_TRANSPORT,
                         JSON_FACTORY,
@@ -327,27 +198,21 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
                         set("code_verifier", verifier)
                     }.execute()
                     
-                    logError("Token obtained successfully with PKCE verification")
-                    
                     flow.createAndStoreCredential(tokenResponse, "user")
                 }
             } catch (e: Exception) {
-                receiver.stop()
-                logError("Authorization failed", e)
+                logError("Auth failed", e)
                 throw e
-            } finally {
-                receiver.stop()
             }
             
-            logError("Authorization successful. Building Drive service...")
             driveService = Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
                 .build()
             
             _isAuthorized.value = true
-            logError("Service ready.")
+            logError("AUTHORIZATION SUCCESSFUL.")
         } catch (e: Exception) {
-            logError("CRITICAL AUTHORIZATION ERROR", e)
+            logError("Authorization failed", e)
             _isAuthorized.value = false
             throw e
         }
@@ -363,7 +228,6 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         e.printStackTrace()
         _syncState.value = CloudSyncState.ERROR
         
-        // Verifica se é um erro de autenticação (Token revogado ou expirado sem refresh)
         val isAuthError = (e is TokenResponseException && e.statusCode == 401) ||
                          (e is GoogleJsonResponseException && e.statusCode == 401) ||
                          (e.cause is TokenResponseException && (e.cause as TokenResponseException).statusCode == 401)
@@ -372,7 +236,6 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             logError("Authentication failed (401). Resetting session.", e)
             _isAuthorized.value = false
             driveService = null
-            // Limpa tokens locais para forçar novo login no próximo authorize()
             if (dataStoreDir.exists()) dataStoreDir.deleteRecursively()
         }
     }
@@ -391,7 +254,6 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
             
             val mediaContent = FileContent("application/json", tempFile)
             
-            // Verifica se o arquivo já existe para atualizar (update) ou criar (insert)
             val existingFiles = service.files().list()
                 .setSpaces("appDataFolder")
                 .setQ("name = '${note.id}.json' and trashed = false")

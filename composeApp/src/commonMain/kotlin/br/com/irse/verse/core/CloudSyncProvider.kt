@@ -8,6 +8,7 @@ interface CloudSyncProvider {
     
     suspend fun authorize()
     suspend fun signOut()
+    fun onManualCodeEntered(code: String)
     
     suspend fun uploadNote(note: Note)
     suspend fun downloadNotes(): List<Note>
