@@ -73,7 +73,7 @@ windowrulev2 = pin,class:^(VerseReaderIRSE)$
 ### Estrutura do Projeto
 *   `composeApp`: Código principal UI (Compose Multiplatform).
     *   `commonMain`: Lógica compartilhada, Banco de Dados, Parser.
-    *   `jvmMain`: Lógica específica de Desktop (Window, Clipboard AWT/Native).
+    *   `desktopMain`: Lógica específica de Desktop (Window, Clipboard AWT/Native).
     *   `androidMain`: Lógica específica Android (Service, Overlay, Clipboard Manager).
 *   `iosApp`: Cliente iOS (SwiftUI bridge).
 

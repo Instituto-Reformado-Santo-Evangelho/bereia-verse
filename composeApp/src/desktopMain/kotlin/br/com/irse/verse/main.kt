@@ -138,14 +138,7 @@ fun main(args: Array<String>) {
         // Se houve erro no Kotlin, remove o lock para não disparar safe mode falso (opcional)
         try { SettingsManager.lockFile.delete() } catch (_: Exception) {}
         
-        val os = System.getProperty("os.name").lowercase()
-        val logDir = if (os.contains("win")) {
-            File(System.getenv("APPDATA"), "BereiaVerse")
-        } else {
-            File(System.getProperty("user.home"), ".local/share/bereia-verse")
-        }
-        if (!logDir.exists()) logDir.mkdirs()
-        
+        val logDir = SettingsManager.dataDir
         val crashFile = File(logDir, "crash_log.txt")
         FileOutputStream(crashFile).use { out ->
             val message = "Crash at ${java.time.LocalDateTime.now()}\nOS: ${System.getProperty("os.name")} ${System.getProperty("os.version")}\n\n${e.stackTraceToString()}"
@@ -188,10 +181,15 @@ fun runApplication() {
     }
 
     if (isWindows && !isWineDetected) {
-        // Estabiliza renderização em Windows 11/10
-        System.setProperty("skiko.renderApi", "DIRECT3D")
-        // Melhora a performance de janelas transparentes
-        System.setProperty("sun.java2d.d3d", "true")
+        val crashDetected = SettingsManager.lockFile.exists()
+        if (crashDetected) {
+            // Se houve crash anterior, usa renderização por software para garantir que o app abra
+            System.setProperty("skiko.renderApi", "SOFTWARE")
+        } else {
+            // Estabiliza renderização em Windows 11/10 com aceleração de hardware
+            System.setProperty("skiko.renderApi", "DIRECT3D")
+            System.setProperty("sun.java2d.d3d", "true")
+        }
     }
 
     application {
@@ -257,11 +255,6 @@ fun runApplication() {
     // Dependencies via Koin
     val viewModel = remember { mutableStateOf<VerseViewModel?>(null) }
     
-    // Coletar a preferência do ViewModel
-    val finalHeight = targetHeight
-    
-
-    
     // Salva a posição sempre que mudar (modo normal)
     LaunchedEffect(state.position, state.size, isMiniMode) {
         // Só salva se estiver pronto, NÃO estiver em mini mode E o tamanho for maior que o mini widget
@@ -283,14 +276,24 @@ fun runApplication() {
     }
 
     val density = androidx.compose.ui.platform.LocalDensity.current
+    
+    // Animação da altura
+    val animatedHeight by androidx.compose.animation.core.animateDpAsState(
+        targetValue = targetHeight,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "windowHeightAnimation"
+    )
 
-    // Efeito de redimensionamento: Mantém largura estável, ajusta apenas altura
-    LaunchedEffect(finalHeight) {
+    // Efeito de redimensionamento: Mantém largura estável, ajusta apenas altura suavemente
+    LaunchedEffect(animatedHeight) {
         if (!isMiniMode && isReady && currentWindow != null) {
             val win = currentWindow!!
-            val targetHeightPx = with(density) { finalHeight.roundToPx() }
+            val targetHeightPx = with(density) { animatedHeight.roundToPx() }
 
-            // Only set height if it's significantly different from the programmatic target
+            // Só ajusta se houver diferença relevante para evitar jitter
             if (abs(win.height - targetHeightPx) > 1) {
                 win.setSize(win.width, targetHeightPx)
             }
@@ -528,39 +531,29 @@ fun runApplication() {
                         },
                         isTransparent = shouldBeTransparent,
                         headerModifier = Modifier.pointerInput(Unit) {
-                            var startWindowX = 0
-                            var startWindowY = 0
-                            var startMouseX = 0
-                            var startMouseY = 0
+                            var startMousePos = java.awt.Point()
+                            var startWindowPos = java.awt.Point()
                             
                             detectDragGestures(
                                 onDragStart = {
-                                    val awtWindow = window
-                                    startWindowX = awtWindow.x
-                                    startWindowY = awtWindow.y
-                                    
-                                    val mousePos = MouseInfo.getPointerInfo().location
-                                    startMouseX = mousePos.x
-                                    startMouseY = mousePos.y
-                                },
-                                onDragEnd = {
-                                    val awtWindow = window
-                                    val currentDensity = this.density
-                                    state.position = with(currentDensity) {
-                                        WindowPosition(awtWindow.x.toDp(), awtWindow.y.toDp())
-                                    }
+                                    // Captura a posição inicial absoluta (em pixels) para evitar loop de feedback
+                                    startMousePos = MouseInfo.getPointerInfo().location
+                                    startWindowPos = java.awt.Point(window.x, window.y)
+                                    window.toFront()
                                 }
                             ) { change, _ ->
                                 change.consume()
                                 
+                                // Calcula o deslocamento real baseado na tela inteira
                                 val currentMousePos = MouseInfo.getPointerInfo().location
-                                val deltaX = currentMousePos.x - startMouseX
-                                val deltaY = currentMousePos.y - startMouseY
+                                val deltaX = currentMousePos.x - startMousePos.x
+                                val deltaY = currentMousePos.y - startMousePos.y
                                 
-                                val newX = startWindowX + deltaX
-                                val newY = startWindowY + deltaY
+                                // Aplica a nova posição convertendo pixels para Dp (respeitando escala do Windows)
+                                val newX = (startWindowPos.x + deltaX).toDp()
+                                val newY = (startWindowPos.y + deltaY).toDp()
                                 
-                                window.setLocation(newX, newY)
+                                state.position = WindowPosition(newX, newY)
                             }
                         }
                     )

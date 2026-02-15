@@ -29,7 +29,7 @@ object SettingsManager {
     val dataDir: File by lazy {
         val os = System.getProperty("os.name")?.lowercase() ?: ""
         val dir = if (os.contains("win")) {
-            File(System.getenv("APPDATA"), "BereiaVerse")
+            File(System.getenv("APPDATA") ?: "", "BereiaVerse")
         } else {
             File(System.getProperty("user.home") ?: "", ".local/share/bereia-verse")
         }

@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.shadow)
     alias(libs.plugins.msix)
@@ -14,7 +13,7 @@ plugins {
 kotlin {
     jvmToolchain(21)
     
-    jvm {
+    jvm("desktop") {
         compilerOptions {
             freeCompilerArgs.add("-Xexpect-actual-classes")
         }
@@ -39,14 +38,16 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
         }
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
+        val desktopMain by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
 
-            implementation(libs.kotlinx.coroutinesSwing)
-            implementation("org.xerial:sqlite-jdbc:3.51.1.0")
-            implementation("com.google.api-client:google-api-client:2.2.0")
-            implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
-            implementation("com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0")
+                implementation(libs.kotlinx.coroutinesSwing)
+                implementation("org.xerial:sqlite-jdbc:3.51.1.0")
+                implementation("com.google.api-client:google-api-client:2.2.0")
+                implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
+                implementation("com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0")
+            }
         }
     }
 }
@@ -80,13 +81,13 @@ compose.desktop {
                 shortcut = true
                 appCategory = "Education"
                 menuGroup = "Utility"
-                iconFile.set(project.file("src/jvmMain/resources/bereiaverse.png"))
+                iconFile.set(project.file("src/desktopMain/resources/bereiaverse.png"))
                 debMaintainer = "IRSE"
             }
             
             macOS {
                 bundleID = "br.com.irse.verse"
-                iconFile.set(project.file("src/jvmMain/resources/bereiaverse.icns"))
+                iconFile.set(project.file("src/desktopMain/resources/bereiaverse.icns"))
             }
 
             windows {
@@ -94,7 +95,7 @@ compose.desktop {
                 menu = true
                 menuGroup = "IRSE"
                 upgradeUuid = "550e8400-e29b-41d4-a716-446655440000" 
-                iconFile.set(project.file("src/jvmMain/resources/bereiaverse.ico"))
+                iconFile.set(project.file("src/desktopMain/resources/bereiaverse.ico"))
             }
         }
     }
@@ -151,7 +152,7 @@ afterEvaluate {
 
 tasks.matching { it.name == "packageDeb" }.configureEach {
     val buildDirProvider = project.layout.buildDirectory
-    val resourcesDir = project.file("src/jvmMain/resources")
+    val resourcesDir = project.file("src/desktopMain/resources")
     
     doLast {
         val buildDir = buildDirProvider.get().asFile
