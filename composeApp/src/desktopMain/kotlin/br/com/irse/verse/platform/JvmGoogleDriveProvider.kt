@@ -107,14 +107,7 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
         val timestamp = java.time.LocalDateTime.now()
         val logMessage = "[$timestamp] DRIVE_LOG: $message"
         println(logMessage)
-        try {
-            val logDir = SettingsManager.externalLogDir
-            val logFile = File(logDir, "auth_debug.txt")
-            val stackTrace = error?.stackTraceToString() ?: ""
-            logFile.appendText("$logMessage\n$stackTrace\n")
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        error?.printStackTrace()
     }
 
     override suspend fun authorize() = withContext(Dispatchers.IO) {

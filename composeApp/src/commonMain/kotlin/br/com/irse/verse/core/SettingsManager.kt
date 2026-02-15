@@ -29,21 +29,6 @@ object SettingsManager {
     
     private val appDirs = AppDirs(appName = "BereiaVerse", appAuthor = "IRSE")
 
-    val dataDir: File by lazy {
-        // getUserConfigDir(roaming = true) é o local ideal para configurações e banco de dados que devem persistir
-        val path = appDirs.getUserConfigDir(roaming = true)
-        val dir = File(path)
-        if (!dir.exists()) dir.mkdirs()
-        dir
-    }
-
-    val externalLogDir: File by lazy {
-        val userHome = System.getProperty("user.home") ?: ""
-        val dir = File(userHome, "Documents/BereiaVerseLogs")
-        if (!dir.exists()) dir.mkdirs()
-        dir
-    }
-
     private val settingsFile: File by lazy { File(dataDir, "settings.json") }
     val lockFile: File by lazy { File(dataDir, "launching.lock") }
 
