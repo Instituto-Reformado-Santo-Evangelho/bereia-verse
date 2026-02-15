@@ -133,7 +133,7 @@ fun main(args: Array<String>) {
             System.setProperty("verse.noTransparent", "true")
         }
 
-        runApplication()
+        runApplication(args)
     } catch (e: Throwable) {
         // Se houve erro no Kotlin, remove o lock para não disparar safe mode falso (opcional)
         try { SettingsManager.lockFile.delete() } catch (_: Exception) {}
@@ -148,7 +148,7 @@ fun main(args: Array<String>) {
     }
 }
 
-fun runApplication() {
+fun runApplication(args: Array<String>) {
     val osName = System.getProperty("os.name").lowercase()
     val isWindows = osName.contains("win")
     val isLinux = osName.contains("linux")
