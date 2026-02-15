@@ -78,12 +78,21 @@ class SyncManager(
         syncMutex.withLock {
             // 1. Download das notas da nuvem
             val cloudNotes = cloudProvider.downloadNotes()
-            val localNotes = notesRepository.notes.value
+            val localNotes = notesRepository.getNotesForSync()
             val localNotesById = localNotes.associateBy { it.id }
             
             // 2. Mesclar mudanças
             cloudNotes.forEach { cloudNote ->
                 val localNote = localNotesById[cloudNote.id]
+                
+                if (cloudNote.isDeleted) {
+                    // Se está deletado na nuvem, garantimos que está deletado localmente
+                    if (localNote != null) {
+                        notesRepository.hardDeleteNote(cloudNote.id)
+                    }
+                    return@forEach
+                }
+
                 when {
                     localNote == null -> {
                         notesRepository.saveNote(cloudNote.copy(syncStatus = SyncStatus.SYNCED))
@@ -102,11 +111,16 @@ class SyncManager(
                 }
             }
             
-            // 3. Upload de notas locais pendentes
-            notesRepository.notes.value.filter { it.syncStatus == SyncStatus.PENDING }.forEach { localNote ->
+            // 3. Upload de mudanças locais pendentes (incluindo deleções)
+            notesRepository.getNotesForSync().filter { it.syncStatus == SyncStatus.PENDING }.forEach { localNote ->
                 cloudProvider.uploadNote(localNote)
                 if (syncState.value != CloudSyncState.ERROR) {
-                    notesRepository.saveNote(localNote.copy(syncStatus = SyncStatus.SYNCED))
+                    if (localNote.isDeleted) {
+                        // Se era uma deleção e foi enviada com sucesso, podemos remover localmente
+                        notesRepository.hardDeleteNote(localNote.id)
+                    } else {
+                        notesRepository.saveNote(localNote.copy(syncStatus = SyncStatus.SYNCED))
+                    }
                 }
             }
         }

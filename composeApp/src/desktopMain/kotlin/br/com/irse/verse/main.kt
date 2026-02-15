@@ -58,6 +58,24 @@ import java.awt.Rectangle
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.abs
+import java.net.ServerSocket
+import java.net.Socket
+import java.io.PrintWriter
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+
+private const val SINGLE_INSTANCE_PORT = 54321
+
+class JvmDeepLinkHandler : br.com.irse.verse.core.DeepLinkHandler {
+    private val _deepLinkFlow = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    override val deepLinkFlow = _deepLinkFlow.asSharedFlow()
+
+    override fun handleDeepLink(uri: String) {
+        _deepLinkFlow.tryEmit(uri)
+    }
+}
 
 fun getActiveMonitorBounds(): Rectangle? {
     return try {
@@ -80,7 +98,56 @@ fun getActiveMonitorBounds(): Rectangle? {
     } catch (e: Exception) { e.printStackTrace(); null }
 }
 
+private var instanceServerSocket: ServerSocket? = null
+
+fun handleSingleInstance(args: Array<String>, deepLinkHandler: br.com.irse.verse.core.DeepLinkHandler): Boolean {
+    try {
+        val serverSocket = ServerSocket(SINGLE_INSTANCE_PORT)
+        instanceServerSocket = serverSocket
+        
+        Thread {
+            while (!serverSocket.isClosed) {
+                try {
+                    val clientSocket = serverSocket.accept()
+                    val reader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
+                    val receivedArgs = reader.readLine()?.split("|")?.toTypedArray() ?: emptyArray()
+                    
+                    receivedArgs.find { it.startsWith("bereia-verse://") }?.let { uri ->
+                        deepLinkHandler.handleDeepLink(uri)
+                    }
+                    
+                    clientSocket.close()
+                } catch (e: Exception) {
+                    if (!serverSocket.isClosed) e.printStackTrace()
+                }
+            }
+        }.apply {
+            isDaemon = true
+            start()
+        }
+        return true
+    } catch (e: Exception) {
+        try {
+            val socket = Socket("localhost", SINGLE_INSTANCE_PORT)
+            val writer = PrintWriter(socket.getOutputStream(), true)
+            writer.println(args.joinToString("|"))
+            socket.close()
+        } catch (e2: Exception) {}
+        return false
+    }
+}
+
 fun main(args: Array<String>) {
+    val deepLinkHandler = JvmDeepLinkHandler()
+
+    if (!handleSingleInstance(args, deepLinkHandler)) {
+        return
+    }
+
+    Runtime.getRuntime().addShutdownHook(Thread {
+        try { instanceServerSocket?.close() } catch (_: Exception) {}
+    })
+
     // Configuração de Log de Erro (Essencial para diagnósticos em Linux/Mac/Win)
     try {
         // 1. Detecção de Crash Anterior (Safe Mode) & Verificação de Suporte
@@ -133,7 +200,7 @@ fun main(args: Array<String>) {
             System.setProperty("verse.noTransparent", "true")
         }
 
-        runApplication(args)
+        runApplication(args, deepLinkHandler)
     } catch (e: Throwable) {
         // Se houve erro no Kotlin, remove o lock para não disparar safe mode falso (opcional)
         try { SettingsManager.lockFile.delete() } catch (_: Exception) {}
@@ -148,7 +215,7 @@ fun main(args: Array<String>) {
     }
 }
 
-fun runApplication(args: Array<String>) {
+fun runApplication(args: Array<String>, deepLinkHandler: br.com.irse.verse.core.DeepLinkHandler) {
     val osName = System.getProperty("os.name").lowercase()
     val isWindows = osName.contains("win")
     val isLinux = osName.contains("linux")
@@ -368,6 +435,7 @@ fun runApplication(args: Array<String>) {
                                 single { SettingsManager.dataDir }
                                 single<SnapshotHandler> { JvmSnapshotHandler() }
                                 single<CloudSyncProvider> { JvmGoogleDriveProvider() }
+                                single<DeepLinkHandler> { deepLinkHandler }
                             }
                         )
                     }
@@ -388,12 +456,18 @@ fun runApplication(args: Array<String>) {
         if (isReady && viewModel.value != null) {
             isVisible = true
             
-            // Verifica se o app foi aberto via protocolo bereia-verse://auth?code=...
-            args.find { it.startsWith("bereia-verse://") }?.let { uri ->
-                val code = uri.substringAfter("code=", "")
-                if (code.isNotBlank()) {
-                    viewModel.value?.submitAuthCode(code)
+            // Traz o app para frente quando um deep link é recebido (mesmo com app já aberto)
+            scope.launch {
+                deepLinkHandler.deepLinkFlow.collect { _ ->
+                    isVisible = true
+                    state.isMinimized = false
+                    currentWindow?.toFront()
                 }
+            }
+
+            // Verifica se o app foi aberto INICIALMENTE via protocolo
+            args.find { it.startsWith("bereia-verse://") }?.let { uri ->
+                deepLinkHandler.handleDeepLink(uri)
             }
 
             withContext(Dispatchers.IO) {

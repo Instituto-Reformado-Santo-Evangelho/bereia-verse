@@ -28,7 +28,7 @@ class LocalNotesRepository(private val baseDir: File) : NotesRepository {
                 } catch (e: Exception) {
                     null
                 }
-            }.sortedByDescending { it.updatedAt }
+            }.filter { !it.isDeleted }.sortedByDescending { it.updatedAt }
             
             _notes.value = loadedNotes
         } catch (e: Exception) {
@@ -42,10 +42,12 @@ class LocalNotesRepository(private val baseDir: File) : NotesRepository {
             val content = json.encodeToString(Note.serializer(), note)
             file.writeText(content)
             
-            // Atualiza estado local
+            // Atualiza estado local (só se não estiver deletada)
             val currentList = _notes.value.toMutableList()
             currentList.removeAll { it.id == note.id }
-            currentList.add(0, note)
+            if (!note.isDeleted) {
+                currentList.add(0, note)
+            }
             _notes.value = currentList.sortedByDescending { it.updatedAt }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -54,12 +56,41 @@ class LocalNotesRepository(private val baseDir: File) : NotesRepository {
 
     override suspend fun deleteNote(noteId: String) = withContext(Dispatchers.IO) {
         try {
+            // Buscamos em TODAS as notas físicas para garantir que podemos marcar como deletada
+            val file = File(notesDir, "$noteId.json")
+            if (!file.exists()) return@withContext
+            
+            val note = json.decodeFromString<Note>(file.readText())
+            saveNote(note.copy(isDeleted = true, syncStatus = SyncStatus.PENDING, updatedAt = System.currentTimeMillis()))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override suspend fun hardDeleteNote(noteId: String) = withContext(Dispatchers.IO) {
+        try {
             val file = File(notesDir, "$noteId.json")
             if (file.exists()) file.delete()
             
             _notes.value = _notes.value.filterNot { it.id == noteId }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    override suspend fun getNotesForSync(): List<Note> = withContext(Dispatchers.IO) {
+        try {
+            val noteFiles = notesDir.listFiles { _, name -> name.endsWith(".json") } ?: emptyArray()
+            noteFiles.mapNotNull { file ->
+                try {
+                    json.decodeFromString<Note>(file.readText())
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
     }
 

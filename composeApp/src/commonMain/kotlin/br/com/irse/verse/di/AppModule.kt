@@ -44,6 +44,7 @@ val appModule = module {
             historyRepository = get(),
             notesRepository = get(),
             syncManager = get(),
+            deepLinkHandler = getOrNull(),
             dispatchers = get()
         )
     }

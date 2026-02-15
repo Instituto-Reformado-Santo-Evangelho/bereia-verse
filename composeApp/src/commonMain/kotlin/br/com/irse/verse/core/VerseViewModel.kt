@@ -23,10 +23,22 @@ class VerseViewModel(
     private val historyRepository: HistoryRepository,
     private val notesRepository: NotesRepository,
     private val syncManager: SyncManager,
+    private val deepLinkHandler: DeepLinkHandler? = null,
     private val dispatchers: CoroutineDispatchers = CoroutineDispatchers()
 ) {
     private val viewModelScope = CoroutineScope(dispatchers.main + SupervisorJob())
     
+    init {
+        viewModelScope.launch {
+            deepLinkHandler?.deepLinkFlow?.collect { uri ->
+                val code = uri.substringAfter("code=", "")
+                if (code.isNotBlank()) {
+                    submitAuthCode(code)
+                }
+            }
+        }
+    }
+
     private val _errorState = MutableStateFlow<UiError?>(null)
     val errorState = _errorState.asStateFlow()
 

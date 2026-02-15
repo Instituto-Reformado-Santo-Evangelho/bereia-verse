@@ -12,5 +12,6 @@ data class Note(
     val content: String,
     val createdAt: Long,
     val updatedAt: Long,
-    val syncStatus: SyncStatus = SyncStatus.PENDING
+    val syncStatus: SyncStatus = SyncStatus.PENDING,
+    val isDeleted: Boolean = false
 )
