@@ -36,3 +36,4 @@ composeApp/src/jvmMain/resources/client_secrets.json
 tokens/
 *.pfx
 *.pfx.base64.txt
+*_git_bak/

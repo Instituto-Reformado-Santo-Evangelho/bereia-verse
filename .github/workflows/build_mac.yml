@@ -1,0 +1,52 @@
+name: Build macOS App
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, Tag ou SHA do bereia-verse para compilar'
+        required: false
+        default: ''
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Checkout Ref (Tag or Master)
+      shell: bash
+      run: |
+        REF="${{ github.event.inputs.ref || github.ref_name }}"
+        echo "Checking out $REF..."
+        git checkout $REF || git checkout master
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x app/gradlew
+
+    - name: Build macOS DMG
+      run: ./app/gradlew -p ./app packageDmg --no-configuration-cache
+
+    - name: Upload DMG Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: verse-mac-dmg
+        path: app/composeApp/build/compose/binaries/main/dmg/*.dmg
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: app/composeApp/build/compose/binaries/main/dmg/*.dmg
