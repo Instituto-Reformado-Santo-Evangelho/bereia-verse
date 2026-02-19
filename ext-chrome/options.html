@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Configurações ACF Bible</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; min-width: 300px; }
+    h2 { font-size: 16px; margin-bottom: 15px; }
+    .option { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    select, button { padding: 8px; width: 100%; box-sizing: border-box; }
+    button { background-color: #007bff; color: white; border: none; cursor: pointer; margin-top: 10px; }
+    button:hover { background-color: #0056b3; }
+    #status { margin-top: 10px; color: green; font-size: 12px; height: 15px; }
+  </style>
+</head>
+<body>
+  <h2>Configurações de Visualização</h2>
+
+  <div class="option">
+    <label for="style">Estilo de Referência:</label>
+    <select id="style">
+      <option value="underline_solid">Sublinhado Sólido (Padrão)</option>
+      <option value="underline">Sublinhado Simples</option>
+      <option value="arrow">Ícone de Seta</option>
+      <option value="none">Nenhum (Texto Limpo)</option>
+    </select>
+  </div>
+
+  <div class="option">
+    <label style="display: flex; align-items: center; cursor: pointer;">
+      <input type="checkbox" id="selection_mode" style="width: auto; margin-right: 10px;">
+      Ativar Popup ao Selecionar Texto
+    </label>
+    <small style="color: #666; margin-left: 23px;">Exibe o versículo ao selecionar uma referência com o mouse.</small>
+  </div>
+
+  <div class="option">
+    <label style="display: flex; align-items: center; cursor: pointer;">
+      <input type="checkbox" id="hover_mode" style="width: auto; margin-right: 10px;">
+      Ativar Popup ao Passar o Mouse
+    </label>
+    <small style="color: #666; margin-left: 23px;">Exibe o versículo automaticamente ao passar o mouse sobre referências marcadas.</small>
+  </div>
+
+  <button id="save">Salvar Preferências</button>
+  <div id="status"></div>
+
+  <script src="options.js"></script>
+</body>
+</html>

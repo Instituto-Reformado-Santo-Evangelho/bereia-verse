@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Bereia Versículos | IRSE",
+  "version": "1.3.0",
+  "author": "Instituto Reformado Santo Evangelho (IRSE)",
+  "homepage_url": "https://tech.santoevangelho.com.br",
+  "description": "Exibe versículos bíblicos (ACF) ao passar o mouse ou selecionar referências.",
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "logo.png"
+  },
+  "icons": {
+    "16": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["bible_mapping.json", "logo.png", "arrow.svg"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
