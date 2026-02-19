@@ -1,6 +1,10 @@
+<div align="center">
+  
 # Bereia Versículos
 
 ![Logo](app/composeApp/src/desktopMain/resources/bereiaverse.png)
+
+</div>
 
 **Um ecossistema de ferramentas para leitura e anotação bíblica, projetado para ser integrado e multiplataforma.**
 
