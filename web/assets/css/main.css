@@ -1,0 +1,536 @@
+:root {
+    --bg-color: #000000;
+    --surface-dark: #050505;
+    --surface-light: #0a0a0a;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --gold-primary: #FFAE00;
+    --gold-secondary: #cc8b00;
+    --gold-glow: rgba(255, 174, 0, 0.15);
+    
+    --font-heading: 'Cinzel', serif;
+    --font-body: 'Inter', sans-serif;
+    
+    --container-width: 1100px;
+    --border-radius: 16px;
+    --transition-slow: 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.7;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    color: #fff;
+    margin-top: 0;
+    letter-spacing: 1px;
+}
+
+h1 { font-size: 3rem; letter-spacing: 3px; text-transform: uppercase; }
+h2 { font-size: 2rem; color: var(--gold-primary); margin-bottom: 2rem; border-bottom: 1px solid rgba(255, 174, 0, 0.2); display: inline-block; padding-bottom: 10px; }
+h3 { font-size: 1.4rem; }
+
+a { 
+    text-decoration: none; 
+    color: inherit; 
+    transition: var(--transition-slow); 
+}
+
+/* Layout */
+main:not(.doc-page) {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: 4rem 2rem;
+}
+
+/* Header / Hero */
+header {
+    height: 75vh;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    background: radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, var(--bg-color) 100%),
+                url('/assets/header-bg.webp') no-repeat center center;
+    background-size: cover;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 150px;
+    background: linear-gradient(to top, var(--bg-color), transparent);
+}
+
+.logo-container {
+    margin-bottom: 2rem;
+    animation: fadeInDown 1.2s ease-out;
+}
+
+.logo-container img {
+    height: 150px;
+    filter: drop-shadow(0 0 30px rgba(0,0,0,0.8));
+    border-radius: 50%;
+    background: var(--gold-primary);
+}
+
+header h1 {
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    animation: fadeInUp 1s ease-out 0.3s backwards;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold-primary);
+    opacity: 0.9;
+    animation: fadeInUp 1s ease-out 0.6s backwards;
+}
+
+/* Bible Quote */
+.bible-quote {
+    text-align: center;
+    padding: 2rem 1rem 4rem;
+    background: transparent;
+}
+
+.quote-text {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-style: italic;
+}
+
+.quote-ref {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    color: var(--gold-primary);
+    margin-top: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-style: normal;
+}
+
+/* Intro Text */
+.intro {
+    margin: 4rem auto 6rem;
+    text-align: center;
+}
+
+.intro p {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    max-width: 750px;
+    margin: 0 auto;
+    line-height: 1.8;
+}
+
+/* Cards */
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 3rem;
+    margin-bottom: 8rem;
+}
+
+.card {
+    background: var(--surface-dark);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    position: relative;
+    transition: var(--transition-slow);
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px -20px rgba(0,0,0,0.7);
+    border-color: rgba(255, 174, 0, 0.3);
+}
+
+.card-image {
+    height: 260px;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s ease;
+    opacity: 0.8;
+}
+
+.card:hover .card-image img {
+    transform: scale(1.05);
+    opacity: 1;
+}
+
+.card-content {
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.card-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.card h2 {
+    font-size: 1.6rem;
+    margin: 0;
+    color: #fff;
+    border: none;
+    padding: 0;
+}
+
+.version-tag {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    background: transparent;
+    border: 1px solid var(--gold-primary);
+    color: var(--gold-primary);
+    padding: 4px 10px;
+    border-radius: 50px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.card p {
+    color: var(--text-secondary);
+    margin-bottom: 2.5rem;
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+/* Premium Button */
+/* Removing any pseudo-elements or inherited decorations */
+.btn-download {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    width: 100%;
+    padding: 1.1rem;
+    background: transparent;
+    color: var(--gold-primary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border: 2px solid var(--gold-primary) !important; /* Force visible border */
+    border-radius: 50px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: none !important;
+    border-bottom: 2px solid var(--gold-primary) !important; /* Explicitly set border bottom */
+    line-height: normal;
+}
+
+.btn-download::after, .btn-download::before {
+    content: none !important;
+    display: none !important;
+}
+
+.btn-download:hover {
+    background: var(--gold-primary);
+    color: #000;
+    box-shadow: 0 0 20px var(--gold-glow);
+}
+
+.history-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.history-link:hover {
+    opacity: 1;
+    color: #fff;
+}
+
+/* Installation Guide */
+.installation-guide {
+    background: var(--surface-light);
+    padding: 5rem 3rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 6rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.installation-guide::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+}
+
+.installation-guide h2 {
+    text-align: center;
+    margin-bottom: 4rem;
+    font-size: 2.2rem;
+    border: none;
+    color: #fff;
+}
+
+.guide-block {
+    margin-bottom: 5rem;
+}
+
+.guide-block:last-child {
+    margin-bottom: 0;
+}
+
+.guide-block h3 {
+    text-align: left;
+    margin-bottom: 2.5rem;
+    color: var(--gold-primary);
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    border-left: 3px solid var(--gold-primary);
+    padding-left: 1rem;
+}
+
+.steps-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.step-card {
+    background: rgba(255,255,255,0.02);
+    padding: 2rem;
+    border-radius: 4px;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.03);
+    transition: var(--transition-slow);
+}
+
+.step-card:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.step-number {
+    font-family: var(--font-heading);
+    font-size: 3rem;
+    color: var(--gold-primary);
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    line-height: 1;
+}
+
+.step-image {
+    margin: 1.5rem 0;
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.step-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    opacity: 0.8;
+}
+
+.step-content h4 {
+    color: #fff;
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.step-content p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Footer */
+footer {
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding: 4rem 0;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    background: #050505;
+}
+
+footer img {
+    margin-top: 1rem;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+}
+
+footer img:hover {
+    opacity: 1;
+}
+
+.footer-links {
+    margin: 1rem 0;
+}
+
+.footer-links a {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.footer-links a:hover {
+    opacity: 1;
+    color: var(--gold-primary);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .cards-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .steps-container {
+        grid-template-columns: 1fr;
+    }
+    
+    h1 { font-size: 2.2rem; }
+    
+    header { height: 60vh; }
+    
+    .installation-guide { padding: 3rem 1.5rem; }
+}
+
+@media (max-width: 600px) {
+    main:not(.doc-page) {
+        padding: 2rem 1rem;
+    }
+
+    header {
+        height: auto;
+        min-height: auto;
+        padding: 6rem 1rem 4rem;
+    }
+
+    .logo-container img {
+        height: 90px;
+        width: 90px; /* Ensure aspect ratio */
+    }
+
+    h1 {
+        font-size: 1.8rem;
+        line-height: 1.3;
+        letter-spacing: 1px;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+        letter-spacing: 2px;
+    }
+
+    .cards-container {
+        gap: 2rem;
+        grid-template-columns: 1fr; /* Force single column */
+    }
+
+    .card {
+        min-width: 0; /* Allow shrinking below content size if needed */
+    }
+    
+    .card-image {
+        height: 200px;
+    }
+
+    .card-content {
+        padding: 1.5rem;
+    }
+
+    .quote-text {
+        font-size: 1.1rem;
+        line-height: 1.5;
+    }
+
+    .quote-ref {
+        margin-top: 1rem;
+        font-size: 0.75rem;
+    }
+
+    .installation-guide {
+        padding: 2rem 1rem;
+    }
+
+    .step-number {
+        font-size: 2rem;
+        top: 5px;
+        right: 15px;
+    }
+
+    .step-card {
+        padding: 1.5rem;
+    }
+    
+    footer {
+        padding: 3rem 1rem;
+    }
+}
