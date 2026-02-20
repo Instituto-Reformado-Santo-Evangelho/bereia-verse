@@ -29,16 +29,16 @@ jobs:
 
     - name: Package Chrome Extension
       run: |
-        cd ext-chrome && zip -r ../ext-chrome.zip .
+        cd ext-chrome && zip -r ../ext-bereia-verse.zip .
 
     - name: Package WordPress Plugin
       run: |
-        cd wp-plugin && zip -r ../wp-plugin.zip .
+        cd wp-plugin && zip -r ../wp-bereia-verse.zip .
 
     - name: Release
       uses: softprops/action-gh-release@v1
       if: github.ref_type == 'tag'
       with:
         files: |
-          ext-chrome.zip
-          wp-plugin.zip
+          ext-bereia-verse.zip
+          wp-bereia-verse.zip
