@@ -25,6 +25,8 @@ jobs:
           REF="${{ github.event.inputs.ref || github.ref_name }}"
           echo "Checking out $REF..."
           git checkout $REF || git checkout master
+          echo "Verificando arquivos:"
+          ls -R snap/
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -43,11 +45,20 @@ jobs:
           name: snap-package
           path: ${{ steps.build.outputs.snap }}
 
+      - name: Publish to Snap Store
+        uses: snapcore/action-publish@v1
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.build.outputs.snap }}
+          release: stable
+
       - name: Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ github.event.inputs.ref || github.ref_name }}
           files: |
             ${{ steps.build.outputs.snap }}
           generate_release_notes: true
@@ -55,12 +66,3 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Opcional: Publicar na Snap Store se houver credenciais
-      # - name: Publish to Snap Store
-      #   uses: snapcore/action-publish@v1
-      #   env:
-      #     SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-      #   with:
-      #     snap: ${{ steps.build.outputs.snap }}
-      #     release: stable
