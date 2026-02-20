@@ -36,9 +36,15 @@ jobs:
         cd wp-plugin && zip -r ../wp-bereia-verse.zip .
 
     - name: Release
-      uses: softprops/action-gh-release@v1
-      if: github.ref_type == 'tag'
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
       with:
+        tag_name: ${{ github.ref_name }}
         files: |
           ext-bereia-verse.zip
           wp-bereia-verse.zip
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

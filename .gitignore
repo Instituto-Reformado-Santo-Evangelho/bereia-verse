@@ -37,5 +37,4 @@ tokens/
 *.pfx
 *.pfx.base64.txt
 *_git_bak/
-\n# Diretório de trabalho para o pacote AUR\naur_pkgbuild/
-\n# Arquivo de segredos do ambiente\n.env
+aur_pkgbuild/*
