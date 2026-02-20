@@ -56,6 +56,10 @@ Para guias de instalação detalhados, acesse a pasta `docs`:
 - **[Instalação da Extensão para Chrome](./docs/extensao-chrome.md)**
 - **[Instalação do Plugin para WordPress](./docs/plugin-wordpress.md)**
 
+<br>
+
+![Print](docs/prints/2026-02-20-055833_hyprshot.png)
+
 ---
 
 ## 📄 Licença

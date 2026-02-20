@@ -3,7 +3,7 @@ Contributors: irse
 Tags: bíblia, acf, versículos, tooltip, popup, teologia, almeida corrigida fiel
 Requires at least: 5.0
 Tested up to: 6.4
-Stable tag: 1.3.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -32,12 +32,13 @@ Não. O plugin é extremamente leve e carrega os versículos via API apenas quan
 
 == Screenshots ==
 
-1. Popup exibindo um versículo em tema claro.
-2. Configurações do plugin no painel administrativo.
+1. Tela principal do leitor bíblico automático.
+2. Exemplo de versículo exibido com anotações.
+3. Interface de configurações e temas.
 
 == Changelog ==
 
-= 1.3.0 =
+= 1.2.0 =
 * Rebranding para Bereia Versículos | IRSE.
 * Adicionado sistema de temas (Claro/Escuro) com ícones animados.
 * Melhorias na performance e detecção de referências.
@@ -45,7 +46,7 @@ Não. O plugin é extremamente leve e carrega os versículos via API apenas quan
 
 == Upgrade Notice ==
 
-= 1.3.0 =
+= 1.2.0 =
 Esta versão inclui o novo sistema de temas e melhorias críticas de interface. Recomendamos a atualização imediata.
 
 == Support ==
