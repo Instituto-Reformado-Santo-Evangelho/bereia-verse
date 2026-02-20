@@ -41,20 +41,7 @@ apps:
       PATH: $SNAP/usr/lib/jvm/java-21-openjdk-amd64/bin:$PATH
 
 parts:
-  jdk:
-    plugin: nil
-    stage-packages:
-      - openjdk-21-jdk-headless
-      - libasound2t64
-      - libpng16-16t64
-      - libgl1
-      - libx11-6
-      - zlib1g
-      - wl-clipboard
-      - xclip
-
   bereia-verse:
-    after: [jdk]
     plugin: nil
     source: .
     build-environment:
@@ -67,21 +54,30 @@ parts:
       - libgl1-mesa-dev
       - libx11-dev
       - zlib1g-dev
+    stage-packages:
+      - libasound2t64
+      - libgl1
+      - wl-clipboard
+      - xclip
     override-build: |
       export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
       export PATH=$JAVA_HOME/bin:$PATH
       
       cd app
-      ./gradlew createDistributable --no-daemon
+      ./gradlew :composeApp:createDistributable --no-daemon
+      
+      # O caminho correto do binário gerado pelo Compose
+      DIST_PATH="composeApp/build/compose/binaries/main/app/bereiaverse"
       
       mkdir -p $SNAPCRAFT_PART_INSTALL/bin
       mkdir -p $SNAPCRAFT_PART_INSTALL/lib
       
-      cp -r composeApp/build/compose/binaries/main/app/bereiaverse/bin/* $SNAPCRAFT_PART_INSTALL/bin/
-      cp -r composeApp/build/compose/binaries/main/app/bereiaverse/lib/* $SNAPCRAFT_PART_INSTALL/lib/
+      # Copia apenas o necessário da distribuição gerada
+      cp -r $DIST_PATH/bin/* $SNAPCRAFT_PART_INSTALL/bin/
+      cp -r $DIST_PATH/lib/* $SNAPCRAFT_PART_INSTALL/lib/
       
       chmod +x $SNAPCRAFT_PART_INSTALL/bin/bereiaverse
 
-      # Instalação do ícone para o desktop launcher interno do snap
+      # Ícone
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps
       cp composeApp/src/desktopMain/resources/bereiaverse.png $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps/bereiaverse.png
