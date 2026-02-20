@@ -74,16 +74,7 @@ git fetch origin
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 echo "Branch atual: $CURRENT_BRANCH"
 
-echo ""
-echo "Resumo da Release:"
-echo "  - Alvo: $TARGET"
-echo "  - Versão: $VERSION"
-echo ""
-read -p "Você confirma a criação e o push desta release? (s/N) " confirmation
-if [[ "$confirmation" != "s" && "$confirmation" != "S" ]]; then
-  echo "Operação cancelada."
-  exit 0
-fi
+
 
 echo "Criando e enviando a tag $VERSION..."
 git tag "$VERSION"

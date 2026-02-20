@@ -1,0 +1,20 @@
+# Maintainer: Heleno Salgado <heleno@irse.com.br>
+
+pkgname=bereiaverse-bin
+_pkgname=bereiaverse # for internal use
+pkgver=1.3.0 # Will be updated for each release
+pkgrel=1
+pkgdesc="Leitor bíblico automático com anotações (ACF)"
+arch=('x86_64')
+url="https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse"
+license=('custom:CC-BY-NC-ND-4.0')
+depends=('java-runtime-openjdk>=17')
+provides=("${_pkgname}")
+conflicts=("${_pkgname}")
+source=("${_pkgname}-${pkgver}.deb::https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases/download/v${pkgver}/bereiaverse-linux-v${pkgver}.deb")
+sha256sums=('SKIP') # Você precisará gerar isso
+
+package() {
+    # Extrai o conteúdo do .deb para o diretório de empacotamento
+    bsdtar -x -f "${srcdir}/${_pkgname}-${pkgver}.deb" -C "${pkgdir}/"
+}

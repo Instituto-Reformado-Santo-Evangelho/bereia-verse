@@ -42,12 +42,27 @@ jobs:
         [IO.File]::WriteAllBytes("app/composeApp/signing.pfx", $bytes)
       shell: powershell
 
+    - name: Create temporary client_secrets.json
+      if: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON != '' }}
+      env:
+        GOOGLE_CLIENT_SECRETS_JSON: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON }}
+      run: |
+        New-Item -ItemType Directory -Force -Path "app/composeApp/src/commonMain/resources"
+        $env:GOOGLE_CLIENT_SECRETS_JSON | Out-File -FilePath "app/composeApp/src/commonMain/resources/client_secrets.json" -Encoding ascii
+      shell: powershell
+
     - name: Build Windows MSIX
       env:
         PFX_PASS: ${{ secrets.MSIX_PFX_PASSWORD }}
       run: |
         ./app/gradlew.bat -p ./app createMsix "-Pmsix.pfx.path=app/composeApp/signing.pfx" "-Pmsix.pfx.password=$env:PFX_PASS" --no-configuration-cache
       shell: bash
+
+    - name: Remove temporary client_secrets.json
+      if: always() && steps.create_secrets.conclusion == 'success'
+      run: Remove-Item -Path "app/composeApp/src/commonMain/resources/client_secrets.json" -Force
+      shell: powershell
+
 
     - name: Upload MSIX Artifact
       uses: actions/upload-artifact@v4

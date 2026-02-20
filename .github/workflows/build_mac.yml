@@ -36,8 +36,21 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x app/gradlew
 
+    - name: Create temporary client_secrets.json
+      if: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON != '' }}
+      env:
+        GOOGLE_CLIENT_SECRETS_JSON: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON }}
+      run: |
+        mkdir -p app/composeApp/src/commonMain/resources
+        echo "$GOOGLE_CLIENT_SECRETS_JSON" > app/composeApp/src/commonMain/resources/client_secrets.json
+
     - name: Build macOS DMG
       run: ./app/gradlew -p ./app packageDmg --no-configuration-cache
+
+    - name: Remove temporary client_secrets.json
+      if: always() && steps.create_secrets.conclusion == 'success'
+      run: rm app/composeApp/src/commonMain/resources/client_secrets.json
+
 
     - name: Upload DMG Artifact
       uses: actions/upload-artifact@v4

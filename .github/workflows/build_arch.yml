@@ -33,8 +33,21 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Create temporary client_secrets.json
+        if: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON != '' }}
+        env:
+          GOOGLE_CLIENT_SECRETS_JSON: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON }}
+        run: |
+          mkdir -p app/composeApp/src/commonMain/resources
+          echo "$GOOGLE_CLIENT_SECRETS_JSON" > app/composeApp/src/commonMain/resources/client_secrets.json
+
       - name: Build Application Binaries
         run: ./app/gradlew -p ./app createDistributable --no-configuration-cache
+
+      - name: Remove temporary client_secrets.json
+        if: always() && steps.create_secrets.conclusion == 'success'
+        run: rm app/composeApp/src/commonMain/resources/client_secrets.json
+
 
       - name: Checkout Release Repo (PKGBUILD)
         uses: actions/checkout@v4

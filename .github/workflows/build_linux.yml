@@ -38,8 +38,21 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y fakeroot binutils
 
+    - name: Create temporary client_secrets.json
+      if: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON != '' }}
+      env:
+        GOOGLE_CLIENT_SECRETS_JSON: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON }}
+      run: |
+        mkdir -p app/composeApp/src/commonMain/resources
+        echo "$GOOGLE_CLIENT_SECRETS_JSON" > app/composeApp/src/commonMain/resources/client_secrets.json
+
     - name: Build Linux DEB
       run: ./app/gradlew -p ./app createDistributable :composeApp:packageDeb --no-configuration-cache
+
+    - name: Remove temporary client_secrets.json
+      if: always() && steps.create_secrets.conclusion == 'success'
+      run: rm app/composeApp/src/commonMain/resources/client_secrets.json
+
 
     - name: Upload DEB Artifact
       uses: actions/upload-artifact@v4
