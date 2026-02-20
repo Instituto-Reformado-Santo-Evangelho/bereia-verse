@@ -38,15 +38,13 @@ apps:
       - gsettings
     environment:
       JAVA_TOOL_OPTIONS: "-Dorg.jetbrains.skiko.renderApi=OPENGL -Dskiko.linux.display.server=Wayland -Djava.awt.headless=false"
-      PATH: $SNAP/usr/lib/jvm/java-21-openjdk-amd64/bin:$PATH
+      # O PATH não precisa do JDK externo, o Compose já empacota o JRE necessário.
+      # PATH: $SNAP/usr/lib/jvm/java-21-openjdk-amd64/bin:$PATH
 
 parts:
   bereia-verse:
     plugin: nil
     source: .
-    build-environment:
-      - GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-      - GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
     build-packages:
       - openjdk-21-jdk
       - libasound2-dev
@@ -64,15 +62,15 @@ parts:
       export PATH=$JAVA_HOME/bin:$PATH
       
       cd app
-      ./gradlew :composeApp:createDistributable --no-daemon
+      ./gradlew :composeApp:createReleaseDistributable --no-daemon
       
-      # O caminho correto do binário gerado pelo Compose
-      DIST_PATH="composeApp/build/compose/binaries/main/app/bereiaverse"
+      # O caminho da distribuição de release
+      DIST_PATH="composeApp/build/compose/binaries/main-release/app/bereiaverse"
       
       mkdir -p $SNAPCRAFT_PART_INSTALL/bin
       mkdir -p $SNAPCRAFT_PART_INSTALL/lib
       
-      # Copia apenas o necessário da distribuição gerada
+      # Copia a distribuição otimizada (JRE + App)
       cp -r $DIST_PATH/bin/* $SNAPCRAFT_PART_INSTALL/bin/
       cp -r $DIST_PATH/lib/* $SNAPCRAFT_PART_INSTALL/lib/
       
