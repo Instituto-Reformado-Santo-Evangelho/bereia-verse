@@ -10,6 +10,7 @@ TARGETS=(
   ["win"]="build_windows.yml"
   ["mac"]="build_mac.yml"
   ["ext"]="build_extensions.yml"
+  ["snap"]="build_snap.yml"
 )
 
 # --- Funções ---
