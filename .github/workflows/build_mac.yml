@@ -56,14 +56,8 @@ jobs:
       run: rm app/composeApp/src/commonMain/resources/client_secrets.json
 
 
-    - name: Upload DMG Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: verse-mac-dmg
-        path: app/composeApp/build/compose/binaries/main/dmg/*.dmg
-
     - name: Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
+      if: github.ref_type == 'tag'
       with:
         files: app/composeApp/build/compose/binaries/main/dmg/*.dmg

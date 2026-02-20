@@ -95,14 +95,8 @@ jobs:
               su builder -c 'cd /package && yes 1 | makepkg -s --noconfirm'
             "
 
-      - name: Upload Arch Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: verse-arch-pkg
-          path: build_arch/*.pkg.tar.zst
-
       - name: Release Arch
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref_type == 'tag'
         with:
           files: build_arch/*.pkg.tar.zst

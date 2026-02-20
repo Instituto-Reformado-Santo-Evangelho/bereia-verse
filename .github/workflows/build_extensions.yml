@@ -35,17 +35,9 @@ jobs:
       run: |
         cd wp-plugin && zip -r ../wp-plugin.zip .
 
-    - name: Upload Extension Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: extensions
-        path: |
-          ext-chrome.zip
-          wp-plugin.zip
-
     - name: Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
+      if: github.ref_type == 'tag'
       with:
         files: |
           ext-chrome.zip
