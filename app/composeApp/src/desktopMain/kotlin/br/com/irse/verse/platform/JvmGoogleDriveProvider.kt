@@ -62,13 +62,10 @@ class JvmGoogleDriveProvider : CloudSyncProvider {
     }
 
     private fun getGoogleClientSecrets(): GoogleClientSecrets {
-        val details = GoogleClientSecrets.Details().apply {
-            clientId = "221997659982-kuaq72a18co34kkb88rnamdlt0ablkaj.apps.googleusercontent.com"
-            clientSecret = "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"
-            authUri = "https://accounts.google.com/o/oauth2/auth"
-            tokenUri = "https://oauth2.googleapis.com/token"
-        }
-        return GoogleClientSecrets().setInstalled(details)
+        val secretsStream = JvmGoogleDriveProvider::class.java.getResourceAsStream("/client_secrets.json")
+            ?: throw IllegalStateException("Arquivo 'client_secrets.json' não encontrado nos resources. Verifique se o processo de build o está incluindo.")
+        
+        return GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(secretsStream))
     }
 
     private suspend fun restoreSession() {
