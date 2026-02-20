@@ -55,8 +55,11 @@ jobs:
 
     - name: Package Generic Linux Artifact (.tar.gz)
       run: |
-        cd app/composeApp/build/compose/binaries/main/app
-        tar -czvf ../../../bereiaverse-linux-${{ github.ref_name }}.tar.gz .
+        DIST_DIR="$GITHUB_WORKSPACE/app/composeApp/build/compose/binaries/main/app"
+        OUT_DIR="$GITHUB_WORKSPACE/app/composeApp/build/compose/binaries"
+        echo "Empacotando de $DIST_DIR para $OUT_DIR"
+        mkdir -p "$OUT_DIR"
+        cd "$DIST_DIR" && tar -czvf "$OUT_DIR/bereiaverse-linux-${{ github.ref_name }}.tar.gz" .
 
     - name: Remove temporary client_secrets.json
       if: always()
