@@ -44,8 +44,8 @@ jobs:
         run: |
           if [ -n "$GOOGLE_CLIENT_SECRETS_JSON" ]; then
             echo "Creating client_secrets.json from secret..."
-            mkdir -p app/composeApp/src/desktopMain/resources
-            echo "$GOOGLE_CLIENT_SECRETS_JSON" > app/composeApp/src/desktopMain/resources/client_secrets.json
+            mkdir -p app/composeApp/src/commonMain/resources
+            echo "$GOOGLE_CLIENT_SECRETS_JSON" > app/composeApp/src/commonMain/resources/client_secrets.json
           else
             echo "Secret not found. Skipping client_secrets.json creation."
           fi
@@ -57,8 +57,8 @@ jobs:
       - name: Remove temporary client_secrets.json
         if: always()
         run: |
-          if [ -f "app/composeApp/src/desktopMain/resources/client_secrets.json" ]; then
-            rm app/composeApp/src/desktopMain/resources/client_secrets.json
+          if [ -f "app/composeApp/src/commonMain/resources/client_secrets.json" ]; then
+            rm app/composeApp/src/commonMain/resources/client_secrets.json
           fi
 
       - name: Upload Snap artifact
