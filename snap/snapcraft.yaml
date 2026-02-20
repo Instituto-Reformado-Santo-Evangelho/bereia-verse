@@ -57,6 +57,9 @@ parts:
     after: [jdk]
     plugin: nil
     source: .
+    build-environment:
+      - GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      - GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
     build-packages:
       - openjdk-21-jdk
       - libasound2-dev
