@@ -50,22 +50,33 @@ jobs:
           echo "Secret not found. Skipping client_secrets.json creation."
         fi
 
-    - name: Build Linux DEB
+    - name: Build Linux DEB and Generic
       run: ./app/gradlew -p ./app createDistributable :composeApp:packageDeb --no-configuration-cache
 
+    - name: Package Generic Linux Artifact (.tar.gz)
+      run: |
+        cd app/composeApp/build/compose/binaries/main/app
+        tar -czvf ../../../../bereiaverse-linux-${{ github.ref_name }}.tar.gz .
+
     - name: Remove temporary client_secrets.json
-      if: always() && steps.create_secrets.conclusion == 'success'
-      run: rm app/composeApp/src/commonMain/resources/client_secrets.json
+      if: always()
+      run: |
+        if [ -f "app/composeApp/src/commonMain/resources/client_secrets.json" ]; then
+          rm app/composeApp/src/commonMain/resources/client_secrets.json
+        fi
 
-
-    - name: Upload DEB Artifact
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: verse-linux-deb
-        path: app/composeApp/build/compose/binaries/main/deb/*.deb
+        name: verse-linux-artifacts
+        path: |
+          app/composeApp/build/compose/binaries/main/deb/*.deb
+          app/composeApp/build/compose/binaries/bereiaverse-linux-*.tar.gz
 
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: app/composeApp/build/compose/binaries/main/deb/*.deb
+        files: |
+          app/composeApp/build/compose/binaries/main/deb/*.deb
+          app/composeApp/build/compose/binaries/bereiaverse-linux-*.tar.gz

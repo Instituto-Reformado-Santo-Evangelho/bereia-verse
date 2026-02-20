@@ -1,8 +1,8 @@
-# Maintainer: Heleno Salgado <heleno@irse.com.br>
+# Maintainer: Heleno Salgado <helenosalgado19@gmail.com>
 
 pkgname=bereiaverse-bin
-_pkgname=bereiaverse # for internal use
-pkgver=1.3.0 # Will be updated for each release
+_pkgname=bereiaverse
+pkgver=1.2.0  # ATUALIZE AQUI A CADA NOVA VERSÃO
 pkgrel=1
 pkgdesc="Leitor bíblico automático com anotações (ACF)"
 arch=('x86_64')
@@ -11,10 +11,28 @@ license=('custom:CC-BY-NC-ND-4.0')
 depends=('java-runtime-openjdk>=17')
 provides=("${_pkgname}")
 conflicts=("${_pkgname}")
-source=("${_pkgname}-${pkgver}.deb::https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases/download/v${pkgver}/bereiaverse-linux-v${pkgver}.deb")
-sha256sums=('SKIP') # Você precisará gerar isso
+
+# O source agora aponta para o .tar.gz do aplicativo compilado
+source=("${_pkgname}-linux-v${pkgver}.tar.gz::https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases/download/v${pkgver}/bereiaverse-linux-v${pkgver}.tar.gz")
+sha256sums=('SKIP') # GERE UM NOVO A CADA VERSÃO
 
 package() {
-    # Extrai o conteúdo do .deb para o diretório de empacotamento
-    bsdtar -x -f "${srcdir}/${_pkgname}-${pkgver}.deb" -C "${pkgdir}/"
+    # Cria os diretórios de destino
+    install -d "${pkgdir}/opt/${_pkgname}"
+    install -d "${pkgdir}/usr/bin"
+    install -d "${pkgdir}/usr/share/applications"
+    install -d "${pkgdir}/usr/share/icons/hicolor/256x256/apps"
+
+    # Copia os arquivos da aplicação
+    cp -r "${srcdir}/bin" "${pkgdir}/opt/${_pkgname}/"
+    cp -r "${srcdir}/lib" "${pkgdir}/opt/${_pkgname}/"
+
+    # Cria o link simbólico para o executável
+    ln -s "/opt/${_pkgname}/bin/${_pkgname}" "${pkgdir}/usr/bin/${_pkgname}"
+
+    # Instala o atalho do menu e o ícone
+    # Assumindo que o .desktop e .png estão na pasta lib/app do tar.gz
+    # Se o caminho estiver errado, precisaremos ajustar.
+    install -Dm644 "${srcdir}/lib/bereiaverse.desktop" "${pkgdir}/usr/share/applications/br.com.irse.verse.desktop"
+    install -Dm644 "${srcdir}/lib/bereiaverse.png" "${pkgdir}/usr/share/icons/hicolor/256x256/apps/br.com.irse.verse.png"
 }
