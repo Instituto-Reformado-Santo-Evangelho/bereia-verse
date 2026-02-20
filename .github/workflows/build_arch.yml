@@ -34,12 +34,16 @@ jobs:
           cache: gradle
 
       - name: Create temporary client_secrets.json
-        if: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON != '' }}
         env:
           GOOGLE_CLIENT_SECRETS_JSON: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON }}
         run: |
-          mkdir -p app/composeApp/src/commonMain/resources
-          echo "$GOOGLE_CLIENT_SECRETS_JSON" > app/composeApp/src/commonMain/resources/client_secrets.json
+          if [ -n "$GOOGLE_CLIENT_SECRETS_JSON" ]; then
+            echo "Creating client_secrets.json from secret..."
+            mkdir -p app/composeApp/src/commonMain/resources
+            echo "$GOOGLE_CLIENT_SECRETS_JSON" > app/composeApp/src/commonMain/resources/client_secrets.json
+          else
+            echo "Secret not found. Skipping client_secrets.json creation."
+          fi
 
       - name: Build Application Binaries
         run: ./app/gradlew -p ./app createDistributable --no-configuration-cache

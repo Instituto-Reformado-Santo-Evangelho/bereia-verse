@@ -43,12 +43,16 @@ jobs:
       shell: powershell
 
     - name: Create temporary client_secrets.json
-      if: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON != '' }}
       env:
         GOOGLE_CLIENT_SECRETS_JSON: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON }}
       run: |
-        New-Item -ItemType Directory -Force -Path "app/composeApp/src/commonMain/resources"
-        $env:GOOGLE_CLIENT_SECRETS_JSON | Out-File -FilePath "app/composeApp/src/commonMain/resources/client_secrets.json" -Encoding ascii
+        if ($env:GOOGLE_CLIENT_SECRETS_JSON) {
+          echo "Creating client_secrets.json from secret..."
+          New-Item -ItemType Directory -Force -Path "app/composeApp/src/commonMain/resources"
+          $env:GOOGLE_CLIENT_SECRETS_JSON | Out-File -FilePath "app/composeApp/src/commonMain/resources/client_secrets.json" -Encoding ascii
+        } else {
+          echo "Secret not found. Skipping client_secrets.json creation."
+        }
       shell: powershell
 
     - name: Build Windows MSIX
