@@ -8,7 +8,7 @@
 
 **Um ecossistema de ferramentas para leitura e anotação bíblica, projetado para ser integrado e multiplataforma.**
 
-O Bereia Versículos é um projeto de código aberto do [Instituto Reformado Santo Evangelho (IRSE)](https://irse.com.br) que visa facilitar o acesso e o estudo das Escrituras Sagradas. Ele transforma automaticamente referências de versículos em texto legível, onde quer que você esteja: no seu desktop, navegando na web ou em seu site WordPress.
+O Bereia Versículos é um projeto do [Instituto Reformado Santo Evangelho (IRSE)](https://irse.com.br) que visa facilitar o acesso e o estudo das Escrituras Sagradas. Ele transforma automaticamente referências de versículos em texto legível, onde quer que você esteja: no seu desktop, navegando na web ou em seu site WordPress.
 
 ---
 
@@ -19,10 +19,10 @@ Este monorepo contém vários pacotes que trabalham juntos para criar o ecossist
 | Projeto | Diretório | Tecnologia | Propósito |
 | :--- | :--- | :--- | :--- |
 | 🖥️ **App Desktop** | `/app` | Kotlin Multiplatform | Aplicativo nativo para Windows, macOS e Linux com recursos de anotações, histórico e sincronização na nuvem. |
-| 🌐 **Site Principal** | `/web` | Nuxt.js / Vue.js | A página inicial do projeto, com documentação e links para download dos aplicativos. |
-| 🧩 **Extensão Chrome** | `/ext-chrome` | JavaScript | Detecta e exibe versículos bíblicos em qualquer página da web que você visitar. |
-| 🔌 **Plugin WordPress** | `/wp-plugin` | PHP / JavaScript | Leva a funcionalidade de detecção de versículos para o seu site ou blog WordPress. |
-| ⚙️ **Servidor Backend**| `/server` | Cloudflare Workers | Fornece a API utilizada pelas outras aplicações para buscar os textos bíblicos. |
+| 🌐 **Site Principal** | `/web` | Wordpress / Nuxt.js | A página inicial do projeto, com a Política de Privacidade e links para download dos aplicativos. |
+| 🧩 **Extensão Chrome** | `extensions/ext-chrome` | JavaScript | Detecta e exibe versículos bíblicos em qualquer página da web que você visitar. |
+| 🔌 **Plugin WordPress** | `extensions/wp-plugin` | PHP / JavaScript | Leva a funcionalidade de detecção de versículos para o seu site ou blog WordPress. |
+| ⚙️ **Servidor**| `/workers` | Cloudflare Workers | Fornece a API utilizada pelas aplicações web. |
 
 ---
 
@@ -31,7 +31,7 @@ Este monorepo contém vários pacotes que trabalham juntos para criar o ecossist
 Para contribuir com o desenvolvimento, você precisará de algumas ferramentas instaladas:
 
 - **Git:** Para controle de versão.
-- **Node.js & npm:** Para os projetos web, server e extensões.
+- **Node.js & npm:** Para os projetos web, workers e extensões.
 - **JDK 21 (ou superior):** Para o aplicativo desktop em Kotlin.
 - **GitHub CLI (`gh`):** Necessário para usar o script de release.
 
@@ -73,4 +73,4 @@ Isso significa que você é livre para copiar e redistribuir o material em qualq
 
 Veja o arquivo [`LICENSE`](./LICENSE) para o texto completo da licença.
 
-**Nota sobre Conteúdo:** Esta licença se aplica ao código-fonte do projeto. O texto da Bíblia (Almeida Corrigida Fiel - ACF) possui seus próprios direitos autorais, que devem ser respeitados conforme os termos de seus detentores.
+**Nota sobre Conteúdo:** Esta licença se aplica ao código-fonte do projeto. O texto da Bíblia possui seus próprios direitos autorais, que devem ser respeitados conforme os termos de seus detentores. O **Bereia Versículos** tem autorização para usar o Texto da Bíblia Almeida Corrigida Fiel (ACF), cedidos gentilmente pela [**Sociedade Bíblica Trinitariana do Brasil (SBTB)**](https://biblias.com.br/sobre).
