@@ -27,6 +27,8 @@ installers/*
 # Environment Variables
 .env
 .env.local
+extensions/data/tmp/*
+extensions/data/docs/*
 
 # Google Drive Sync
 client_secrets.json

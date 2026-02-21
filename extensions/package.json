@@ -1,0 +1,19 @@
+{
+  "name": "bereia-versiculos-irse",
+  "version": "1.3.0",
+  "description": "Monorepo for Bereia Versículos | IRSE project",
+  "scripts": {
+    "build": "npm run build:core && npm run build:extension && npm run build:wp",
+    "build:core": "node scripts/build_core.js",
+    "build:extension": "python3 scripts/create_chrome_zip.py",
+    "build:wp": "python3 scripts/create_zip.py",
+    "db:build": "python3 scripts/build_database.py",
+    "db:dump": "python3 scripts/dump_sqlite.py",
+    "db:upload": "python3 scripts/upload_chunks.py"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  },
+  "author": "",
+  "license": "ISC"
+}

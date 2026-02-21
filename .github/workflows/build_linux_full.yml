@@ -1,0 +1,135 @@
+name: Build Full Linux & Extensions
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, Tag ou SHA para compilar'
+        required: false
+        default: ''
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-all:
+    name: Build All Artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Checkout Ref
+      shell: bash
+      run: |
+        REF="${{ github.event.inputs.ref || github.ref_name }}"
+        echo "Checking out $REF..."
+        git checkout $REF || git checkout master
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Install Build Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y fakeroot binutils zip
+
+    - name: Create temporary client_secrets.json
+      env:
+        GOOGLE_CLIENT_SECRETS_JSON: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON }}
+      run: |
+        if [ -n "$GOOGLE_CLIENT_SECRETS_JSON" ]; then
+          echo "Creating client_secrets.json from secret..."
+          mkdir -p app/composeApp/src/commonMain/resources
+          echo "$GOOGLE_CLIENT_SECRETS_JSON" > app/composeApp/src/commonMain/resources/client_secrets.json
+        else
+          echo "Secret not found. Skipping client_secrets.json creation."
+        fi
+
+    - name: Get Version
+      id: get_version
+      run: |
+        VERSION=$(grep 'packageVersion =' app/composeApp/build.gradle.kts | cut -d '"' -f 2)
+        echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+        TAG_VERSION=${{ github.ref_name }}
+        echo "CLEAN_VERSION=${TAG_VERSION#v}" >> $GITHUB_ENV
+
+    - name: Build Desktop App (DEB & Binaries)
+      run: ./app/gradlew -p ./app :composeApp:createDistributable :composeApp:packageDeb --no-configuration-cache
+
+    - name: Package Generic Linux (.tar.gz)
+      run: |
+        DIST_DIR="$GITHUB_WORKSPACE/app/composeApp/build/compose/binaries/main/app/bereiaverse"
+        OUT_DIR="$GITHUB_WORKSPACE/artifacts"
+        mkdir -p "$OUT_DIR"
+        cd "$DIST_DIR" && tar -czvf "$OUT_DIR/bereiaverse-linux-${{ env.APP_VERSION }}.tar.gz" .
+
+    - name: Build Arch Package (.pkg.tar.zst)
+      run: |
+        # Checkout Release Repo for PKGBUILD
+        git clone https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse-pkgbuild.git release_repo
+        
+        VERSION=${{ env.CLEAN_VERSION }}
+        if [[ "$VERSION" == "main" ]] || [[ "$VERSION" == "master" ]]; then
+          VERSION="0.0.0"
+        fi
+        
+        mkdir -p build_arch/src/app
+        cp release_repo/arch/PKGBUILD build_arch/
+        cp release_repo/arch/bereiaverse.desktop build_arch/src/
+        sed -i "s/pkgver=0.0.0/pkgver=$VERSION/" build_arch/PKGBUILD
+        cp -r app/composeApp/build/compose/binaries/main/app/bereiaverse/* build_arch/src/app/
+        cp app/composeApp/src/desktopMain/resources/bereiaverse.png build_arch/src/bereiaverse.png
+        
+        docker run --rm 
+          -v ${{ github.workspace }}/build_arch:/package 
+          archlinux:latest 
+          /bin/bash -c "
+            pacman -Syu --noconfirm --needed base-devel && 
+            useradd -m builder && 
+            echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && 
+            chown -R builder:builder /package && 
+            su builder -c 'cd /package && yes 1 | makepkg -s --noconfirm'
+          "
+        cp build_arch/*.pkg.tar.zst artifacts/
+
+    - name: Build Extensions (.zip)
+      run: |
+        # Usar o script de build oficial que ajustamos
+        cd extensions
+        npm install
+        npm run build
+        cp dist/ext-bereia-verse-v*.zip ../artifacts/ext-bereia-verse.zip
+        cp dist/wp-bereia-verse-v*.zip ../artifacts/wp-bereia-verse.zip
+
+    - name: Remove temporary client_secrets.json
+      if: always()
+      run: |
+        if [ -f "app/composeApp/src/commonMain/resources/client_secrets.json" ]; then
+          rm app/composeApp/src/commonMain/resources/client_secrets.json
+        fi
+
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+      with:
+        tag_name: ${{ github.ref_name }}
+        files: |
+          app/composeApp/build/compose/binaries/main/deb/*.deb
+          artifacts/*.tar.gz
+          artifacts/*.pkg.tar.zst
+          artifacts/ext-bereia-verse.zip
+          artifacts/wp-bereia-verse.zip
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
