@@ -46,6 +46,7 @@ jobs:
         id: build
         with:
           path: linux/snap
+          snapcraft-args: --destructive-mode
 
       - name: Get Version
         id: get_version
