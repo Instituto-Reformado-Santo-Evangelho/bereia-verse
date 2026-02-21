@@ -59,8 +59,6 @@ jobs:
       run: |
         VERSION=$(grep 'packageVersion =' app/composeApp/build.gradle.kts | cut -d '"' -f 2)
         echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
-        TAG_VERSION=${{ github.ref_name }}
-        echo "CLEAN_VERSION=${TAG_VERSION#v}" >> $GITHUB_ENV
 
     - name: Build Desktop App (DEB & Binaries)
       run: ./app/gradlew -p ./app :composeApp:createDistributable :composeApp:packageDeb --no-configuration-cache
@@ -72,46 +70,12 @@ jobs:
         mkdir -p "$OUT_DIR"
         cd "$DIST_PARENT" && tar -czvf "$OUT_DIR/bereiaverse-linux-${{ env.APP_VERSION }}.tar.gz" bereiaverse
 
-    - name: Build Arch Package (.pkg.tar.zst)
-      run: |
-        VERSION=${{ env.CLEAN_VERSION }}
-        if [[ "$VERSION" == "main" ]] || [[ "$VERSION" == "master" ]]; then
-          VERSION="0.0.0"
-        fi
-        
-        AUR_DIR="linux/aur/bereiaverse-bin"
-        mkdir -p build_arch/src
-        
-        # Copiar arquivos do AUR local
-        cp $AUR_DIR/PKGBUILD build_arch/
-        cp $AUR_DIR/br.com.irse.verse.desktop build_arch/
-        cp $AUR_DIR/br.com.irse.verse.appdata.xml build_arch/
-        
-        # Atualizar versão no PKGBUILD
-        sed -i "s/pkgver=.*/pkgver=$VERSION/" build_arch/PKGBUILD
-        
-        # Preparar o tar.gz local para o makepkg não precisar baixar
-        # O PKGBUILD espera bereiaverse-linux-v$pkgver.tar.gz
-        cp artifacts/bereiaverse-linux-${{ env.APP_VERSION }}.tar.gz build_arch/bereiaverse-linux-v$VERSION.tar.gz
-        
-        docker run --rm \
-          -v ${{ github.workspace }}/build_arch:/package \
-          archlinux:latest \
-          /bin/bash -c "
-            pacman -Syu --noconfirm --needed base-devel && \
-            useradd -m builder && \
-            echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
-            chown -R builder:builder /package && \
-            su builder -c 'cd /package && makepkg -s --noconfirm'
-          "
-        cp build_arch/*.pkg.tar.zst artifacts/
-
     - name: Build Extensions (.zip)
       run: |
-        # Usar o script de build oficial que ajustamos
         cd extensions
         npm install
         npm run build
+        mkdir -p ../artifacts
         cp dist/ext-bereia-verse-v*.zip ../artifacts/ext-bereia-verse.zip
         cp dist/wp-bereia-verse-v*.zip ../artifacts/wp-bereia-verse.zip
 
@@ -130,7 +94,6 @@ jobs:
         files: |
           app/composeApp/build/compose/binaries/main/deb/*.deb
           artifacts/*.tar.gz
-          artifacts/*.pkg.tar.zst
           artifacts/ext-bereia-verse.zip
           artifacts/wp-bereia-verse.zip
         generate_release_notes: true
