@@ -105,10 +105,10 @@ compose.desktop {
 // Configuração do Plugin MSIX
 msix {
     manifest {
-        displayName.set("Bereia Versículos") // DisplayName pode ter acento
+        displayName.set("Bereia Versículos")
         publisher.set("CN=B41FD2FB-AD80-4515-8823-5F91386585CC")
-        publisherDisplayName.set("Organização IRSE") // Fornecido pela Microsoft
-        identityName.set("OrganizaoIRSE.BereiaVersculos") // Normalizado pela Microsoft
+        publisherDisplayName.set("Organização IRSE")
+        identityName.set("OrganizaoIRSE.BereiaVersculos")
         version.set("1.3.0.0")
         appId.set("BereiaVerse")
         processorArchitecture.set("x64")

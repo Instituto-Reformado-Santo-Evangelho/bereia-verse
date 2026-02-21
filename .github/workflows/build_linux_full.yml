@@ -67,37 +67,42 @@ jobs:
 
     - name: Package Generic Linux (.tar.gz)
       run: |
-        DIST_DIR="$GITHUB_WORKSPACE/app/composeApp/build/compose/binaries/main/app/bereiaverse"
+        DIST_PARENT="$GITHUB_WORKSPACE/app/composeApp/build/compose/binaries/main/app"
         OUT_DIR="$GITHUB_WORKSPACE/artifacts"
         mkdir -p "$OUT_DIR"
-        cd "$DIST_DIR" && tar -czvf "$OUT_DIR/bereiaverse-linux-${{ env.APP_VERSION }}.tar.gz" .
+        cd "$DIST_PARENT" && tar -czvf "$OUT_DIR/bereiaverse-linux-${{ env.APP_VERSION }}.tar.gz" bereiaverse
 
     - name: Build Arch Package (.pkg.tar.zst)
       run: |
-        # Checkout Release Repo for PKGBUILD
-        git clone https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse-pkgbuild.git release_repo
-        
         VERSION=${{ env.CLEAN_VERSION }}
         if [[ "$VERSION" == "main" ]] || [[ "$VERSION" == "master" ]]; then
           VERSION="0.0.0"
         fi
         
-        mkdir -p build_arch/src/app
-        cp release_repo/arch/PKGBUILD build_arch/
-        cp release_repo/arch/bereiaverse.desktop build_arch/src/
-        sed -i "s/pkgver=0.0.0/pkgver=$VERSION/" build_arch/PKGBUILD
-        cp -r app/composeApp/build/compose/binaries/main/app/bereiaverse/* build_arch/src/app/
-        cp app/composeApp/src/desktopMain/resources/bereiaverse.png build_arch/src/bereiaverse.png
+        AUR_DIR="linux/aur/bereiaverse-bin"
+        mkdir -p build_arch/src
         
-        docker run --rm 
-          -v ${{ github.workspace }}/build_arch:/package 
-          archlinux:latest 
+        # Copiar arquivos do AUR local
+        cp $AUR_DIR/PKGBUILD build_arch/
+        cp $AUR_DIR/br.com.irse.verse.desktop build_arch/
+        cp $AUR_DIR/br.com.irse.verse.appdata.xml build_arch/
+        
+        # Atualizar versão no PKGBUILD
+        sed -i "s/pkgver=.*/pkgver=$VERSION/" build_arch/PKGBUILD
+        
+        # Preparar o tar.gz local para o makepkg não precisar baixar
+        # O PKGBUILD espera bereiaverse-linux-v$pkgver.tar.gz
+        cp artifacts/bereiaverse-linux-${{ env.APP_VERSION }}.tar.gz build_arch/bereiaverse-linux-v$VERSION.tar.gz
+        
+        docker run --rm \
+          -v ${{ github.workspace }}/build_arch:/package \
+          archlinux:latest \
           /bin/bash -c "
-            pacman -Syu --noconfirm --needed base-devel && 
-            useradd -m builder && 
-            echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && 
-            chown -R builder:builder /package && 
-            su builder -c 'cd /package && yes 1 | makepkg -s --noconfirm'
+            pacman -Syu --noconfirm --needed base-devel && \
+            useradd -m builder && \
+            echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
+            chown -R builder:builder /package && \
+            su builder -c 'cd /package && makepkg -s --noconfirm'
           "
         cp build_arch/*.pkg.tar.zst artifacts/
 

@@ -61,12 +61,6 @@ jobs:
             rm app/composeApp/src/commonMain/resources/client_secrets.json
           fi
 
-      - name: Upload Snap artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: snap-package
-          path: ${{ steps.build.outputs.snap }}
-
       - name: Publish to Snap Store
         uses: snapcore/action-publish@v1
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
