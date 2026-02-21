@@ -84,8 +84,12 @@ parts:
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/applications
       cp linux/aur/bereiaverse-bin/br.com.irse.verse.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/
     prime:
-      - bin
-      - lib
-      - usr/share/icons
-      - usr/share/applications
-      - -usr/lib/jvm # Remove redundant JDK files if any leaked into install
+      - bin/bereiaverse
+      - lib/*.jar
+      - lib/runtime
+      - usr/share/icons/hicolor/256x256/apps/br.com.irse.verse.png
+      - usr/share/applications/br.com.irse.verse.desktop
+      - -usr/include
+      - -usr/share/man
+      - -usr/share/doc
+      - -usr/lib/jvm

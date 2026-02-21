@@ -46,7 +46,6 @@ jobs:
         id: build
         with:
           path: linux/snap
-          use-lxd: true
 
       - name: Get Version
         id: get_version
