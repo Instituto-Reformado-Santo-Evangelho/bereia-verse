@@ -6,13 +6,11 @@ Este documento detalha como instalar e utilizar o aplicativo desktop do Bereia V
 
 ## 💻 Instalação
 
-O aplicativo desktop está disponível para Windows, macOS e Linux. Os pacotes de instalação podem ser encontrados na [página de Releases do GitHub](https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases).
+O aplicativo desktop está disponível para Windows, macOS e Linux. Os pacotes de instalação podem ser encontrados nas lojas oficiais ou na [página de Releases do GitHub](https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases).
 
 ### Windows
 
-1.  Acesse a [página de Releases](https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases).
-2.  Baixe o arquivo `BereiaVerse.msix` (ou `BereiaVerse.exe` se disponível).
-3.  Execute o instalador e siga as instruções na tela.
+Instale seguramente pela [Microsoft Store](https://apps.microsoft.com/detail/9NGHM6QZMH5V), pesquisando pelo termo Bereia Versículos.
 
 ### macOS
 
@@ -21,6 +19,8 @@ O aplicativo desktop está disponível para Windows, macOS e Linux. Os pacotes d
 3.  Abra o arquivo `.dmg` e arraste o aplicativo `BereiaVerse` para a pasta "Aplicativos".
 
 ### Linux (Debian/Ubuntu)
+
+Instale via [Snap Store](https://snapcraft.io/bereiaverse) ou:
 
 1.  Acesse a [página de Releases](https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases).
 2.  Baixe o arquivo `bereiaverse-<versao>.deb`.
@@ -32,12 +32,11 @@ O aplicativo desktop está disponível para Windows, macOS e Linux. Os pacotes d
 
 ### Linux (Arch Linux)
 
-1.  Acesse a [página de Releases](https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases).
-2.  Baixe o arquivo `bereiaverse-<versao>.pkg.tar.zst`.
-3.  Instale o pacote usando `pacman`:
-    ```bash
-    sudo pacman -U bereiaverse-<versao>.pkg.tar.zst
-    ```
+Instale via AUR:
+
+```
+yay -S bereiaverse-bin
+```
 
 ---
 
@@ -47,8 +46,7 @@ O Bereia Versículos é um leitor bíblico automático e uma ferramenta de anota
 
 ### Funcionalidades Principais:
 
-*   **Leitura da Bíblia:** Navegue por livros, capítulos e versículos da tradução Almeida Corrigida Fiel (ACF).
-*   **Detecção Automática:** Copie e cole textos com referências bíblicas e o aplicativo as detectará e exibirá o conteúdo.
+*   **Detecção Automática:** Copie uma referência Bíblica e o aplicativo exibirá o trecho correspondente.
 *   **Anotações:** Faça anotações personalizadas em qualquer versículo ou trecho da Bíblia.
 *   **Histórico:** Mantenha um registro dos versículos e passagens que você visualizou recentemente.
 *   **Sincronização na Nuvem:** (Se configurado) Sincronize suas anotações e histórico com o Google Drive para acesso em múltiplos dispositivos.
@@ -56,5 +54,3 @@ O Bereia Versículos é um leitor bíblico automático e uma ferramenta de anota
 ### Dicas de Uso:
 
 *   **Busca Rápida:** Use a barra de busca para encontrar rapidamente livros, capítulos ou palavras-chave.
-*   **Cópia Inteligente:** Ao copiar um texto de outro lugar, cole-o no aplicativo e veja as referências bíblicas serem automaticamente identificadas.
-*   **Modo Escuro:** Alterne entre temas claro e escuro nas configurações para uma leitura mais confortável.

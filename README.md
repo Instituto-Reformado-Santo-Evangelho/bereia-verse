@@ -20,36 +20,19 @@ Este monorepo contém vários pacotes que trabalham juntos para criar o ecossist
 | :--- | :--- | :--- | :--- |
 | 🖥️ **App Desktop** | `/app` | Kotlin Multiplatform | Aplicativo nativo para Windows, macOS e Linux com recursos de anotações, histórico e sincronização na nuvem. |
 | 🌐 **Site Principal** | `/web` | Wordpress / Nuxt.js | A página inicial do projeto, com a Política de Privacidade e links para download dos aplicativos. |
-| 🧩 **Extensão Chrome** | `extensions/ext-chrome` | JavaScript | Detecta e exibe versículos bíblicos em qualquer página da web que você visitar. |
-| 🔌 **Plugin WordPress** | `extensions/wp-plugin` | PHP / JavaScript | Leva a funcionalidade de detecção de versículos para o seu site ou blog WordPress. |
-| ⚙️ **Servidor**| `/workers` | Cloudflare Workers | Fornece a API utilizada pelas aplicações web. |
-
+| 🧩 **Extensão Chrome** | `extensions/ext-bereia-verse` | JavaScript | Detecta e exibe versículos bíblicos em qualquer página da web que você visitar. |
+| 🔌 **Plugin WordPress** | `extensions/wp-bereia-verse` | PHP / JavaScript | Leva a funcionalidade de detecção de versículos para o seu site ou blog WordPress. |
+| ⚙️ **Servidor** | `/workers` | Cloudflare Workers | Fornece a API utilizada pelas aplicações web. |
+| 🐧 **Linux** | `/linux` | Shell | Arquivos de compilação e instalaçao para Linux.
 ---
 
-## 🚀 Como Começar (Desenvolvimento)
-
-Para contribuir com o desenvolvimento, você precisará de algumas ferramentas instaladas:
-
-- **Git:** Para controle de versão.
-- **Node.js & npm:** Para os projetos web, workers e extensões.
-- **JDK 21 (ou superior):** Para o aplicativo desktop em Kotlin.
-- **GitHub CLI (`gh`):** Necessário para usar o script de release.
-
-**Passos básicos:**
-
-1.  Clone o repositório:
-    ```bash
-    git clone https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse.git
-    cd bereia-verse
-    ```
-
-2.  Para instruções detalhadas de como compilar e rodar cada projeto, consulte o nosso **[Guia de Desenvolvimento](./docs/desenvolvimento.md)**.
+Para instruções detalhadas de como compilar e rodar cada projeto, consulte o nosso **[Guia de Desenvolvimento](./docs/desenvolvimento.md)**.
 
 ---
 
 ## 릴 Releases e Instalação
 
-Os pacotes de instalação para todos os aplicativos podem ser encontrados na [**página de Releases**](https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases) do projeto.
+Os pacotes de instalação para todos os aplicativos podem ser encontrados nas lojas oficiais ou na [**página de Releases**](https://github.com/Instituto-Reformado-Santo-Evangelho/bereia-verse/releases) do projeto.
 
 Para guias de instalação detalhados, acesse a pasta `docs`:
 - **[Instalação do App Desktop](./docs/app-desktop.md)**

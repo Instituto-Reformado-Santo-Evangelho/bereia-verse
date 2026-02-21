@@ -17,7 +17,7 @@ base: core24
 compression: xz
 
 # O ícone principal do snap (arquivo local usado durante o build)
-icon: app/composeApp/src/desktopMain/resources/bereiaverse.png
+icon: ../../app/composeApp/src/desktopMain/resources/bereiaverse.png
 
 platforms:
   amd64:
@@ -43,7 +43,7 @@ apps:
 parts:
   bereia-verse:
     plugin: nil
-    source: .
+    source: ../..
     build-packages:
       - openjdk-21-jdk
       - libasound2-dev
@@ -81,7 +81,7 @@ parts:
       
       # Desktop file
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/applications
-      cp ../linux/aur/bereiaverse-bin/br.com.irse.verse.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/
+      cp linux/aur/bereiaverse-bin/br.com.irse.verse.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/
     prime:
       - bin
       - lib

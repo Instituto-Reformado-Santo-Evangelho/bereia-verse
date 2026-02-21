@@ -10,16 +10,13 @@ Certifique-se de ter as seguintes ferramentas instaladas em seu sistema:
 
 *   **Git:** Ferramenta de controle de versão.
     *   [Download e Instalação do Git](https://git-scm.com/downloads)
-*   **Node.js (LTS recomendado) e npm (ou Yarn):** Para os projetos `web`, `server`, `ext-chrome` e `wp-plugin` (para algumas tarefas de build, se aplicável).
+*   **Node.js (LTS recomendado) e npm (ou Yarn):** Para os projetos `web`, `workers`, `ext-bereia-verse` e `wp-bereia-verse` (para algumas tarefas de build, se aplicável).
     *   [Download e Instalação do Node.js](https://nodejs.org/en/download/)
 *   **JDK 21 (Java Development Kit):** Para o projeto `app` (Kotlin Multiplatform).
     *   [Download e Instalação do JDK](https://adoptium.net/) (Recomendado Temurin OpenJDK 21)
-*   **GitHub CLI (`gh`):** Para interagir com o GitHub e usar o script `release.sh`.
-    *   [Download e Instalação do GitHub CLI](https://cli.github.com/)
-    *   Após a instalação, autentique-se: `gh auth login`
 *   **IDE (Opcional, mas recomendado):**
     *   **IntelliJ IDEA Ultimate Edition:** Para o desenvolvimento em Kotlin Multiplatform (`app`).
-    *   **VS Code:** Para os projetos `web`, `server`, `ext-chrome` e `wp-plugin`.
+    *   **VS Code:** Para os projetos `web`, `workers` e `extensions`.
 
 ---
 
@@ -32,14 +29,11 @@ Certifique-se de ter as seguintes ferramentas instaladas em seu sistema:
     ```
 
 2.  **Configuração Inicial (Projetos Node.js):**
-    Para os projetos `web`, `server` e `ext-chrome`:
+    Para os projetos `web`, `workers`:
     ```bash
     npm install --prefix web
-    npm install --prefix server
-    npm install --prefix ext-chrome
+    npm install --prefix workers
     ```
-    (Note: `wp-plugin` geralmente não tem dependências Node/npm, mas pode ter scripts de build no futuro).
-
 ---
 
 ## ⚙️ Rodando os Subprojetos Localmente
@@ -64,51 +58,27 @@ Certifique-se de ter as seguintes ferramentas instaladas em seu sistema:
     ```
     O site estará acessível em `http://localhost:3000` (ou outra porta indicada).
 
-### Servidor Backend (`/server`)
+### Servidor Backend (`/workers`)
 
 *   **Tecnologia:** Cloudflare Workers (TypeScript)
 *   **Para Rodar (com Wrangler CLI):**
     ```bash
-    cd server
+    cd workers
     npm run dev
     ```
     O servidor estará acessível localmente para testes.
 
-### Extensão Chrome (`/ext-chrome`)
+### Extensão Chrome (`/ext-bereia-verse`)
 
 *   **Tecnologia:** JavaScript, HTML, CSS
-*   **Para Testar:** Consulte o guia de instalação em [docs/extensao-chrome.md](./extensao-chrome.md) e siga os passos para "Carregar sem compactação" no modo de desenvolvedor do Chrome, apontando para o diretório `ext-chrome`.
+*   **Para Testar:** Consulte o guia de instalação em [docs/extensao-chrome.md](./extensao-chrome.md) e siga os passos para "Carregar sem compactação" no modo de desenvolvedor do Chrome, apontando para o diretório `ext-bereia-verse`.
 
-### Plugin WordPress (`/wp-plugin`)
+### Plugin WordPress (`/wp-bereia-verse`)
 
 *   **Tecnologia:** PHP, JavaScript, CSS
 *   **Para Testar:** Instale em um ambiente de desenvolvimento WordPress (ex: LocalWP, Docker, MAMP/XAMPP). Consulte o guia de instalação em [docs/plugin-wordpress.md](./plugin-wordpress.md).
 
 ---
-
-## 📦 Builds e Releases
-
-### Script de Release Automatizado
-
-Utilize o script `release.sh` na raiz do projeto para automatizar a criação de tags, o push e o disparo dos workflows de build no GitHub Actions.
-
-*   **Tornar Executável (se ainda não for):**
-    ```bash
-    chmod +x release.sh
-    ```
-*   **Uso Básico:**
-    ```bash
-    ./release.sh <alvo> <versão>
-    ```
-    Exemplos:
-    *   `./release.sh all v1.0.0` (Para construir e lançar todos os pacotes)
-    *   `./release.sh deb v1.0.0` (Para construir e lançar apenas o pacote Debian)
-    *   `./release.sh ext v1.0.0` (Para construir e lançar apenas a extensão e o plugin)
-
-*   **Detalhes e Opções:**
-    ```bash
-    ./release.sh --help
-    ```
 
 ### Builds Manuais (Via Gradle/npm)
 
@@ -119,24 +89,19 @@ Utilize o script `release.sh` na raiz do projeto para automatizar a criação de
     ./gradlew packageDmg       # Gera pacote .dmg para macOS
     ./gradlew createMsix       # Gera pacote .msix para Windows
     ```
-*   **Extensão Chrome (`/ext-chrome`):**
+*   **Extensão Chrome e Plugin Wordpress (`extensions/`):**
     ```bash
-    cd ext-chrome
-    zip -r ../ext-chrome.zip . # Cria o zip para distribuição
+    cd extensions/ && npm run build
     ```
-*   **Plugin WordPress (`/wp-plugin`):**
-    ```bash
-    cd wp-plugin
-    zip -r ../wp-plugin.zip . # Cria o zip para distribuição
-    ```
+    
 *   **Site Principal (`/web`):**
     ```bash
     cd web
     npm run generate           # Gera a versão estática do site
     ```
-*   **Servidor Backend (`/server`):**
+*   **Servidor Backend (`/workers`):**
     ```bash
-    cd server
+    cd workers
     npm run build              # Gera o worker para deploy no Cloudflare
     ```
 
