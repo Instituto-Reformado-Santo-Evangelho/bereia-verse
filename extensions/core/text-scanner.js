@@ -12,6 +12,7 @@ window.ACF_CORE.autoScanAndLink = function(mapping, style = 'arrow', interaction
     // Tenta encontrar o container principal de conteúdo. 
     const container = document.querySelector('.entry-content') || 
                       document.querySelector('.post-content') || 
+                      document.querySelector('.post-body') || 
                       document.querySelector('article') || 
                       document.body;
 
@@ -70,18 +71,17 @@ window.ACF_CORE.autoScanAndLink = function(mapping, style = 'arrow', interaction
     // Sufixo completo de versículos
     const verseSuffix = `${versePart}${foot}${endRange}`;
     
-    // Nome do Livro (Obrigatório Capitalizado)
-    const bookName = `(?:[1-3]${s})?[A-ZÁ-Ú][a-zá-úçã]+\\.?`;
+    // Nome do Livro (Obrigatório Capitalizado + pelo menos 1 minúscula)
+    const bookName = `(?:[1-3]${s}?)?[A-ZÁ-Ú][a-zá-úçã]+\\.?`;
     
-    const fullRef = `${bookName}${s}${verseSuffix}`;
+    // FullRef: Exige espaço antes do capítulo para evitar falsos positivos como "Filho d"
+    const fullRef = `${bookName}\\s+${verseSuffix}`;
     const partialRef = `${verseSuffix}`;
     
     // SafePartialStart: Captura referências soltas que começam com separador (; , . e ou)
-    // Essencial para casos onde o livro ficou em um nó de texto anterior (separado por link de rodapé)
-    // FIX: Added negative lookahead (?!${bookName}) to prevent matching numbered books (e.g. "e 1 Coríntios") as partial refs
     const safePartialStart = `(?:(?:[;\\.,]|\\s+e\\s+|\\s+ou\\s+)\\s*(?!${bookName})${verseSuffix})`; 
     
-    // Regex Principal: Aceita FullRef OU SafePartialStart, seguido de repetições
+    // Regex Principal
     const scanRegexStr = `((?:${fullRef}|${safePartialStart})(?:${s}(?:;|${s})${s}(?:${fullRef}|${partialRef}))*)`;
     const scanRegex = new RegExp(scanRegexStr, 'g');
 
@@ -111,7 +111,7 @@ window.ACF_CORE.autoScanAndLink = function(mapping, style = 'arrow', interaction
                 
                 // Se encontrar uma referência já processada (span com classe), extrai o livro dela
                 if (curr.classList.contains('acf-ref-underline') || curr.classList.contains('acf-ref-underline-solid')) {
-                    const match = curr.textContent.match(/^((?:[1-3]\s)?[A-ZÁ-Ú][a-zá-úçã]+)/);
+                    const match = curr.textContent.match(/^((?:[1-3]\s?)?[A-ZÁ-Ú][a-zá-úçã]+)/);
                     if (match) return match[1];
                 }
                 
@@ -141,7 +141,7 @@ window.ACF_CORE.autoScanAndLink = function(mapping, style = 'arrow', interaction
             const originalMatchText = match[0];
             
             // Verifica se o match começa com um nome de livro
-            const startsWithBook = /^(?:[1-3]\s)?[A-ZÁ-Ú][a-zá-úçã]+\.?/.test(textToProcess.trim().replace(/^[;,\.\s]+/, ''));
+            const startsWithBook = /^(?:[1-3]\s?)?[A-ZÁ-Ú][a-zá-úçã]+\.?/.test(textToProcess.trim().replace(/^[;,\.\s]+/, ''));
             
             if (!startsWithBook) {
                 // Se não tem livro, tenta recuperar do contexto DOM (nós anteriores)

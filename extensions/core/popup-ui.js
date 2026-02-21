@@ -1,7 +1,7 @@
 // Namespace Global para UI
 window.ACF_CORE = window.ACF_CORE || {};
 window.ACF_CORE.popup = null;
-window.ACF_CORE.popupId = 'acf-tooltip-popup'; // Default, será sobrescrito pelo adapter
+window.ACF_CORE.popupId = 'acf-tooltip-popup';
 
 // --- Interface para Adaptador (Defaults) ---
 window.ACF_CORE.getAssetUrl = function(filename) {
@@ -121,7 +121,7 @@ window.ACF_CORE.showPopup = function(x, y, title) {
             <a href="https://santoevangelho.com.br" target="_blank" rel="noopener noreferrer">
                 <img src="${logoUrl}" class="acf-logo" alt="Logo" />
             </a>
-            <span>${title} | IRSE</span>
+            <span>${title} | Bereia Versículos</span>
         </div>
         <button class="acf-theme-toggle" title="Alternar Tema">
             ${themeIcon}
@@ -129,7 +129,7 @@ window.ACF_CORE.showPopup = function(x, y, title) {
     </div>
     <div class="acf-body acf-loading">Carregando referências...</div>
     <div class="acf-footer">
-        <a href="https://biblias.com.br/acfonline" target="_blank" rel="noopener noreferrer">ACF2011 - SBTB</a>
+        <a href="https://biblias.com.br/acfonline" target="_blank" rel="noopener noreferrer">ACF2011</a>
     </div>
   `;
 };
@@ -138,7 +138,7 @@ window.ACF_CORE.updatePopupContent = function(html, title) {
   const popup = window.ACF_CORE.popup;
   if (popup) {
     const headerSpan = popup.querySelector('.acf-header span');
-    if (headerSpan) headerSpan.innerText = `${title} | IRSE`;
+    if (headerSpan) headerSpan.innerText = `${title} Bereia Versículos`;
     
     popup.querySelector('.acf-body').innerHTML = html;
     popup.querySelector('.acf-body').classList.remove('acf-loading');
@@ -252,7 +252,7 @@ window.ACF_CORE.fetchAndShow = async function(requests, x, y) {
               html += `<div class="acf-group-title">${currentHeader}</div>`;
               lastHeader = currentHeader;
             }
-            html += `<p class="acf-verse"><strong>${req.verse}.</strong> ${verseContent}</p>`;
+            html += `<p class="acf-verse"><sup>${req.verse}</sup> ${verseContent}</p>`;
         }
       });
 

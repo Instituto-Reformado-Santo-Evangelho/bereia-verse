@@ -39,17 +39,44 @@ div#acf-wp-popup.acf-popup-container {
   max-width: 90vw;
   max-height: 500px;
   overflow-y: auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.4;
-  color: var(--acf-text);
-  text-align: left;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+  color: var(--acf-text) !important;
+  text-align: left !important;
   display: none;
   transition: var(--acf-transition);
   transition-property: background, color, border, box-shadow;
+  box-sizing: border-box !important;
+  
+  /* Reset de herança para o container */
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
   
   /* Hide scrollbar */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none;  /* IE/Edge */
+}
+
+/* Garantir que todos os elementos internos usem border-box e herdem a fonte correta */
+div#acf-ext-popup.acf-popup-container *,
+div#acf-wp-popup.acf-popup-container * {
+    box-sizing: border-box !important;
+    font-family: inherit !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+}
+
+/* Redefinir comportamentos de bloco para elementos comuns */
+div#acf-ext-popup.acf-popup-container div,
+div#acf-wp-popup.acf-popup-container div,
+div#acf-ext-popup.acf-popup-container p,
+div#acf-wp-popup.acf-popup-container p {
+    display: block;
 }
 
 /* Hide scrollbar for Chrome/Safari */
@@ -88,7 +115,7 @@ div#acf-wp-popup.acf-popup-container .acf-header {
   border-bottom: 1px solid var(--acf-border);
   font-weight: bold;
   color: var(--acf-header-text);
-  font-size: 0.9rem;
+  font-size: 16px !important;
   border-radius: 8px 8px 0 0;
   display: flex;
   justify-content: space-between;
@@ -142,7 +169,8 @@ div#acf-wp-popup.acf-popup-container .acf-logo {
 div#acf-ext-popup.acf-popup-container .acf-body,
 div#acf-wp-popup.acf-popup-container .acf-body {
   padding: 15px;
-  font-size: 1.1rem;
+  font-size: 18px !important;
+  line-height: 1.5 !important;
   transition: var(--acf-transition);
 }
 
@@ -151,7 +179,7 @@ div#acf-wp-popup.acf-popup-container .acf-footer {
   padding: 8px 15px;
   border-top: 1px solid var(--acf-border);
   background-color: var(--acf-footer-bg);
-  font-size: small;
+  font-size: small !important;
   text-align: right;
   color: var(--acf-footer-text);
   border-radius: 0 0 8px 8px;
@@ -173,13 +201,15 @@ div#acf-wp-popup.acf-popup-container .acf-footer a:hover {
 
 div#acf-ext-popup.acf-popup-container .acf-group-title,
 div#acf-wp-popup.acf-popup-container .acf-group-title {
-  margin: 5px 0 10px 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--acf-accent);
-  border-bottom: 1px solid var(--acf-accent);
-  padding-bottom: 2px;
+  margin: 15px 0 10px 0;
+  font-size: 0.80rem;
+  line-height: 1.3 !important;
+  color: #FFAE00;
+  border-bottom: 1px solid rgba(255, 174, 0, 0.3);
+  padding-bottom: 4px;
   transition: var(--acf-transition);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 div#acf-ext-popup.acf-popup-container .acf-group-title:first-child,
@@ -189,14 +219,19 @@ div#acf-wp-popup.acf-popup-container .acf-group-title:first-child {
 
 div#acf-ext-popup.acf-popup-container .acf-verse,
 div#acf-wp-popup.acf-popup-container .acf-verse {
-  margin: 0 0 4px 0;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
 }
 
-div#acf-ext-popup.acf-popup-container .acf-verse strong,
-div#acf-wp-popup.acf-popup-container .acf-verse strong {
-  color: var(--acf-footer-text);
-  font-size: 0.9em;
-  margin-right: 4px;
+div#acf-ext-popup.acf-popup-container .acf-verse sup,
+div#acf-wp-popup.acf-popup-container .acf-verse sup {
+  color: #FFAE00;
+  font-size: 0.65em !important;
+  margin-right: 2px;
+  vertical-align: baseline;
+  position: relative;
+  top: -0.4em;
+  font-weight: 400;
 }
 
 div#acf-ext-popup.acf-popup-container .acf-loading,

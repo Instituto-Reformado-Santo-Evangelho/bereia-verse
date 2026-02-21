@@ -291,7 +291,7 @@ window.ACF_CORE.processSelection = function(text, mapping) {
 // Namespace Global para UI
 window.ACF_CORE = window.ACF_CORE || {};
 window.ACF_CORE.popup = null;
-window.ACF_CORE.popupId = 'acf-tooltip-popup'; // Default, será sobrescrito pelo adapter
+window.ACF_CORE.popupId = 'acf-tooltip-popup';
 
 // --- Interface para Adaptador (Defaults) ---
 window.ACF_CORE.getAssetUrl = function(filename) {
@@ -411,7 +411,7 @@ window.ACF_CORE.showPopup = function(x, y, title) {
             <a href="https://santoevangelho.com.br" target="_blank" rel="noopener noreferrer">
                 <img src="${logoUrl}" class="acf-logo" alt="Logo" />
             </a>
-            <span>${title} | IRSE</span>
+            <span>${title} | Bereia Versículos</span>
         </div>
         <button class="acf-theme-toggle" title="Alternar Tema">
             ${themeIcon}
@@ -419,7 +419,7 @@ window.ACF_CORE.showPopup = function(x, y, title) {
     </div>
     <div class="acf-body acf-loading">Carregando referências...</div>
     <div class="acf-footer">
-        <a href="https://biblias.com.br/acfonline" target="_blank" rel="noopener noreferrer">ACF2011 - SBTB</a>
+        <a href="https://biblias.com.br/acfonline" target="_blank" rel="noopener noreferrer">ACF2011</a>
     </div>
   `;
 };
@@ -428,7 +428,7 @@ window.ACF_CORE.updatePopupContent = function(html, title) {
   const popup = window.ACF_CORE.popup;
   if (popup) {
     const headerSpan = popup.querySelector('.acf-header span');
-    if (headerSpan) headerSpan.innerText = `${title} | IRSE`;
+    if (headerSpan) headerSpan.innerText = `${title} Bereia Versículos`;
     
     popup.querySelector('.acf-body').innerHTML = html;
     popup.querySelector('.acf-body').classList.remove('acf-loading');
@@ -542,7 +542,7 @@ window.ACF_CORE.fetchAndShow = async function(requests, x, y) {
               html += `<div class="acf-group-title">${currentHeader}</div>`;
               lastHeader = currentHeader;
             }
-            html += `<p class="acf-verse"><strong>${req.verse}.</strong> ${verseContent}</p>`;
+            html += `<p class="acf-verse"><sup>${req.verse}</sup> ${verseContent}</p>`;
         }
       });
 
@@ -576,6 +576,7 @@ window.ACF_CORE.autoScanAndLink = function(mapping, style = 'arrow', interaction
     // Tenta encontrar o container principal de conteúdo. 
     const container = document.querySelector('.entry-content') || 
                       document.querySelector('.post-content') || 
+                      document.querySelector('.post-body') || 
                       document.querySelector('article') || 
                       document.body;
 
@@ -634,18 +635,17 @@ window.ACF_CORE.autoScanAndLink = function(mapping, style = 'arrow', interaction
     // Sufixo completo de versículos
     const verseSuffix = `${versePart}${foot}${endRange}`;
     
-    // Nome do Livro (Obrigatório Capitalizado)
-    const bookName = `(?:[1-3]${s})?[A-ZÁ-Ú][a-zá-úçã]+\\.?`;
+    // Nome do Livro (Obrigatório Capitalizado + pelo menos 1 minúscula)
+    const bookName = `(?:[1-3]${s}?)?[A-ZÁ-Ú][a-zá-úçã]+\\.?`;
     
-    const fullRef = `${bookName}${s}${verseSuffix}`;
+    // FullRef: Exige espaço antes do capítulo para evitar falsos positivos como "Filho d"
+    const fullRef = `${bookName}\\s+${verseSuffix}`;
     const partialRef = `${verseSuffix}`;
     
     // SafePartialStart: Captura referências soltas que começam com separador (; , . e ou)
-    // Essencial para casos onde o livro ficou em um nó de texto anterior (separado por link de rodapé)
-    // FIX: Added negative lookahead (?!${bookName}) to prevent matching numbered books (e.g. "e 1 Coríntios") as partial refs
     const safePartialStart = `(?:(?:[;\\.,]|\\s+e\\s+|\\s+ou\\s+)\\s*(?!${bookName})${verseSuffix})`; 
     
-    // Regex Principal: Aceita FullRef OU SafePartialStart, seguido de repetições
+    // Regex Principal
     const scanRegexStr = `((?:${fullRef}|${safePartialStart})(?:${s}(?:;|${s})${s}(?:${fullRef}|${partialRef}))*)`;
     const scanRegex = new RegExp(scanRegexStr, 'g');
 
@@ -675,7 +675,7 @@ window.ACF_CORE.autoScanAndLink = function(mapping, style = 'arrow', interaction
                 
                 // Se encontrar uma referência já processada (span com classe), extrai o livro dela
                 if (curr.classList.contains('acf-ref-underline') || curr.classList.contains('acf-ref-underline-solid')) {
-                    const match = curr.textContent.match(/^((?:[1-3]\s)?[A-ZÁ-Ú][a-zá-úçã]+)/);
+                    const match = curr.textContent.match(/^((?:[1-3]\s?)?[A-ZÁ-Ú][a-zá-úçã]+)/);
                     if (match) return match[1];
                 }
                 
@@ -705,7 +705,7 @@ window.ACF_CORE.autoScanAndLink = function(mapping, style = 'arrow', interaction
             const originalMatchText = match[0];
             
             // Verifica se o match começa com um nome de livro
-            const startsWithBook = /^(?:[1-3]\s)?[A-ZÁ-Ú][a-zá-úçã]+\.?/.test(textToProcess.trim().replace(/^[;,\.\s]+/, ''));
+            const startsWithBook = /^(?:[1-3]\s?)?[A-ZÁ-Ú][a-zá-úçã]+\.?/.test(textToProcess.trim().replace(/^[;,\.\s]+/, ''));
             
             if (!startsWithBook) {
                 // Se não tem livro, tenta recuperar do contexto DOM (nós anteriores)
