@@ -66,6 +66,13 @@ jobs:
         ./app/gradlew.bat -p ./app :composeApp:createMsix "-Pmsix.pfx.path=app/composeApp/signing.pfx" "-Pmsix.pfx.password=$env:PFX_PASS" --no-configuration-cache
       shell: bash
 
+    - name: Get Version
+      id: get_version
+      run: |
+        $VERSION = (Get-Content app/composeApp/build.gradle.kts | Select-String 'packageVersion = "(.*)"').Matches.Groups[1].Value
+        echo "APP_VERSION=$VERSION" >> $env:GITHUB_ENV
+      shell: powershell
+
     - name: Remove temporary client_secrets.json
       if: always()
       run: |
@@ -82,7 +89,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
       with:
-        tag_name: ${{ github.ref_name }}
+        tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', env.APP_VERSION) }}
         files: app/composeApp/build/outputs/msix/BereiaVerse.msix
         generate_release_notes: true
         draft: false
