@@ -7,33 +7,15 @@ xcuserdata
 local.properties
 .idea
 .DS_Store
-captures
-.externalNativeBuild
-.cxx
-*.xcodeproj/*
-!*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata/
-!*.xcodeproj/project.xcworkspace/
-!*.xcworkspace/contents.xcworkspacedata
-**/xcshareddata/WorkspaceSettings.xcsettings
-node_modules/
 
 # Distribution Artifacts
-releases/
-pkg/
-dist/
-installers/linux/arch/src/
-installers/linux/arch/pkg/
+installers/windows/app\installers\windows\BereiaVerse_SelfSigned.pfx
+*.pfx
+*.pfx.base64.txt
 
 # Environment Variables
 .env
 .env.local
 
 # Google Drive Sync
-client_secrets.json
 composeApp/src/jvmMain/resources/client_secrets.json
-.bereia-verse/tokens/
-tokens/
-*.pfx
-*.pfx.base64.txt
-\n# Arquivo de segredos - não commitar\n.env

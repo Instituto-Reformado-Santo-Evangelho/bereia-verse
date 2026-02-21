@@ -22,8 +22,7 @@ node_modules/
 releases/
 pkg/
 dist/
-installers/linux/arch/src/
-installers/linux/arch/pkg/
+installers/*
 
 # Environment Variables
 .env

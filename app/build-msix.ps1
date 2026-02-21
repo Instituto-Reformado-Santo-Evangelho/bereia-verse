@@ -26,7 +26,7 @@ if (-not $SkipEnv) {
 }
 
 if (-not $env:JAVA_HOME) {
-    $jdkPath = "C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot"
+    $jdkPath = "C:\Program Files\Microsoft\jdk-21.0.10.7-hotspot"
     if (Test-Path $jdkPath) {
         $env:JAVA_HOME = $jdkPath
         Write-Host "  OK JAVA_HOME configurado" -ForegroundColor Green

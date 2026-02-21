@@ -4,12 +4,12 @@ export interface Env {
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+
 		const url = new URL(request.url);
 		
 		// 1. Configurar Cache
 		const cache = caches.default;
 		
-		// Tentar encontrar resposta no cache
 		// Importante: O cache usa a URL completa (incluindo query params) como chave
 		let cachedResponse = await cache.match(request);
 
@@ -92,6 +92,7 @@ export default {
 				const verseId = parseInt(pathParts[2]);
 				
 				if (!isNaN(verseId)) {
+					
 					const stmt = env.DB.prepare('SELECT content FROM verses WHERE id = ?').bind(verseId);
 					const result = await stmt.first();
 
@@ -109,10 +110,9 @@ export default {
 		// --- Salvar no Cache e Retornar ---
 
 		if (resultResponse) {
-			// Se a resposta for sucesso (200), salvamos no cache
+			// Se a resposta for sucesso, salva no cache
 			if (resultResponse.status === 200) {
 				// ctx.waitUntil permite que o worker responda ao usuário antes de terminar de salvar no cache
-				// Usamos .clone() porque o corpo da resposta só pode ser lido uma vez
 				ctx.waitUntil(cache.put(request, resultResponse.clone()));
 			}
 			return resultResponse;
