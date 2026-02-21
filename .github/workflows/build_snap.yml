@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-snap:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
@@ -41,18 +41,17 @@ jobs:
             echo "Secret not found. Skipping client_secrets.json creation."
           fi
 
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: build
-        with:
-          path: linux/snap
-          snapcraft-args: --destructive-mode
-
       - name: Get Version
         id: get_version
         run: |
           VERSION=$(grep 'packageVersion =' app/composeApp/build.gradle.kts | cut -d '"' -f 2)
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build Snap
+        uses: snapcore/action-build@v1
+        id: build
+        with:
+          path: linux/snap
 
       - name: Remove temporary client_secrets.json
         if: always()
