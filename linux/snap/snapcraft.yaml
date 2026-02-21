@@ -61,6 +61,7 @@ parts:
       export PATH=$JAVA_HOME/bin:$PATH
       
       cd app
+      chmod +x gradlew
       ./gradlew :composeApp:createReleaseDistributable --no-daemon
       
       # O caminho da distribuição de release
@@ -77,7 +78,7 @@ parts:
 
       # Ícone
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps
-      cp composeApp/src/desktopMain/resources/bereiaverse.png $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps/bereiaverse.png
+      cp composeApp/src/desktopMain/resources/bereiaverse.png $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps/br.com.irse.verse.png
       
       # Desktop file
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/applications
